@@ -1,0 +1,21 @@
+reach_target_0:
+  motion_type: "reach_target"
+  model_path: "motion/motion_speed_control_0.1/model/model_epi_1000"
+reach_target_1:
+  motion_type: "reach_target"
+  model_path: "motion/accurate_reach_target/model/model_epi_700"
+reach_target_2:
+  motion_type: "reach_target"
+  model_path: "motion/motion3/model/model_epi_1200"
+reach_target_3:
+  motion_type: "reach_target"
+  model_path: "motion/hero_motion/model/model_epi_1000"
+reach_target_4:
+  motion_type: "reach_target"
+  model_path: "motion/speed_control_by_waypoints/model/model_epi_600"
+reach_target_5:
+  motion_type: "reach_target"
+  model_path: "motion/speed_control_by_waypoints7/model/model_epi_200"
+path_following_0:
+  motion_type: "path_following"
+  model_path: "motion/path_following/model/model_epi_500"

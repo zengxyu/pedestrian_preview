@@ -1,0 +1,68 @@
+ddpg:
+  discount_rate: 0.98
+  replay_start_size: 64
+  batch_size: 64
+  update_interval: 1
+  soft_update_tau: 0.01
+  target_update_interval: 20
+  target_update_method: soft
+  n_times_update: 1
+  optimizer: Adam
+  explorer: Additive_ou
+  replay_buffer: ReplayBuffer
+  scheduler: StepLR
+
+ddpg_recurrent:
+  discount_rate: 0.98
+  replay_start_size: 64
+  batch_size: 64
+  update_interval: 1
+  soft_update_tau: 0.01
+  target_update_interval: 20
+  target_update_method: soft
+  n_times_update: 1
+  optimizer: Adam
+  explorer: Additive_ou
+  #  EpisodicReplayBuffer, ReplayBuffer, PrioritizedReplayBuffer, PrioritizedEpisodicReplayBuffer
+  replay_buffer: PrioritizedEpisodicReplayBuffer
+  # sequence length
+  episodic_update_len: 5
+  recurrent: True
+
+td3:
+  discount_rate: 0.98
+  replay_start_size: 128
+  target_update_method: soft
+  target_update_interval: 20
+  update_interval: 1
+  soft_update_tau: 0.005
+  n_times_update: 1
+  batch_size: 128
+  optimizer: Adam
+  explorer: AdditiveGaussian
+  replay_buffer: ReplayBuffer
+
+td3_recurrent:
+  discount_rate: 0.98
+  replay_start_size: 128
+  target_update_method: soft
+  target_update_interval: 20
+  update_interval: 1
+  soft_update_tau: 0.005
+  n_times_update: 1
+  batch_size: 128
+  optimizer: Adam
+  explorer: AdditiveGaussian
+  replay_buffer: ReplayBuffer
+  episodic_update_len: 5
+  recurrent: True
+
+sac:
+  discount_rate: 0.99
+  tau: 0.01
+  replay_start_size: 128
+  batch_size: 128
+  update_interval: 1
+  optimizer: Adam
+  replay_buffer: ReplayBuffer
+  temperature_optimizer_lr: 0.0003

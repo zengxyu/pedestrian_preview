@@ -1,0 +1,13 @@
+LinearDecayEpsilonGreedy:
+  start_epsilon: 0.5
+  end_epsilon: 0.05
+  decay_steps: 20000
+
+Additive_ou:
+  mu: 0
+  theta: 0.1
+  sigma: 0.1
+  start_with_mu: false
+
+AdditiveGaussian:
+  scale: 0.1

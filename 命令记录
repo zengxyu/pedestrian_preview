@@ -1,0 +1,5 @@
+bash batch_test.sh --in_folder="test_models/spacial" --out_folder="test_result/spacial"
+bash batch_test.sh --in_folder="test_models/temporal_mass" --out_folder="test_result/temporal_mass"
+bash batch_test.sh --in_folder="test_models/cnn" --out_folder="test_result/cnn"
+bash batch_test.sh --in_folder="test_models/temporal" --out_folder="test_result/temporal"
+bash batch_test.sh --in_folder=test_models/temporal_mass --in_model_index=3000 --num_episodes=1000 --out_folder=test_result/temporal_mass --gpu=0

@@ -1,0 +1,136 @@
+######################################################################
+# iGibson
+######################################################################
+# empty, stadium, gibson, igibson,
+scene: igibson
+scene_id: Pomaria_2_int
+build_graph: true
+load_texture: true
+load_scene_episode_config: false
+pybullet_load_texture: false
+trav_map_type: with_obj
+trav_map_resolution: 0.1
+trav_map_erosion: 1
+should_open_all_doors: true
+optimized_renderer: true
+
+# Simulator settings
+action_freq: 5
+action_freq_robot: 5
+physics_freq: 120
+
+# Scenes & Objects
+# Scene criteria: Not too large, spacious rooms for demos
+scene_id_list: [ "Ihlen_0_int", "Ihlen_1_int", "Merom_0_int", "Merom_1_int", "Pomaria_2_int", "Beechwood_0_int",  "Beechwood_1_int", "Pomaria_1_int", "Pomaria_0_int" ]
+not_load_object_categories: [ "carpet", "pillow", "cucumber", "lid", "potato", "stand", "strawberry", "milk", "granola", "parer", "saucepan", "parmesan", "bean", "spaghetti", "pear", "cherry", "foot_rule", "pea", "parsley", "melon", "artichoke", "soup_ladle", "vidalia_onion", "paper_clip", "pomegranate", "honing_steel", "dish_rack", "jar", "butter", "low-milk", "digital_scale", "olive_oil", "eggplant", "watermelon", "cheese_dip", "pineapple", "puffed_rice", "dessert_spoon", "teapot", "pop", "corn_flake", "colander", "radish", "kettle", "dinner_napkin", "lasagna", "casserole", "spatula", "caper", "pasta", "pencil", "straight_pin", "pencil_box", "powdered_milk", "grape", "vegetable", "penne", "tablespoon", "pen", "tape", "highlighter", "apricot", "walnut", "teaspoon", "pepper_grinder", "banana", "carving_knife", "whiteboard", "millet", "spoon", "sauce", "pepper", "rosehip", "head_cabbage", "catsup", "sprout", "berry", "lemon", "frying_pan", "sweet_corn", "griddle", "grater", "farfalle", "egg", "eraser", "bulletin_board", "sticky_note", "velveeta", "tumbler", "toasting_fork", "raisin_bran", "cold_cereal", "flour", "spaghetti_sauce", "mug", "wine_bottle", "watermelon_tail", "avocado", "zucchini", "thumbtack", "lettuce", "rice", "oatmeal", "carafe", "cantaloup", "dipper", "vodka", "spinach", "cheddar", "caliper", "beet", "bowl", "margarine", "pepper_sauce", "chip", "cream", "peach", "chopping_board", "paper_towel_holder", "dill_pickle", "pistachio", "cream_pitcher", "rack", "wine", "mushroom", "chives", "plum", "bucket", "tomato", "orange", "tablefork", "bulldog_clip", "yogurt", "carrot", "raspberry", "turnip", "apple" ]
+load_room_types: [ 'lobby', 'kitchen', 'corridor', 'dining_room', 'empty_room', 'living_room', 'staircase', 'television_room', 'auditorium', 'lobby' ]
+
+# domain randomization
+texture_randomization_freq: null
+object_randomization_freq: null
+scene_randomization_freq: 50
+task_randomization_freq: 5
+
+# Demo data for human replay in task:
+demo_preset_paths:
+  - "./__experiment_configs__/demo_data/demo_data_dynamic_0.pkl"
+  - "./__experiment_configs__/demo_data/demo_data_dynamic_1.pkl"
+  - "./__experiment_configs__/demo_data/demo_data_dynamic_2.pkl"
+  - "./__experiment_configs__/demo_data/demo_data_dynamic_3.pkl"
+  - "./__experiment_configs__/demo_data/demo_data_dynamic_4.pkl"
+  - "./__experiment_configs__/demo_data/demo_data_static_0.pkl"
+  - "./__experiment_configs__/demo_data/demo_data_static_2.pkl"
+  - "./__experiment_configs__/demo_data/demo_data_static_3.pkl"
+  - "./__experiment_configs__/demo_data/demo_data_static_4.pkl"
+
+
+######################################################################
+# Robot
+######################################################################
+robot:
+  name: Turtlebot
+  action_type: continuous
+  action_normalize: false
+  base_name: null
+  scale: 1.0
+  self_collision: false
+  rendering_params: null
+  controller_config:
+    base:
+      name: DifferentialDriveController
+      command_output_limits: [ [ 0, -3.14 ], [ 0.5, 3.14 ] ]
+      command_input_limits: [ [ 0, -3.14 ], [ 0.5, 3.14 ] ]
+
+######################################################################
+# Task
+######################################################################
+task: social_nav_random
+goal_format: polar
+task_obs_dim: 5
+target_dist_min: 1.5
+target_dist_max: 6.0
+minimum_wall_distance: 3
+exclude_room_types: [ 'bathroom' ]
+pedestrian_speed_mean: 0.1
+pedestrian_speed_std: 0.3
+pedestrian_goal_thresh: 0.2
+pedestrian_mesh_randomization_freq: null
+pedestrian_modes: [ 0, 2, 4, 6 ]
+pedestrian_meshes: [ 0, 1, 2 ]
+
+# demonstration settings
+robot_preset: [ [ -1,0,0.1 ] ]
+robot_preset_orn: [ [ 0,0,0 ] ]
+target_preset: [ [ 0,1,0.1 ] ]
+pedestrian_preset: [ [ 0,0,0 ] ]
+pedestrian_preset_orn: [ [ 0,0,0 ] ]
+
+# reward
+reward_type: l2
+success_reward: 5.0
+potential_reward_weight: 1.0
+collision_reward_weight: -5.0
+timeout_reward: -1.0
+success_reward_demo: 10.0
+continuous_reward_demo: 0.1
+
+# termination condition
+dist_tol: 0.40  # body width
+pedestrian_collision_threshold: 0.40
+max_step: 150
+max_collisions_allowed: 0
+
+# misc config
+initial_pos_z_offset: 0.2
+collision_ignore_link_a_ids: [ 1, 2, 3, 4 ]  # ignore collisions with these robot links
+
+######################################################################
+# Sensor and observation space
+###########################################################0###########
+output: [ task_obs, scan, scan_occ ]
+normalize_observation: true
+
+fisheye: true
+image_width: 640
+image_height: 480
+vertical_fov: 58
+depth_low: 0.4
+depth_high: 6.0
+
+# sensor noise
+depth_noise_rate: 0.05
+human_pose_dropout_rate: 0.05
+human_pose_gaussian_noise: 0.02
+n_horizontal_rays: 1440
+laser_linear_range: 3.5
+laser_angular_range: 360
+min_laser_dist: 0
+
+# visual objects
+visible_target: true
+visible_path: true
+
+physics_timestep: 0.05
+action_timestep: 0.05
+enable_shadow: True
+enable_pbr: True

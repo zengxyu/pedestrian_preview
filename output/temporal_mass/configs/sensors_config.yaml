@@ -1,0 +1,21 @@
+lidar:
+  # """ ray_num - the number of rays that the lidar on robot casts"""
+  ray_num: 360
+
+  # """ height - the height position of lidar on the robot"""
+  height: 0.5
+
+  # """"""
+  angle: 360
+
+  # ray length
+  ray_length: 3.5
+
+vision:
+  distance: 100000
+  image_width: 120
+  image_height: 80
+  fov: 90
+  aspect: 1.5
+  near_val: 0.02
+  far_val: 3.5
