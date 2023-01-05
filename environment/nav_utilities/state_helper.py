@@ -15,7 +15,6 @@ from environment.nav_utilities.icp import icp
 from environment.nav_utilities.match_bbox import filtered_hit_coordinates
 from environment.nav_utilities.visualize_utils import visualize_cartesian_list
 from utils.math_helper import cartesian_2_polar, compute_distance
-from environment.path_manager import PathManager
 import warnings
 
 warnings.filterwarnings("ignore", category=np.VisibleDeprecationWarning)
@@ -45,92 +44,7 @@ class StateHelper:
         self.input_config = get_input_config(self.args)
         self.seq_indexes = self.input_config["seq_indexes"]
 
-    def get_ros_next_state(self, robot, path_manager: PathManager):
-        path_manager.update_ideal_ind()
-
-        cartesian_coordinates_list = np.array(robot.cartesian_coordinates_list)
-        polar_positions_list = np.array(robot.polar_positions_list)
-        hits = np.array(robot.hit_vector_list)
-
-        cartesian_list = []
-        polar_list = []
-        hits_list = []
-        choose_index = [-3, -1]
-        for i in choose_index:
-            if self.state_stores[i]:
-                hit_vector = hits[i]
-                cartesian_positions = cartesian_coordinates_list[i]
-                polar_positions = polar_positions_list[i]
-                # TODO这个waypoints只用当前时刻的waypoints就可以了
-                # waypoints_list.append(waypoints)
-                cartesian_list.append(cartesian_positions)
-                polar_list.append(polar_positions)
-                hits_list.append(hit_vector)
-        polar_position_list = np.array(polar_list)
-        cartesian_positions_list = np.array(cartesian_list)
-        hits_list = np.array(hits_list)
-        if self.input_config["process"] == InputsProcess.TagdProcessing:
-            reference_polar_coordinates = polar_position_list[-1]
-            reference_cartesian_coordinates = cartesian_positions_list[-1]
-
-            reference_coordinates = self.sector_process(reference_polar_coordinates,
-                                                        reference_cartesian_coordinates)
-
-            # num_points x 2
-            # deformed waypoints
-            waypoints = self.get_future_waypoints(path_manager,
-                                                  path_manager.original_path,
-                                                  path_manager.nearest_ind)
-            # cvt deformed waypoints
-            waypoints = self.convert_future_polar_waypoints(waypoints, robot.get_x_y(), robot.get_yaw(),
-                                                            self.visible_zone_limit)
-            # 2, 3(ref)
-            masses_s_t, centers = self.generate_tag_descriptor_process(cartesian_positions_list, hits_list)
-
-            visualize_cartesian_list([reference_coordinates, waypoints], title="test",
-                                     labels=["reference_coordinates", "waypoints"], folder="output/test",
-                                     visualize=self.visualize, save=self.save)
-            # seq_len x (points + waypoints)
-            return masses_s_t.astype(np.float32), reference_coordinates.astype(np.float32), waypoints.astype(
-                np.float32)
-
-    def get_next_state(self, path_manager: PathManager, cartesian_coordinates_list, polar_positions_list,
-                       hit_vector_list, robot_position, robot_yaw, scan_range_max):
-        path_manager.update_ideal_ind()
-
-        if self.input_config["process"] == InputsProcess.BaselineProcessing:
-            cartesian_positions_list = []
-
-            for i in self.input_config["seq_indexes"]:
-                coordinates = self.sector_process(polar_positions_list[i]).flatten()
-                cartesian_positions_list.append(coordinates)
-
-            cartesian_positions = np.array(cartesian_positions_list)
-            waypoints = self.get_future_waypoints(path_manager, robot_position, robot_yaw, scan_range_max)
-
-            results = np.concatenate([cartesian_positions.flatten(), waypoints.flatten()], axis=0)
-
-            return results
-        else:
-            # num_points x 2
-            waypoints = self.get_future_waypoints(path_manager, robot_position, robot_yaw, scan_range_max)
-
-            # 使用最后一帧作为参考帧，计算spacial coordinates
-            spacial_coordinates = self.sector_process(polar_positions_list[-1])
-
-            # compute tag descriptor
-            cartesian_positions_list = np.array([cartesian_coordinates_list[i] for i in self.seq_indexes])
-            hits_list = np.array([hit_vector_list[i] for i in self.seq_indexes])
-            tag_descriptors = self.generate_tag_descriptor_process(cartesian_positions_list, hits_list)
-
-            # visualize_cartesian_list([spacial_coordinates, waypoints], title="test",
-            #                          labels=["spacial_coordinates", "waypoints"],
-            #                          folder="output/test",
-            #                          visualize=True, save=self.save)
-            return tag_descriptors.astype(np.float32), spacial_coordinates.astype(np.float32), waypoints.astype(
-                np.float32)
-
-    def compute_reward(self, robot_position, path_manager: PathManager, cartesian_coordinates_list, success, collision,
+    def compute_reward(self, robot_position, path_manager, cartesian_coordinates_list, success, collision,
                        over_max_step):
 
         reward = 0
@@ -279,7 +193,7 @@ class StateHelper:
 
         return results
 
-    def get_future_waypoints(self, path_manager: PathManager, robot_position, robot_yaw, scan_range_max):
+    def get_future_waypoints(self, path_manager, robot_position, robot_yaw, scan_range_max):
         # waypoints_num = int(round(self.input_dims_configs["waypoints"] / 2))
         delta_indexes = np.array([6, 12, 18, 24, 30])
 

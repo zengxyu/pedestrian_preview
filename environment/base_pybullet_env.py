@@ -38,8 +38,11 @@ class PybulletBaseEnv(gym.Env, ABC):
         # Set control type
         self.p.setRealTimeSimulation(False)  # Manual simulation call
         self.p.setTimeStep(self.physical_step_duration)
-        self.p.configureDebugVisualizer(p.COV_ENABLE_GUI, 0)
+        self.p.configureDebugVisualizer(p.COV_ENABLE_GUI, 1)
         self.p.configureDebugVisualizer(p.COV_ENABLE_TINY_RENDERER, 1)
+        self.p.configureDebugVisualizer(p.COV_ENABLE_SEGMENTATION_MARK_PREVIEW, 1)
+        self.p.configureDebugVisualizer(p.COV_ENABLE_DEPTH_BUFFER_PREVIEW, 1)
+        self.p.configureDebugVisualizer(p.COV_ENABLE_RGB_BUFFER_PREVIEW, 1)
         self.p.resetDebugVisualizerCamera(cameraDistance=5, cameraYaw=0, cameraPitch=-30,
                                           cameraTargetPosition=[3, 3, 0])
         # Create Plane

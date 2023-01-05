@@ -4,7 +4,7 @@ import pybullet as p
 
 
 class VisionSensor:
-    def __int__(self, robot_id, sensor_config):
+    def __init__(self, robot_id, sensor_config):
         self.robot_id = robot_id
 
         self.distance = sensor_config["distance"]
@@ -24,18 +24,20 @@ class VisionSensor:
         z_eye += 0.3  # make the camera a little higher than the robot
 
         # compute focusing point of the camera
-        distance = 1
-        x_target = x_eye + math.cos(yaw) * distance
-        y_target = y_eye + math.sin(yaw) * distance
+        x_target = x_eye + math.cos(yaw) * self.distance
+        y_target = y_eye + math.sin(yaw) * self.distance
         z_target = z_eye
 
         view_matrix = p.computeViewMatrix(cameraEyePosition=[x_eye, y_eye, z_eye],
                                           cameraTargetPosition=[x_target, y_target, z_target],
                                           cameraUpVector=[0, 0, 1.0])
-        projection_matrix = p.computeProjectionMatrixFOV(fov=90, aspect=1.5, nearVal=0.02, farVal=3.5)
-        images = p.getCameraImage(self.image_width, self.image_height, view_matrix, projection_matrix, self.shadow,
-                                  renderer=p.ER_BULLET_HARDWARE_OPENGL)
-        return images
+        projection_matrix = p.computeProjectionMatrixFOV(fov=self.fov, aspect=self.aspect, nearVal=self.nearVal,
+                                                         farVal=self.farVal)
+        width, height, rgb_image, depth_image, seg_image = p.getCameraImage(self.image_width, self.image_height,
+                                                                            view_matrix,
+                                                                            projection_matrix, self.shadow,
+                                                                            renderer=p.ER_BULLET_HARDWARE_OPENGL)
+        return width, height, rgb_image, depth_image, seg_image
 
     def get_rgb(self):
         return

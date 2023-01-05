@@ -10,6 +10,6 @@ visible_width: 3.5
 
 lidar_scan_interval: 0.4
 
-sensor: lidar
+sensor: vision
 v_ctrl_factor: 14
 w_ctrl_factor: 30

@@ -19,3 +19,4 @@ vision:
   aspect: 1.5
   near_val: 0.02
   far_val: 3.5
+  shadow: True

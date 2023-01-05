@@ -102,17 +102,12 @@ class EnvironmentBullet(PybulletBaseEnv, EvaluationHelper):
         self.hit_vector_list = deque(maxlen=self.seq_len)
         self.polar_positions_list = deque(maxlen=self.seq_len)
         self.cartesian_coordinates_list = deque(maxlen=self.seq_len)
-        self.ray_num = self.args.robot_config["ray_num"]
+        # self.ray_num = self.args.robot_config["ray_num"]
         self.visible_zone_limit = self.args.robot_config["visible_width"]
 
-    def init_states(self):
-        for i in range(self.seq_len):
-            self.hit_vector_list.append(np.zeros((self.ray_num,)))
-            self.polar_positions_list.append(np.zeros((self.ray_num, 2)))
-            self.cartesian_coordinates_list.append(np.zeros((self.ray_num, 2)))
-
     def render(self, mode="human"):
-        pass
+        width, height, rgb_image, depth_image, seg_image = self.turtle_bot.sensor.get_obs()
+        return width, height, rgb_image, depth_image, seg_image
 
     def reset(self):
         self.episode_count += 1
@@ -124,18 +119,11 @@ class EnvironmentBullet(PybulletBaseEnv, EvaluationHelper):
         #  2. re plan from current to the goal,
         #  3. re initialize the state helper.
         self.restart_environment()
-        self.init_states()
+        # self.init_states()
 
         self.turtle_bot = self.initialize_turtle_bot()
 
-        self.path_manager.update_nearest_waypoint(self.s_bu_pose)
-
         # get the next observation and future waypoint
-        self.state_helper = StateHelper(self.args, self.step_count)
-        state = self.state_helper.get_next_state(self.path_manager, self.cartesian_coordinates_list,
-                                                 self.polar_positions_list, self.hit_vector_list,
-                                                 self.turtle_bot.get_position(), self.turtle_bot.get_yaw(),
-                                                 self.visible_zone_limit)
         self.plot_mark_plot(self.path_manager.original_path[self.path_manager.ideal_ind], color=[0, 1, 0])
 
         if not self.args.train:
@@ -146,10 +134,7 @@ class EnvironmentBullet(PybulletBaseEnv, EvaluationHelper):
             # time.sleep(self.physical_step_duration)
             self.robot_direction_id = plot_robot_direction_line(self.p, self.robot_direction_id,
                                                                 self.turtle_bot.get_x_y_yaw())
-        # self._gui_observe_entire_environment()
-        # plt.imshow(self.occ_map)
-        # plt.show()
-        return state
+        return {}
 
     def get_action_space_keys(self):
         action_spaces_configs = read_yaml(self.args.action_space_config_folder, "action_space.yaml")
@@ -250,21 +235,6 @@ class EnvironmentBullet(PybulletBaseEnv, EvaluationHelper):
                 plt.plot(np.array([start_occ[0], end_occ_coordinate[0]]),
                          np.array([start_occ[1], end_occ_coordinate[1]]), c=color, alpha=attention_scores[index][0])
 
-            # for i, end_occ_coordinate in enumerate(end_occ_coordinates):
-            #     index = int(i // skip)
-            #     if i % skip == 0:
-            #         # 计算方向
-            #         direction = (end_occ_coordinate - start_occ) / np.linalg.norm(end_occ_coordinate - start_occ)
-            #         scale_direction = 30
-            #         lidar_waypoints.append(start_occ + direction * scale_direction * attention_scores[index])
-            #
-            # lidar_waypoints = np.array(lidar_waypoints)
-            # plt.plot(lidar_waypoints[:, 0], lidar_waypoints[:, 1], c=color, alpha=1)
-
-            # for i in range(len(lidar_waypoints) - 1):
-            #     triangle = np.array([lidar_waypoints[i], lidar_waypoints[i + 1], start_occ])
-            #     plt.plot(triangle[:, 0], triangle[:, 1], c=color, alpha=1)
-
         def draw_lidar_figure(color, save_folder, save_path):
             plt.figure(figsize=(5, 5))
             ax = plt.gca()
@@ -318,22 +288,13 @@ class EnvironmentBullet(PybulletBaseEnv, EvaluationHelper):
         # self.draw_attention_figure()
 
         action = self.action_space.to_force(action=action)
-
+        action = np.array([0.1, 0.1])
         success, collision = self.iterate_steps(*action)
 
         over_max_step = self.step_count >= self.max_step
 
-        # update state
         # get next state and reward
-        state = self.state_helper.get_next_state(self.path_manager, self.cartesian_coordinates_list,
-                                                 self.polar_positions_list, self.hit_vector_list,
-                                                 self.turtle_bot.get_position(), self.turtle_bot.get_yaw(),
-                                                 self.visible_zone_limit)
-        # compute reward
-        reward, info_for_sum = self.state_helper.compute_reward(self.turtle_bot.get_position(), self.path_manager,
-                                                                self.cartesian_coordinates_list,
-                                                                success, collision,
-                                                                over_max_step)
+        width, height, rgb_image, depth_image, seg_image = self.turtle_bot.sensor.get_obs()
 
         # whether done
         done = collision or success or over_max_step
@@ -389,7 +350,7 @@ class EnvironmentBullet(PybulletBaseEnv, EvaluationHelper):
                                   save_name="robot_trajectory_{}".format(self.episode_count.value)
                                   )
             # plot stored information
-        return state, reward, done, info_for_sum, info_for_last
+        return {}, {}, done, {}, info_for_last
 
     def plot_mark_plot(self, sample_position, color):
         if self.render:
@@ -424,6 +385,11 @@ class EnvironmentBullet(PybulletBaseEnv, EvaluationHelper):
         plt.ylabel("y")
         plt.show()
         plt.clf()
+
+    def collect_vision_obs(self, turtle_bot: TurtleBot):
+        width, height, rgb_image, depth_image, seg_image = turtle_bot.sensor.get_obs()
+
+        return rgb_image, depth_image, seg_image
 
     def collect_observation(self, turtle_bot: TurtleBot):
         # lidar scan
@@ -470,7 +436,8 @@ class EnvironmentBullet(PybulletBaseEnv, EvaluationHelper):
 
             # 每隔一定的间隔 进行一次雷达扫描
             if self.time_to_scan():
-                self.collect_observation(self.turtle_bot)
+                # self.collect_observation(self.turtle_bot)
+                self.collect_vision_obs(self.turtle_bot)
 
             position = self.turtle_bot.get_position()
             self.path_manager.update_nearest_waypoint(position)

@@ -95,12 +95,13 @@ class EnvironmentGibson(GibsonBaseEnv):
         robot_position = self.robot.get_position()
         robot_yaw = self.get_yaw(self.robot.get_orientation())
         # 获得下一个状态
-        state = self.state_helper.get_next_state(self.path_manager, self.cartesian_coordinates_list,
-                                                 self.polar_positions_list,
-                                                 self.hit_vector_list,
-                                                 robot_position,
-                                                 robot_yaw,
-                                                 self.visible_zone_limit)
+        # state = self.state_helper.get_next_state(self.path_manager, self.cartesian_coordinates_list,
+        #                                          self.polar_positions_list,
+        #                                          self.hit_vector_list,
+        #                                          robot_position,
+        #                                          robot_yaw,
+        #                                          self.visible_zone_limit)
+        state = None
         # 计算奖励
         # compute reward
         over_max_step = self.step_count >= 1000000000
