@@ -27,14 +27,10 @@ from agents.action_space.high_level_action_space import AbstractHighLevelActionS
 from environment.base_pybullet_env import PybulletBaseEnv
 from environment.nav_utilities.check_helper import check_collision
 from environment.nav_utilities.counter import Counter
-from environment.nav_utilities.evaluation_helper import EvaluationHelper
-from environment.nav_utilities.state_helper import StateHelper
 from environment.robots.dynamic_obstacle import DynamicObstacleGroup, DynamicObstacle
 from environment.robots.obstacle_collections import ObstacleCollections
 from environment.robots.static_obstacle import StaticObstacleGroup, StaticObstacle
 from environment.robots.turtlebot import TurtleBot
-from environment.nav_utilities.pybullet_debug_gui_helper import plot_trajectory, get_random_color, \
-    plot_robot_direction_line, plot_mark_spot
 
 from utils.config_utility import read_yaml
 from utils.image_utility import dilate_image
@@ -42,17 +38,12 @@ from utils.math_helper import compute_yaw
 from environment.nav_utilities.scene_loader import load_environment_scene
 from environment.nav_utilities.coordinates_converter import cvt_to_bu, cvt_to_om, cvt_polar_to_cartesian
 from environment.path_manager import PathManager
-from visualize_utilities.plot_action_space import plot_action_distribution
-from visualize_utilities.plot_env import plot_a_star_path, plot_occupancy_map, plot_robot_trajectory
-from visualize_utilities.plot_speed_density_curve import plot_speed_distance_curve, plot_real_speed_curve
 from traditional_planner.a_star.astar import AStar
 
 
-class EnvironmentBullet(PybulletBaseEnv, EvaluationHelper):
+class EnvironmentBullet(PybulletBaseEnv):
     def __init__(self, args, action_space):
         PybulletBaseEnv.__init__(self, args)
-        if not args.train:
-            EvaluationHelper.__init__(self, args)
         self.args = args
         self.running_config = args.running_config
         self.robot_config = args.robot_config
@@ -119,21 +110,9 @@ class EnvironmentBullet(PybulletBaseEnv, EvaluationHelper):
         #  2. re plan from current to the goal,
         #  3. re initialize the state helper.
         self.restart_environment()
-        # self.init_states()
 
         self.turtle_bot = self.initialize_turtle_bot()
 
-        # get the next observation and future waypoint
-        self.plot_mark_plot(self.path_manager.original_path[self.path_manager.ideal_ind], color=[0, 1, 0])
-
-        if not self.args.train:
-            self.refresh_evaluation_episodes()
-            self.history_occupancy_maps.append(self.occ_map)
-
-        if self.render:
-            # time.sleep(self.physical_step_duration)
-            self.robot_direction_id = plot_robot_direction_line(self.p, self.robot_direction_id,
-                                                                self.turtle_bot.get_x_y_yaw())
         return {}
 
     def get_action_space_keys(self):
@@ -158,131 +137,6 @@ class EnvironmentBullet(PybulletBaseEnv, EvaluationHelper):
         return TurtleBot(self.p, self.client_id, self.physical_step_duration, self.args.robot_config, self.args,
                          self.s_bu_pose, start_yaw)
 
-    def draw_attention_figure(self):
-
-        def arrow(position, direction, arrow_length, c):
-            start = position
-            end = position + direction * arrow_length
-
-            plt.plot([start[0], end[0]], [start[1], end[1]])
-
-        def circle(position, radius=0.4, c='r'):
-            theta = np.linspace(0, 2 * np.pi, 150)
-            a = radius * np.cos(theta) + position[0]
-            b = radius * np.sin(theta) + position[1]
-            plt.plot(a, b, c=c)
-
-        def draw_pedestrians():
-            for obstacle in self.obstacle_collections.obstacles:
-                if isinstance(obstacle, DynamicObstacle):
-                    position = obstacle.get_cur_position()
-                    position_occ = cvt_to_om(position, self.grid_res)
-                    direction = obstacle.get_direction()
-                    draw_entity(position_occ, direction, radius=2, arrow_length=4, color='g')
-                elif isinstance(obstacle, StaticObstacle) and obstacle.type == "irrelevant":
-                    position = obstacle.get_cur_position()
-                    position_occ = cvt_to_om(position, self.grid_res)
-                    draw_entity(position_occ, radius=2, arrow_length=4, color='gray')
-                elif isinstance(obstacle, StaticObstacle) and obstacle.type == "static":
-                    position = obstacle.get_cur_position()
-                    position_occ = cvt_to_om(position, self.grid_res)
-                    draw_entity(position_occ, radius=2, arrow_length=4, color='r')
-
-        def draw_entity(position, direction=None, radius=5, arrow_length=10, color='r'):
-            circle(position, radius, c=color)
-            if direction is not None:
-                arrow(position, direction, arrow_length=arrow_length, c=color)
-
-        def draw_robot():
-            position = self.turtle_bot.get_position()
-            position_occ = cvt_to_om(position, self.grid_res)
-            yaw = self.turtle_bot.get_yaw()
-            direction = np.array([np.cos(yaw), np.sin(yaw)])
-            draw_entity(position_occ, direction, radius=3, arrow_length=6, color='r')
-
-        def draw_path():
-            point_occ = cvt_to_om(self.path_manager.original_path, self.grid_res)
-            plt.plot(point_occ[:, 0], point_occ[:, 1])
-
-        def draw_lidar(coordinates, c="r"):
-            start_coordinate = self.turtle_bot.get_position()
-            theta = self.turtle_bot.get_yaw() - np.pi / 2
-            R = np.array([[np.cos(theta), -np.sin(theta)],
-                          [np.sin(theta), np.cos(theta)]])
-            end_coordinates = (R @ coordinates.T).T * self.visible_zone_limit + start_coordinate
-            start_occ = cvt_to_om(start_coordinate, self.grid_res)
-            end_occ_coordinates = cvt_to_om(end_coordinates, self.grid_res)
-
-            for i, end_occ_coordinate in enumerate(end_occ_coordinates):
-                plt.plot(np.array([start_occ[0], end_occ_coordinate[0]]),
-                         np.array([start_occ[1], end_occ_coordinate[1]]), c=c, alpha=0.2)
-
-        def draw_attention(coordinates, attention_scores, color):
-            start_coordinate = self.turtle_bot.get_position()
-            theta = self.turtle_bot.get_yaw() - np.pi / 2
-            R = np.array([[np.cos(theta), -np.sin(theta)],
-                          [np.sin(theta), np.cos(theta)]])
-            end_coordinates = (R @ coordinates.T).T * self.visible_zone_limit + start_coordinate
-            start_occ = cvt_to_om(start_coordinate, self.grid_res)
-            end_occ_coordinates = cvt_to_om(end_coordinates, self.grid_res)
-
-            # attention_scores = attention_scores / (np.max(attention_scores) - np.min(attention_scores))
-            attention_scores = attention_scores / max(attention_scores)
-            skip = len(end_coordinates) / len(attention_scores)
-
-            for i, end_occ_coordinate in enumerate(end_occ_coordinates):
-                index = int(i // skip)
-                plt.plot(np.array([start_occ[0], end_occ_coordinate[0]]),
-                         np.array([start_occ[1], end_occ_coordinate[1]]), c=color, alpha=attention_scores[index][0])
-
-        def draw_lidar_figure(color, save_folder, save_path):
-            plt.figure(figsize=(5, 5))
-            ax = plt.gca()
-            plt.tight_layout()
-            plt.axis('off')
-            ax.set_xlim([0, self.occ_map.shape[0]])
-            ax.set_ylim([0, self.occ_map.shape[1]])
-            plt.imshow(np.rot90(np.flip(1 - self.occ_map, 1)), cmap='pink')
-            draw_path()
-            draw_pedestrians()
-            draw_robot()
-            draw_lidar(coordinates, color)
-            # plt.show()
-            plt.savefig(os.path.join(save_folder, save_path))
-            plt.clf()
-
-        def draw_attention_figure(scores, color, save_folder, save_path):
-            plt.figure(figsize=(5, 5))
-            ax = plt.gca()
-            plt.tight_layout()
-            plt.axis('off')
-            ax.set_xlim([0, self.occ_map.shape[0]])
-            ax.set_ylim([0, self.occ_map.shape[1]])
-            plt.imshow(np.rot90(np.flip(1 - self.occ_map, 1)), cmap='pink')
-            draw_path()
-            draw_pedestrians()
-            draw_robot()
-            draw_attention(coordinates, scores, color=color)
-            # plt.show()
-            plt.savefig(os.path.join(save_folder, save_path))
-            plt.clf()
-
-        scores_spacial = self.args.actor_network.scores_spacial.detach().cpu().numpy()[0]
-        scores_temporal = self.args.actor_network.scores_temporal.detach().cpu().numpy()[0]
-        coordinates = self.args.actor_network.coordinates.detach().cpu().numpy()[0]
-
-        save_folder = os.path.join("output", "attention_figure")
-        if not os.path.exists(save_folder):
-            os.makedirs(save_folder)
-        random_path = uuid.uuid1()
-        draw_lidar_figure(color='g', save_folder=save_folder, save_path="{}_lidar.png".format(random_path))
-        draw_attention_figure(scores_spacial, color='b', save_folder=save_folder,
-                              save_path="{}_attention_spacial.png".format(random_path))
-        draw_attention_figure(scores_temporal, color='r', save_folder=save_folder,
-                              save_path="{}_attention_temporal.png".format(random_path))
-
-        print()
-
     def step(self, action):
         self.step_count += 1
         # self.draw_attention_figure()
@@ -302,61 +156,13 @@ class EnvironmentBullet(PybulletBaseEnv, EvaluationHelper):
         # store information
         info_for_last = {"collision": collision, "a_success": success,
                          "over_max_step": over_max_step, "step_count": self.step_count.value}
-        # logging.warning("target_speed:{}; robot : {}; speed : {}".format(action[0], self.turtle_bot.robot_id,
-        #                                                                  self.turtle_bot.get_velocity()))
-        # logging.debug("info_for_sum:{}".format(info_for_sum))
-        # logging.debug("info_for_last:{}".format(info_for_last))
-        # logging.debug("\n")
 
         # print()
         if done:
             print("success:{}; collision:{}; over_max_step:{}".format(success, collision, over_max_step))
 
-        if done and self.render:
-            self.add_episode_end_prompt(info_for_last)
-
-        if done and not self.args.train and not self.args.resume:
-            self.history_success.append(success)
-            self.history_collision.append(collision)
-            self.history_over_max_step.append(over_max_step)
-            self.history_actions[-1].append(action)
-
-        if done and self.args.plot_motion:
-            plot_speed_distance_curve(self.motion_history_waypoint_distances, self.motion_history_real_speeds,
-                                      y_label="real speed",
-                                      parent_dir="plot_motion/speed_distance",
-                                      save_name="real_speed_waypoint_distance_{}".format(self.episode_count.value))
-            plot_speed_distance_curve(self.motion_history_waypoint_distances, self.motion_history_planned_speeds,
-                                      y_label="planned speed",
-                                      parent_dir="plot_motion/speed_distance",
-                                      save_name="planned_speed_waypoint_distance_{}".format(self.episode_count.value))
-            plot_real_speed_curve(self.motion_history_real_speeds[-1],
-                                  parent_dir="plot_motion/real_speed_time_step",
-                                  save_name="real_speed_time_step_{}".format(self.episode_count.value))
-        if done and self.args.plot_action and self.episode_count.value % 10 == 0:
-            plot_action_distribution(self.history_actions,
-                                     parent_dir="plot_action",
-                                     save_name="action_{}".format(self.episode_count.value))
-
-        if done and self.args.plot_trajectory:
-            plot_robot_trajectory(self.occ_map, self.om_path[0], self.om_path[-1],
-                                  cvt_to_om(self.path_manager.original_path, self.grid_res),
-                                  cvt_to_om(self.path_manager.deformed_path, self.grid_res),
-                                  cvt_to_om(self.history_robot_positions[-1], self.grid_res),
-                                  self.history_robot_velocities[-1],
-                                  self.history_pedestrians_positions[-1],
-                                  self.grid_res,
-                                  parent_dir="plot_robot_trajectory",
-                                  save_name="robot_trajectory_{}".format(self.episode_count.value)
-                                  )
             # plot stored information
         return {}, {}, done, {}, info_for_last
-
-    def plot_mark_plot(self, sample_position, color):
-        if self.render:
-            plot_mark_spot(self.p,
-                           spot_position=[sample_position[0], sample_position[1]],
-                           size=0.05, color=color)
 
     def p_step_simulation(self):
         self.p.stepSimulation()
@@ -372,42 +178,10 @@ class EnvironmentBullet(PybulletBaseEnv, EvaluationHelper):
     def _check_collision(self):
         return check_collision(self.p, [self.turtle_bot.robot_id], self.obstacle_ids)
 
-    def visualize_polar(self, thetas, dists, title="Plot lidar polar positions", c='r'):
-        plt.polar(thetas, dists, 'ro', lw=2, c=c)
-        plt.title(title)
-        plt.ylim(0, 1)
-        plt.show()
-
-    def visualize_(self, xs, ys, title="Plot lidar cartesian positions", c='r'):
-        plt.scatter(xs, ys, lw=2, c=c)
-        plt.title(title)
-        plt.xlabel("x")
-        plt.ylabel("y")
-        plt.show()
-        plt.clf()
-
     def collect_vision_obs(self, turtle_bot: TurtleBot):
         width, height, rgb_image, depth_image, seg_image = turtle_bot.sensor.get_obs()
 
         return rgb_image, depth_image, seg_image
-
-    def collect_observation(self, turtle_bot: TurtleBot):
-        # lidar scan
-        # hit_fractions, the first ray is in the robot direction
-        _, hit_fractions = turtle_bot.sensor.get_obs()
-        hit_thetas = np.linspace(0, 2 * np.pi, len(hit_fractions), endpoint=False)
-        # compute polar positions
-        polar_positions = np.array([hit_thetas, hit_fractions]).transpose()
-
-        # hit vectors
-        hit_vector = np.where(polar_positions[:, 1] < 1, 1, 0)
-
-        # cartesian positions
-        cartesian_positions = cvt_polar_to_cartesian(polar_positions)
-
-        self.polar_positions_list.append(polar_positions)
-        self.cartesian_coordinates_list.append(cartesian_positions)
-        self.hit_vector_list.append(hit_vector)
 
     def time_to_scan(self):
         # lidar_scan_interval = 0.2, 这意味着每走四步 small_step, 进行一次扫描
@@ -428,11 +202,6 @@ class EnvironmentBullet(PybulletBaseEnv, EvaluationHelper):
             self.p_step_simulation()
 
             collision = self._check_collision()
-
-            if self.render:
-                # time.sleep(self.physical_step_duration)
-                self.robot_direction_id = plot_robot_direction_line(self.p, self.robot_direction_id,
-                                                                    self.turtle_bot.get_x_y_yaw())
 
             # 每隔一定的间隔 进行一次雷达扫描
             if self.time_to_scan():
@@ -581,9 +350,6 @@ class EnvironmentBullet(PybulletBaseEnv, EvaluationHelper):
             obs_bu_starts.append(obs_bu_start)
             obs_bu_ends.append(obs_bu_end)
 
-            if self.render:
-                plot_trajectory(self.p, obs_bu_path, color=get_random_color())
-
             if len(obs_bu_starts) >= self.n_dynamic_obstacle_num - 1:
                 break
 
@@ -656,17 +422,6 @@ class EnvironmentBullet(PybulletBaseEnv, EvaluationHelper):
             self.om_path = AStar(self.dilated_occ_map).search_path(tuple(self.s_om_pose), tuple(self.g_om_pose))
             no_planned_path_available = self.om_path is None or len(self.om_path) <= 10
 
-        if self.args.plot_env:
-            plot_occupancy_map(self.dilated_occ_map, self.om_path[0], self.om_path[-1],
-                               save_name="dilated_om_" + building_name)
-            plot_occupancy_map(self.occ_map, self.om_path[0], self.om_path[-1], save_name="om_" + building_name)
-            plot_a_star_path(self.dilated_occ_map, self.om_path[0], self.om_path[-1], self.om_path,
-                             parent_dir="plot_occupancy_map",
-                             save_name="path_dilated_om_" + building_name + "_{}".format(self.episode_count.value))
-            plot_a_star_path(self.occ_map, self.om_path[0], self.om_path[-1], self.om_path,
-                             parent_dir="plot_occupancy_map",
-                             save_name="path_om_" + building_name + "_{}".format(self.episode_count.value))
-
         # sample start pose and goal pose
         self.s_bu_pose = cvt_to_bu(self.s_om_pose, self.grid_res)
         self.g_bu_pose = cvt_to_bu(self.g_om_pose, self.grid_res)
@@ -676,9 +431,6 @@ class EnvironmentBullet(PybulletBaseEnv, EvaluationHelper):
         self.path_manager.register_path(self.bu_path[:-5], self.occ_map)
         self.path_manager.update_nearest_waypoint(self.s_bu_pose)
 
-        if self.render:
-            plot_trajectory(self.p, self.path_manager.original_path, color=[1, 0, 0])
-
     def clear_variables(self):
         self.step_count = Counter()
         self.turtle_bot = None
@@ -687,12 +439,6 @@ class EnvironmentBullet(PybulletBaseEnv, EvaluationHelper):
         self.door_occ_map = None
         self.s_om_pose, self.s_bu_pose, self.g_om_pose, self.g_bu_pose = [None] * 4
         self.om_path, self.bu_path = [], []
-
-        self.collection_robot_positions_occ = []
-        self.collection_robot_vs = []
-        self.collection_robot_ws = []
-        self.collection_robot_planned_vs = []
-        self.collection_robot_planned_ws = []
 
         self.obstacle_collections.clear()
         self.obstacle_ids = []

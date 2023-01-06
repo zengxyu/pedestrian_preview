@@ -1,10 +1,7 @@
 import numpy as np
 
-from environment.nav_utilities.coordinates_converter import transform_local_to_world, cvt_to_om
-from environment.nav_utilities.pybullet_debug_gui_helper import plot_ground_line, plot_bullet_path, plot_mark_spot
 from utils.math_helper import compute_distance, gaussian, compute_yaw
 from utils.sampling_interpolating import extract_points, equidistant_sampling_from_path
-from visualize_utilities.plot_env import plot_deformed_path, get_time_uuid
 
 
 class PathManager:
