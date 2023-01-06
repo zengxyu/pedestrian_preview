@@ -9,21 +9,21 @@ def quaternion_multiplication(q1_, q2_):
     q1 = [q1_[3], q1_[0], q1_[1], q1_[2]]
     q2 = [q2_[3], q2_[0], q2_[1], q2_[2]]
     q1_times_q2 = np.array([
-        q1[0]*q2[0] - q1[1]*q2[1] - q1[2]*q2[2] - q1[3]*q2[3],
-        q1[0]*q2[1] + q1[1]*q2[0] + q1[2]*q2[3] - q1[3]*q2[2],
-        q1[0]*q2[2] - q1[1]*q2[3] + q1[2]*q2[0] + q1[3]*q2[1],
-        q1[0]*q2[3] + q1[1]*q2[2] - q1[2]*q2[1] + q1[3]*q2[0]])
+        q1[0] * q2[0] - q1[1] * q2[1] - q1[2] * q2[2] - q1[3] * q2[3],
+        q1[0] * q2[1] + q1[1] * q2[0] + q1[2] * q2[3] - q1[3] * q2[2],
+        q1[0] * q2[2] - q1[1] * q2[3] + q1[2] * q2[0] + q1[3] * q2[1],
+        q1[0] * q2[3] + q1[1] * q2[2] - q1[2] * q2[1] + q1[3] * q2[0]])
     return np.roll(q1_times_q2, -1)
 
 
 def quaternion_and_its_derivative_to_angular_velocity(quaternion, derivative):
     _, inverse_quaternion = p.invertTransform([0, 0, 0], quaternion)
-    omega4vec = quaternion_multiplication(2*derivative, inverse_quaternion)
+    omega4vec = quaternion_multiplication(2 * derivative, inverse_quaternion)
     return np.array([omega4vec[0], omega4vec[1], omega4vec[2]])
 
 
 def generateQuaternionFromMMMRxRyRz(rx, ry, rz):
-    q_intermediate = p.getQuaternionFromEuler([math.pi/2, 0, math.pi/2])
+    q_intermediate = p.getQuaternionFromEuler([math.pi / 2, 0, math.pi / 2])
     _, q_intermediate_inv = p.invertTransform([0, 0, 0], q_intermediate)
     q_tmp = p.getQuaternionFromEuler([ry, rz, rx])
     _, q_tmp = p.multiplyTransforms([0, 0, 0], q_intermediate, [0, 0, 0], q_tmp)
@@ -33,7 +33,7 @@ def generateQuaternionFromMMMRxRyRz(rx, ry, rz):
 
 def applyMMMRotationToURDFJoint(urdf_body_id, joint_index, rx, ry, rz, inverse=False):
     q = generateQuaternionFromMMMRxRyRz(rx, ry, rz)
-    quat_tf_urdf = p.getQuaternionFromEuler([-math.pi/2, math.pi, 0])
+    quat_tf_urdf = p.getQuaternionFromEuler([-math.pi / 2, math.pi, 0])
     translation, quat_tf_urdf_inv = p.invertTransform([0, 0, 0], quat_tf_urdf)
     _, q = p.multiplyTransforms([0, 0, 0], quat_tf_urdf, [0, 0, 0], q)
     _, q = p.multiplyTransforms([0, 0, 0], q, [0, 0, 0], quat_tf_urdf_inv)
@@ -49,12 +49,12 @@ class Human:
     gait_phase_step = 0
 
     def __init__(
-        self,
-        pybtPhysicsClient,
-        folder,
-        timestep=0.01,
-        scaling=1.0,
-        translation_scaling=0.95,   # this is a calibration/scaling of the mocap velocities
+            self,
+            pybtPhysicsClient,
+            folder,
+            timestep=0.01,
+            scaling=1.0,
+            translation_scaling=0.95,  # this is a calibration/scaling of the mocap velocities
     ):
         self.scaling = scaling
         self.setColor()
@@ -66,8 +66,8 @@ class Human:
         self.is_fixed = False
         self.global_xyz = np.zeros(3)
         self.global_quaternion = p.getQuaternionFromEuler(np.zeros(3))
-        self.other_xyz = np.zeros(3)
-        self.other_rpy = np.zeros(3)
+        self.local_xyz = np.zeros(3)
+        self.local_rpy = np.zeros(3)
         self.joint_positions = np.zeros(44)
 
         # gait motion data
@@ -107,35 +107,35 @@ class Human:
     def setColor(self):
         # arm_indices, foot_indices ... = ...
         cl = [
-            [116,  66, 200],  # purple heart            # noqa: E201,E241
+            [116, 66, 200],  # purple heart            # noqa: E201,E241
             [252, 116, 253],  # pink flamingo           # noqa: E201,E241
-            [242,  40,  71],  # scarlet                 # noqa: E201,E241
-            [255, 127,   0],  # orange                  # noqa: E201,E241
+            [242, 40, 71],  # scarlet                 # noqa: E201,E241
+            [255, 127, 0],  # orange                  # noqa: E201,E241
             [253, 252, 116],  # unmellow yellow         # noqa: E201,E241
-            [190, 192,  10],  # mellow green (unused)   # noqa: E201,E241
-            [ 29, 249,  20],  # electric lime           # noqa: E201,E241
+            [190, 192, 10],  # mellow green (unused)   # noqa: E201,E241
+            [29, 249, 20],  # electric lime           # noqa: E201,E241
             [120, 219, 226],  # aquamarine              # noqa: E201,E241
-            [ 59, 176, 143],  # jungle green            # noqa: E201,E241
+            [59, 176, 143],  # jungle green            # noqa: E201,E241
             [221, 148, 117],  # copper                  # noqa: E201,E241
-            [  0,   0,   0],  # black                   # noqa: E201,E241
+            [0, 0, 0],  # black                   # noqa: E201,E241
             [230, 230, 230],  # grey white              # noqa: E201,E241
-            [  0,   0, 255],  # blue                    # noqa: E201,E241
+            [0, 0, 255],  # blue                    # noqa: E201,E241
         ]
         link_color_index_map = [
-            0 , 0 , 0, 	# chest belly pelvis (front)    # noqa: E203
-            12, 12, 	# upper legs                    # noqa: E203
-            7 , 7 ,     # shins                         # noqa: E203
-            6 , 6 , 	# ankles/feet                   # noqa: E203
-            1 , 1 , 	# upper arms                    # noqa: E203
-            1 , 1 , 	# forearms                      # noqa: E203
-            1 , 1 , 	# hands                         # noqa: E203
-            10, 		# neck (front)                  # noqa: E203
-            4 , 		# head (front/face)             # noqa: E203
-            6 , 6 , 	# soles/feet                    # noqa: E203
-            6 , 6 , 	# toes/feet                     # noqa: E203
-            0 , 0 , 0,  # chest belly pelvis (back)     # noqa: E203
-            9 , 		# neck (back)                   # noqa: E203
-            11 			# head (back/skull)             # noqa: E203
+            0, 0, 0,  # chest belly pelvis (front)    # noqa: E203
+            12, 12,  # upper legs                    # noqa: E203
+            7, 7,  # shins                         # noqa: E203
+            6, 6,  # ankles/feet                   # noqa: E203
+            1, 1,  # upper arms                    # noqa: E203
+            1, 1,  # forearms                      # noqa: E203
+            1, 1,  # hands                         # noqa: E203
+            10,  # neck (front)                  # noqa: E203
+            4,  # head (front/face)             # noqa: E203
+            6, 6,  # soles/feet                    # noqa: E203
+            6, 6,  # toes/feet                     # noqa: E203
+            0, 0, 0,  # chest belly pelvis (back)     # noqa: E203
+            9,  # neck (back)                   # noqa: E203
+            11  # head (back/skull)             # noqa: E203
         ]
 
         sdl = p.getVisualShapeData(self.body_id)
@@ -144,7 +144,7 @@ class Human:
             p.changeVisualShape(
                 self.body_id,
                 sdl[i][1],
-                rgbaColor=[cl[j][0]/255, cl[j][1]/255, cl[j][2]/255, 1]
+                rgbaColor=[cl[j][0] / 255, cl[j][1] / 255, cl[j][2] / 255, 1]
             )
 
     def resetGlobalTransformation(self,
@@ -152,18 +152,18 @@ class Human:
                                   rpy=np.zeros(3),
                                   gait_phase_value=0):
         self.initial_xyz = np.array(xyz)
-        self.initial_rpy = np.array(rpy) + np.array([0, 0, -np.pi/2])
-        self.other_xyz[0] = 0.0
+        self.initial_rpy = np.array(rpy) + np.array([0, 0, -np.pi / 2])
+        self.local_xyz[0] = 0.0
         self.setGaitPhase(gait_phase_value)
 
     def setGaitPhase(self, period_fraction):
         period_fraction = abs(period_fraction) - int(abs(period_fraction))
-        self.gait_phase_step = int(period_fraction*np.size(self.cycle_time_steps))
+        self.gait_phase_step = int(period_fraction * np.size(self.cycle_time_steps))
 
-        self.other_xyz[1] = self.cyclic_pelvis_lateral_position[self.gait_phase_step]
-        self.other_xyz[2] = self.cyclic_pelvis_vertical_position[self.gait_phase_step]
+        self.local_xyz[1] = self.cyclic_pelvis_lateral_position[self.gait_phase_step]
+        self.local_xyz[2] = self.cyclic_pelvis_vertical_position[self.gait_phase_step]
 
-        self.other_rpy[:] = self.cyclic_pelvis_rotations[:, self.gait_phase_step]
+        self.local_rpy[:] = self.cyclic_pelvis_rotations[:, self.gait_phase_step]
 
         self.joint_positions[:] = self.cyclic_joint_positions[:, self.gait_phase_step]
 
@@ -174,16 +174,37 @@ class Human:
         self.global_quaternion = global_quaternion
 
         if not self.is_fixed:
-            self.other_xyz[:] += self.cyclic_pelvis_forward_velocity[self.gait_phase_step]*self.timestep
+            self.local_xyz[:] += self.cyclic_pelvis_forward_velocity[self.gait_phase_step] * self.timestep
 
             self.gait_phase_step += 1
             if self.gait_phase_step == np.size(self.cycle_time_steps):
                 self.gait_phase_step = 0
 
-            self.other_xyz[1] = self.cyclic_pelvis_lateral_position[self.gait_phase_step]
-            self.other_xyz[2] = self.cyclic_pelvis_vertical_position[self.gait_phase_step]
+            self.local_xyz[1] = self.cyclic_pelvis_lateral_position[self.gait_phase_step]
+            self.local_xyz[2] = self.cyclic_pelvis_vertical_position[self.gait_phase_step]
 
-            self.other_rpy[:] = self.cyclic_pelvis_rotations[:, self.gait_phase_step]
+            self.local_rpy[:] = self.cyclic_pelvis_rotations[:, self.gait_phase_step]
+
+            self.joint_positions[:] = self.cyclic_joint_positions[:, self.gait_phase_step]
+
+        self.__apply_pose()
+
+    def advance(self, forward_velocity, angle_velocity):
+        # compute new orientation and speed
+        # self.global_xyz = global_xyz
+        # self.global_quaternion = global_quaternion
+
+        if not self.is_fixed:
+            self.local_xyz[:] += self.cyclic_pelvis_forward_velocity[self.gait_phase_step] * self.timestep
+
+            self.gait_phase_step += 1
+            if self.gait_phase_step == np.size(self.cycle_time_steps):
+                self.gait_phase_step = 0
+
+            self.local_xyz[1] = self.cyclic_pelvis_lateral_position[self.gait_phase_step]
+            self.local_xyz[2] = self.cyclic_pelvis_vertical_position[self.gait_phase_step]
+
+            self.local_rpy[:] = self.cyclic_pelvis_rotations[:, self.gait_phase_step]
 
             self.joint_positions[:] = self.cyclic_joint_positions[:, self.gait_phase_step]
 
@@ -196,16 +217,16 @@ class Human:
         self.is_fixed = False
 
     def regress(self):
-        self.other_xyz[:] -= self.cyclic_pelvis_forward_velocity[self.gait_phase_step]*0.01
+        self.local_xyz[:] -= self.cyclic_pelvis_forward_velocity[self.gait_phase_step] * 0.01
 
         self.gait_phase_step -= 1
         if self.gait_phase_step == -1:
-            self.gait_phase_step = np.size(self.cycle_time_steps)-1
+            self.gait_phase_step = np.size(self.cycle_time_steps) - 1
 
-        self.other_xyz[1] = self.cyclic_pelvis_lateral_position[self.gait_phase_step]
-        self.other_xyz[2] = self.cyclic_pelvis_vertical_position[self.gait_phase_step]
+        self.local_xyz[1] = self.cyclic_pelvis_lateral_position[self.gait_phase_step]
+        self.local_xyz[2] = self.cyclic_pelvis_vertical_position[self.gait_phase_step]
 
-        self.other_rpy[:] = self.cyclic_pelvis_rotations[:, self.gait_phase_step]
+        self.local_rpy[:] = self.cyclic_pelvis_rotations[:, self.gait_phase_step]
 
         self.joint_positions[:] = self.cyclic_joint_positions[:, self.gait_phase_step]
 
@@ -226,12 +247,12 @@ class Human:
         self.advance()
 
         # compute base velocities via central differences assuming a timestep of 0.01 [s]
-        baseLinearVelocity = (np.array(pos_2) - np.array(pos_1))/0.02
-        quaternion_derivative = (np.array(ori_2) - np.array(ori_1))/0.02
+        baseLinearVelocity = (np.array(pos_2) - np.array(pos_1)) / 0.02
+        quaternion_derivative = (np.array(ori_2) - np.array(ori_1)) / 0.02
 
         _, ori_now = p.getBasePositionAndOrientation(self.body_id)
         _, inverse_ori_now = p.invertTransform([0, 0, 0], ori_now)
-        omega4vec = quaternion_multiplication(2*quaternion_derivative, inverse_ori_now)
+        omega4vec = quaternion_multiplication(2 * quaternion_derivative, inverse_ori_now)
         baseAngularVelocity = [omega4vec[0], omega4vec[1], omega4vec[2]]
 
         p.resetBaseVelocity(self.body_id,
@@ -245,7 +266,7 @@ class Human:
             if joint_info[2] == p.JOINT_SPHERICAL:
                 omega = quaternion_and_its_derivative_to_angular_velocity(
                     joint_position_list_now[i],
-                    (np.array(joint_position_list_2[i]) - np.array(joint_position_list_1[i]))/0.02
+                    (np.array(joint_position_list_2[i]) - np.array(joint_position_list_1[i])) / 0.02
                 )
                 p.resetJointStateMultiDof(
                     self.body_id,
@@ -254,7 +275,7 @@ class Human:
                     targetVelocity=omega
                 )
             elif joint_info[2] == p.JOINT_REVOLUTE:
-                omega_scalar = (joint_position_list_2[i] - joint_position_list_1[i])/0.02
+                omega_scalar = (joint_position_list_2[i] - joint_position_list_1[i]) / 0.02
                 p.resetJointState(
                     self.body_id,
                     i,
@@ -374,16 +395,16 @@ class Human:
 
         # Base rotation and Zero Translation (for now)
         self.__applyMMMRotationAndZeroTranslationToURDFBody(
-            self.other_rpy[0],
-            self.other_rpy[1],
-            self.other_rpy[2]
+            self.local_rpy[0],
+            self.local_rpy[1],
+            self.local_rpy[2]
         )
 
         # Base translation
         self.__applyMMMTranslationToURDFBody(
-            self.other_xyz[0],
-            self.other_xyz[1],
-            self.other_xyz[2]
+            self.local_xyz[0],
+            self.local_xyz[1],
+            self.local_xyz[2]
         )
 
     def __applyMMMRotationAndZeroTranslationToURDFBody(self, rx, ry, rz):
@@ -410,7 +431,7 @@ class Human:
 
         # pre-multiply with rotation from MMM to my axis convention
         t_tmp, r_mmm_pelvis_to_chest = p.multiplyTransforms(
-            [0, 0, 0], p.getQuaternionFromEuler([-math.pi/2, math.pi, 0]),
+            [0, 0, 0], p.getQuaternionFromEuler([-math.pi / 2, math.pi, 0]),
             [0, 0, 0], r_pelvis_to_chest
         )
 
@@ -450,8 +471,8 @@ class Human:
 
         t_phb_center_to_base_com = [0, 0, 0]
         for i in range(3):
-            t_phb_center_to_base_com[i] = t_base_com[i] - 0.5*(
-                translation_to_right_leg_frame[i] + translation_to_left_leg_frame[i])
+            t_phb_center_to_base_com[i] = t_base_com[i] - 0.5 * (
+                    translation_to_right_leg_frame[i] + translation_to_left_leg_frame[i])
 
         t_base_com = [
             tx + t_phb_center_to_base_com[0],
