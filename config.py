@@ -1,6 +1,8 @@
 import argparse
 import os.path
 
+import numpy as np
+
 from utils.config_utility import *
 from utils.fo_utility import get_project_path
 
@@ -34,7 +36,7 @@ def process_args():
     parser.add_argument("--gpu", type=int, default=-1, help="gpu >=0 : use gpu; gpu <0 : use cpu")
     # parser.add_argument("--running_config", type=str, default="running.yaml",
     #                     help="choose running config file from configs folder")
-    parser.add_argument('--env_probs', type=str, help='')
+    parser.add_argument('--scene_name', type=str, help='')
     parser.add_argument("--max_speed", type=float, help='')
     parser.add_argument("--dynamic_num", type=int, help='')
     parser.add_argument("--static_num", type=int, help='')
@@ -77,15 +79,19 @@ def process_args():
     parser_args.input_config = read_yaml(parser_args.configs_folder, "inputs.yaml")
     parser_args.robot_config = read_yaml(parser_args.robot_config_folder, "robot.yaml")
     parser_args.agents_config = read_yaml(parser_args.agents_config_folder, "agents.yaml")
-    parser_args.env_config = read_yaml(configs_folder, "env.yaml")
+    parser_args.env_config = read_yaml(configs_folder, "env_config.yaml")
     parser_args.world_config = read_yaml(configs_folder, "world_config.yaml")
     parser_args.sensors_config = read_yaml(configs_folder, "sensors_config.yaml")
     parser_args.running_config = read_yaml(configs_folder, "running_rl.yaml")
+
     # evaluation时动态配置的环境参数，
     if not parser_args.train or parser_args.resume:
-        if parser_args.env_probs is not None:
-            probs = parser_args.env_probs.split()
-            parser_args.env_config["env_probs"] = [int(prob) for prob in probs]
+        if parser_args.scene_name is not None:
+            if parser_args.env_config["scene_name"] == "random":
+                scene_name = np.random.choice(a=["office", "corridor", "cross"])
+            else:
+                scene_name = parser_args.scene_name
+            parser_args.env_config["scene_name"] = scene_name
 
         if parser_args.max_speed is not None:
             parser_args.env_config["pedestrian_speed_range"] = [parser_args.max_speed - 0.01,

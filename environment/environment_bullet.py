@@ -13,15 +13,12 @@
 import logging
 import os
 import sys
-import uuid
-from collections import deque
 
-from matplotlib import pyplot as plt
+from environment.robots.human import Man
 
 sys.path.append(
     os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), "traditional_planner", "a_star"))
 print(sys.path)
-import time
 import numpy as np
 from agents.action_space.high_level_action_space import AbstractHighLevelActionSpace
 from environment.base_pybullet_env import PybulletBaseEnv
@@ -32,8 +29,8 @@ from environment.robots.turtlebot import TurtleBot
 
 from utils.config_utility import read_yaml
 from utils.math_helper import compute_yaw
-from environment.nav_utilities.scene_loader import load_environment_scene
-from environment.nav_utilities.coordinates_converter import cvt_to_bu, cvt_to_om, cvt_polar_to_cartesian
+from environment.gen_scene.scene_generator import load_environment_scene
+from environment.nav_utilities.coordinates_converter import cvt_to_bu
 from environment.path_manager import PathManager
 from traditional_planner.a_star.astar import AStar
 
@@ -52,23 +49,21 @@ class EnvironmentBullet(PybulletBaseEnv):
 
         self.max_step = self.running_config["max_steps"]
         self.inference_every_duration = self.running_config["inference_per_duration"]
-        self.lidar_scan_interval = self.robot_config["lidar_scan_interval"]
         self.action_space: AbstractHighLevelActionSpace = action_space
-        self.global_planner = None
+
         self.path_manager = PathManager(self.args)
 
-        self.turtle_bot: TurtleBot = None
+        self.robot: TurtleBot = None
         self.occ_map = None
         self.dilated_occ_map = None
         self.door_occ_map = None
-        self.state_helper = None
 
         self.s_om_pose, self.s_bu_pose, self.g_om_pose, self.g_bu_pose = [None] * 4
-        self.om_path, self.bu_path = [], []
 
         self.obstacle_collections: ObstacleCollections = ObstacleCollections(args)
-
+        self.obstacle_ids = []
         # n_radius, n_from_start, n_to_end [unit: pixel]
+        # generate human agent, and other human npc
         self.n_radius = int(self.env_config["unobstructed_radius"] / self.grid_res)
         self.n_from_start = int(self.env_config["distance_from_start"] / self.grid_res)
         self.n_to_end = int(self.env_config["distance_to_end"] / self.grid_res)
@@ -80,21 +75,21 @@ class EnvironmentBullet(PybulletBaseEnv):
         self.dilation_size = self.env_config["dilation_size"]
         self.start_goal_sampler, self.static_obs_sampler, self.dynamic_obs_sampler = None, None, None
         self.action_space_keys = None
-        self.robot_direction_id = None
         self.physical_steps = Counter()
-        self.n_lidar_scan_step = np.round(self.lidar_scan_interval / self.physical_step_duration)
 
         self.get_action_space_keys()
 
-        self.seq_len = 4
-        self.hit_vector_list = deque(maxlen=self.seq_len)
-        self.polar_positions_list = deque(maxlen=self.seq_len)
-        self.cartesian_coordinates_list = deque(maxlen=self.seq_len)
-        # self.ray_num = self.args.robot_config["ray_num"]
-        self.visible_zone_limit = self.args.robot_config["visible_width"]
+        """
+        initialize environment
+        initialize dynamic human npc
+        initialize the human agent
+        compute the relative position to the target
+        
+        
+        """
 
     def render(self, mode="human"):
-        width, height, rgb_image, depth_image, seg_image = self.turtle_bot.sensor.get_obs()
+        width, height, rgb_image, depth_image, seg_image = self.robot.sensor.get_obs()
         return width, height, rgb_image, depth_image, seg_image
 
     def reset(self):
@@ -108,22 +103,12 @@ class EnvironmentBullet(PybulletBaseEnv):
         # randomize environment
         self.randomize_env()
 
-        # self.randomize_static_obstacles()
-        # self.randomize_dynamic_obstacles()
-
-        self.turtle_bot = self.initialize_turtle_bot()
         return {}
 
     def get_action_space_keys(self):
         action_spaces_configs = read_yaml(self.args.action_space_config_folder, "action_space.yaml")
         action_class = self.action_space.__class__.__name__
         self.action_space_keys = list(action_spaces_configs[action_class].keys())
-
-    def initialize_turtle_bot(self):
-        # load turtle bot towards path direction
-        start_yaw = compute_yaw(self.s_bu_pose, self.g_bu_pose)
-        return TurtleBot(self.p, self.client_id, self.physical_step_duration, self.args.robot_config, self.args,
-                         self.s_bu_pose, start_yaw)
 
     def step(self, action):
         self.step_count += 1
@@ -136,7 +121,7 @@ class EnvironmentBullet(PybulletBaseEnv):
         over_max_step = self.step_count >= self.max_step
 
         # get next state and reward
-        width, height, rgb_image, depth_image, seg_image = self.turtle_bot.sensor.get_obs()
+        width, height, rgb_image, depth_image, seg_image = self.robot.sensor.get_obs()
 
         # whether done
         done = collision or success or over_max_step
@@ -157,7 +142,7 @@ class EnvironmentBullet(PybulletBaseEnv):
         self.physical_steps += 1
 
     def _check_collision(self):
-        return check_collision(self.p, [self.turtle_bot.robot_id], self.obstacle_ids)
+        return check_collision(self.p, [self.robot.body_id], self.obstacle_ids)
 
     def iterate_steps(self, planned_v, planned_w):
         iterate_count = 0
@@ -166,7 +151,7 @@ class EnvironmentBullet(PybulletBaseEnv):
         n_step = np.round(self.inference_every_duration / self.physical_step_duration)
 
         while iterate_count < n_step and not reach_goal and not collision:
-            self.turtle_bot.small_step(planned_v, planned_w)
+            self.robot.small_step(planned_v, planned_w)
             self.obstacle_collections.step()
             self.p_step_simulation()
 
@@ -175,75 +160,13 @@ class EnvironmentBullet(PybulletBaseEnv):
             iterate_count += 1
         return reach_goal, collision
 
-    # def randomize_static_obstacles(self):
-    #     if self.n_static_obstacle_num == 0:
-    #         return
-    #
-    #     count = 0
-    #     obs_bu_positions = []
-    #     start_index = self.n_from_start
-    #     end_index = len(self.om_path) - self.n_to_end
-    #     # sample static points from the path
-    #     while len(obs_bu_positions) < self.n_static_obstacle_num and count < 50:
-    #         obs_om_position, sample_success = self.static_obs_sampler(occupancy_map=self.dilated_occ_map,
-    #                                                                   door_map=self.door_occ_map,
-    #                                                                   sample_from_path=True,
-    #                                                                   robot_om_path=self.om_path,
-    #                                                                   margin=self.dilation_size + 1,
-    #                                                                   radius=self.n_radius,
-    #                                                                   start_index=start_index,
-    #                                                                   end_index=end_index)
-    #
-    #         count += 1
-    #         if sample_success:
-    #             obs_bu_position = cvt_to_bu(np.array(obs_om_position), self.grid_res)
-    #             obs_bu_positions.append(obs_bu_position)
-    #
-    #     # if no static point can be sampled from this environment, restart environment
-    #     if len(obs_bu_positions) > 0:
-    #         # create n dynamic obstacles, put them into the environment
-    #         static_obstacle_group = StaticObstacleGroup(self.p, self.occ_map, self.grid_res).create(
-    #             obs_bu_positions, type="static")
-    #
-    #         self.obstacle_collections.add(static_obstacle_group, dynamic=False)
-    #
-    #         self.obstacle_ids.extend(self.obstacle_collections.get_obstacle_ids())
-    #
-    #     # ====================================================
-    #     for i in range(self.env_config["num_extra_pedestrians"]):
-    #         # sample static points from occupancy map, not limited on the path
-    #         obs_om_position, sample_success = self.static_obs_sampler(occupancy_map=self.dilated_occ_map,
-    #                                                                   door_map=self.door_occ_map,
-    #                                                                   sample_from_path=False,
-    #                                                                   robot_om_path=self.om_path,
-    #                                                                   margin=self.dilation_size + 1,
-    #                                                                   radius=self.n_radius,
-    #                                                                   start_index=start_index,
-    #                                                                   end_index=end_index)
-    #         if sample_success:
-    #             obs_bu_position = cvt_to_bu(np.array(obs_om_position), self.grid_res)
-    #             obs_bu_positions.append(obs_bu_position)
-    #
-    #     # if no static point can be sampled from this environment, restart environment
-    #     if len(obs_bu_positions) > 0:
-    #         # create n dynamic obstacles, put them into the environment
-    #         static_obstacle_group = StaticObstacleGroup(self.p, self.occ_map, self.grid_res).create(
-    #             obs_bu_positions, type="irrelevant")
-    #
-    #         self.obstacle_collections.add(static_obstacle_group, dynamic=False)
-    #
-    #         self.obstacle_ids.extend(self.obstacle_collections.get_obstacle_ids())
+    def init_human_npc(self, num_human_npc, ):
+        # compute the free cells from the dilated occupancy map
+        # sample randomized position from the free cells,
+        # keep distances between human > 0.5m
+        # plan an astar path for each human
 
-    def sample_segment_index(self, used_indexes, seg_start_indexes, seg_end_indexes):
-        length_start = len(seg_start_indexes)
-        length_end = len(seg_end_indexes)
-        if len(used_indexes) == min(length_start, length_end):
-            used_indexes = []
-        index = np.random.randint(0, min(length_start, length_end))
-        while index in used_indexes:
-            index = np.random.randint(0, min(length_start, length_end))
-        used_indexes.append(index)
-        return index
+        return None
 
     # def randomize_dynamic_obstacles(self):
     #     if self.n_dynamic_obstacle_num == 0:
@@ -342,50 +265,46 @@ class EnvironmentBullet(PybulletBaseEnv):
                 self.s_om_pose, self.s_bu_pose, self.g_om_pose, self.g_bu_pose,
                 self.om_path, self.bu_path
         """
-        no_planned_path_available = True
-        building_name = ""
-        while no_planned_path_available:
-            logging.debug("Create the environment...")
-            self.reset_simulation()
-            self.clear_variables()
-
-            # randomize building
-            self.obstacle_ids, self.occ_map, self.dilated_occ_map, self.door_occ_map, samplers, building_name = load_environment_scene(
-                p=self.p,
-                high_env_config=self.env_config,
-                world_config=self.world_config,
-                grid_resolution=self.grid_res
-            )
-            # extract samplers
-            self.start_goal_sampler, self.static_obs_sampler, self.dynamic_obs_sampler = samplers
-
-            # sample start position and goal position
-            [self.s_om_pose, self.g_om_pose], sample_success = self.start_goal_sampler(
-                occupancy_map=self.dilated_occ_map, margin=self.dilation_size + 1)
-
-            # plan a path
-            # if no path planned available, resample start position and goal position
-            if not sample_success:
-                continue
-
-            self.om_path = AStar(self.dilated_occ_map).search_path(tuple(self.s_om_pose), tuple(self.g_om_pose))
-            no_planned_path_available = self.om_path is None or len(self.om_path) <= 10
+        # randomize building
+        maps, samplers, obstacle_ids, start, end = load_environment_scene(p=self.p,
+                                                                          env_config=self.env_config,
+                                                                          world_config=self.world_config)
 
         # sample start pose and goal pose
-        self.s_bu_pose = cvt_to_bu(self.s_om_pose, self.grid_res)
-        self.g_bu_pose = cvt_to_bu(self.g_om_pose, self.grid_res)
-        self.bu_path = cvt_to_bu(self.om_path, self.grid_res)
+        self.s_bu_pose = cvt_to_bu(start, self.grid_res)
+        self.g_bu_pose = cvt_to_bu(end, self.grid_res)
+        self.obstacle_ids = obstacle_ids
+        self.occ_map = maps["occ_map"]
+        self.dilated_occ_map = maps["dilated_occ_map"]
+        self.door_occ_map = maps["door_map"]
+        # extract samplers
+        self.start_goal_sampler, self.static_obs_sampler, self.dynamic_obs_sampler = samplers
 
+        # initialize robot
         logging.debug("Create the environment, Done...")
+
+        # self.robot = TurtleBot(self.p, self.client_id, self.physical_step_duration, self.args.robot_config, self.args,
+        #                        self.s_bu_pose, compute_yaw(self.s_bu_pose, self.g_bu_pose))
+        self.robot = self.initialize_human_agent(self.s_bu_pose)
+
+    def initialize_human_agent(self, start):
+        human = Man(self.client_id, partitioned=True, timestep=self.physical_step_duration,
+                    translation_scaling=0.95 / 5)
+        human.reset()
+        human.resetGlobalTransformation(
+            xyz=np.array([start[0], start[1], 0.94 * human.scaling]),
+            rpy=np.array([0, 0, 0]),
+            gait_phase_value=0
+        )
+        return human
 
     def clear_variables(self):
         self.step_count = Counter()
-        self.turtle_bot = None
+        self.robot = None
         self.occ_map = None
         self.dilated_occ_map = None
         self.door_occ_map = None
         self.s_om_pose, self.s_bu_pose, self.g_om_pose, self.g_bu_pose = [None] * 4
-        self.om_path, self.bu_path = [], []
 
         self.obstacle_collections.clear()
         self.obstacle_ids = []

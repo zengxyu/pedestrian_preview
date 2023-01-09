@@ -11,7 +11,8 @@ class Man(Human):
                  partitioned=False,
                  self_collisions=False,
                  timestep=0.01,
-                 scaling=1.0):
+                 scaling=1.0,
+                 translation_scaling=0.95):
         if partitioned:
             self.body_id = p.loadURDF(
                 os.path.join(os.path.dirname(__file__),
@@ -37,5 +38,5 @@ class Man(Human):
             folder=os.path.dirname(__file__),
             timestep=timestep,
             scaling=scaling,
-            translation_scaling=0.95,   # this is a calibration/scaling of the mocap velocities
+            translation_scaling=translation_scaling,  # this is a calibration/scaling of the mocap velocities
         )

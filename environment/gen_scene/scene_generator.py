@@ -4,64 +4,80 @@ import numpy as np
 from pybullet_utils.bullet_client import BulletClient
 
 from environment.gen_scene.build_office_world import drop_walls
-from environment.nav_utilities.coordinates_converter import cvt_to_bu
 from environment.gen_scene.gen_corridor_map import create_corridor_map
 from environment.gen_scene.gen_cross_map import create_cross_map
 from environment.gen_scene.gen_office_map import create_office_map
 
 import logging as logger
 
-from environment.gen_scene.gen_simple_map import create_simple_environment
 from utils.image_utility import dilate_image
 
+from traditional_planner.a_star.astar import AStar
 
-def load_environment_scene(p: BulletClient, high_env_config: Dict, world_config: Dict, grid_resolution: float):
+
+def load_environment_scene(p: BulletClient, env_config: Dict, world_config: Dict):
     """
-    load office
+    load scene
     :param p:
-    :param high_env_config:
+    :param env_config:
     :param world_config:
-    :param grid_resolution:
     :return:
     """
-    probs = high_env_config["env_probs"] / np.sum(high_env_config["env_probs"])
-    building_name = np.random.choice(a=high_env_config["env_types"], p=probs)
-    logger.info("Create a building : {}".format(building_name))
+    logger.info("Create a building...")
+    scene_name = env_config["scene_name"]
 
-    if building_name == "office":
+    if scene_name == "office":
         # create a new office
         component_configs = world_config["office"]
         component_configs.update(world_config["configs_all"])
         occupancy_map, samplers = create_office_map(component_configs)
 
-    elif building_name == "corridor":
+    elif scene_name == "corridor":
         # create a tunnel
         component_configs = world_config["corridor"]
         component_configs.update(world_config["configs_all"])
         occupancy_map, samplers = create_corridor_map(component_configs)
 
-    elif building_name == "cross":
+    elif scene_name == "cross":
         # create a cross
         component_configs = world_config["cross"]
         component_configs.update(world_config["configs_all"])
         occupancy_map, samplers = create_cross_map(component_configs)
 
-    elif building_name == "simple":
-        # create a simple environment
-        component_configs = world_config["simple"]
-        component_configs.update(world_config["configs_all"])
-        occupancy_map, samplers = create_simple_environment(component_configs)
-
     else:
         raise NotImplementedError
 
     # dilate image
-    dilated_occ_map = dilate_image(occupancy_map, dilation_size=high_env_config["dilation_size"])
+    dilated_occ_map = dilate_image(occupancy_map, env_config["dilation_size"])
     door_occ_map = compute_door_map(dilated_occ_map)
-    # create office entity in py bullet simulation environment
-    obstacle_ids = drop_walls(p, occupancy_map.copy(), grid_resolution, component_configs)
 
-    return obstacle_ids, occupancy_map, dilated_occ_map, door_occ_map, samplers, building_name
+    # sample start position and goal position
+    start_goal_sampler = samplers[0]
+    [start, end], sample_success = start_goal_sampler(occupancy_map=dilated_occ_map, margin=env_config["dilation_size"])
+
+    # check the connectivity between the start and end position
+    if not sample_success or not check_connectivity(dilated_occ_map, start, end):
+        load_environment_scene(p, env_config, world_config)
+
+    # map results
+    maps = {"occ_map": occupancy_map, "dilated_occ_map": dilated_occ_map, "door_map": door_occ_map}
+
+    # create office entity in py bullet simulation environment
+    obstacle_ids = drop_walls(p, occupancy_map.copy(), env_config["grid_res"], component_configs)
+
+    return maps, samplers, obstacle_ids, start, end
+
+
+def check_connectivity(dilated_occ_map, start, end):
+    """
+    check the connectivity between start and end position in dilated_occ_map
+    TODO
+    可以用更粗颗粒度的occ_map来检查连通性，AStar算法遍历更快,
+    或者直接计算一个连通图，这样连通图上的任何两点之间都存在可达路径
+    """
+    om_path = AStar(dilated_occ_map).search_path(tuple(start), tuple(end))
+    is_connective = om_path is not None and len(om_path) > 10
+    return is_connective
 
 
 def compute_door_map(dilated_occupancy_map):
@@ -84,12 +100,3 @@ def compute_door_map(dilated_occupancy_map):
             if is_h_door or is_v_door:
                 door_map[i, j] = True
     return door_map
-
-
-def plan_linear_path(p: BulletClient, grid_res=0, start=None, end=None):
-    xs = np.arange(start[0], end[1], step=1)
-    ys = np.arange(start[0], end[1], step=1)
-    om_path = np.array([[x, y] for x, y in zip(xs, ys)])
-    bullet_path = cvt_to_bu(om_path, grid_res)
-
-    return bullet_path

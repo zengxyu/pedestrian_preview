@@ -1,8 +1,11 @@
 import os
 import math
+from collections import deque
 
 import pybullet as p
 import numpy as np
+
+from environment.sensors.vision_sensor import VisionSensor
 
 
 def quaternion_multiplication(q1_, q2_):
@@ -58,10 +61,10 @@ class Human:
     ):
         self.scaling = scaling
         self.setColor()
-
+        self.body_id = 0
         # Timestep
         self.timestep = timestep
-
+        self.translation_scaling = translation_scaling
         # pose containers
         self.is_fixed = False
         self.global_xyz = np.zeros(3)
@@ -69,7 +72,7 @@ class Human:
         self.local_xyz = np.zeros(3)
         self.local_rpy = np.zeros(3)
         self.joint_positions = np.zeros(44)
-
+        self.last_3_positions = deque([self.global_xyz, self.global_xyz, self.global_xyz], maxlen=3)
         # gait motion data
         self.cyclic_joint_positions = np.load(os.path.join(
             folder,
@@ -169,44 +172,24 @@ class Human:
 
         self.__apply_pose()
 
-    def advance(self, global_xyz, global_quaternion):
-        self.global_xyz = global_xyz
-        self.global_quaternion = global_quaternion
+    def small_step(self, v, w):
+        w *= self.timestep
+        self.global_quaternion = p.getQuaternionFromEuler(
+            np.array([0, 0, w] + np.array(p.getEulerFromQuaternion(self.global_quaternion))))
 
         if not self.is_fixed:
-            self.local_xyz[:] += self.cyclic_pelvis_forward_velocity[self.gait_phase_step] * self.timestep
+            self.local_xyz[:] += self.cyclic_pelvis_forward_velocity[round(self.gait_phase_step)] * self.timestep * v
 
-            self.gait_phase_step += 1
-            if self.gait_phase_step == np.size(self.cycle_time_steps):
+            self.gait_phase_step += v
+
+            if round(self.gait_phase_step) >= np.size(self.cycle_time_steps):
                 self.gait_phase_step = 0
 
-            self.local_xyz[1] = self.cyclic_pelvis_lateral_position[self.gait_phase_step]
-            self.local_xyz[2] = self.cyclic_pelvis_vertical_position[self.gait_phase_step]
+            self.local_xyz[1] = self.cyclic_pelvis_lateral_position[round(self.gait_phase_step)]
+            self.local_xyz[2] = self.cyclic_pelvis_vertical_position[round(self.gait_phase_step)]
 
-            self.local_rpy[:] = self.cyclic_pelvis_rotations[:, self.gait_phase_step]
-
-            self.joint_positions[:] = self.cyclic_joint_positions[:, self.gait_phase_step]
-
-        self.__apply_pose()
-
-    def advance(self, forward_velocity, angle_velocity):
-        # compute new orientation and speed
-        # self.global_xyz = global_xyz
-        # self.global_quaternion = global_quaternion
-
-        if not self.is_fixed:
-            self.local_xyz[:] += self.cyclic_pelvis_forward_velocity[self.gait_phase_step] * self.timestep
-
-            self.gait_phase_step += 1
-            if self.gait_phase_step == np.size(self.cycle_time_steps):
-                self.gait_phase_step = 0
-
-            self.local_xyz[1] = self.cyclic_pelvis_lateral_position[self.gait_phase_step]
-            self.local_xyz[2] = self.cyclic_pelvis_vertical_position[self.gait_phase_step]
-
-            self.local_rpy[:] = self.cyclic_pelvis_rotations[:, self.gait_phase_step]
-
-            self.joint_positions[:] = self.cyclic_joint_positions[:, self.gait_phase_step]
+            self.local_rpy[:] = self.cyclic_pelvis_rotations[:, round(self.gait_phase_step)]
+            self.joint_positions[:] = self.cyclic_joint_positions[:, round(self.gait_phase_step)]
 
         self.__apply_pose()
 
@@ -406,6 +389,31 @@ class Human:
             self.local_xyz[1],
             self.local_xyz[2]
         )
+        self.last_3_positions.append(self.get_position())
+
+    def get_position(self):
+        position, _ = p.getBasePositionAndOrientation(self.body_id)
+        return np.array(position)
+
+    def get_yaw(self):
+        orientation_quaternion = p.getBasePositionAndOrientation(self.body_id)
+        orientation_euler = p.getEulerFromQuaternion(orientation_quaternion)
+        return orientation_euler[2]
+
+    def get_v(self):
+        delta_position = self.last_3_positions[2] - self.last_3_positions[0]
+        return np.linalg.norm(delta_position) / (2 * self.timestep)
+
+    def get_v_w(self):
+        cur_v, cur_w = p.getBaseVelocity(self.body_id)
+        speed = np.linalg.norm(cur_v[:2])
+        return speed, cur_w[2]
+
+    def get_x_y_yaw_v_w(self):
+        position = self.get_position()
+        yaw = self.get_yaw()
+        v, w = self.get_v_w()
+        return position[0], position[1], yaw, v, w
 
     def __applyMMMRotationAndZeroTranslationToURDFBody(self, rx, ry, rz):
         # call this function AFTER applying the BT- and BP-joint angles for the urdf (as shown above)

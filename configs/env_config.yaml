@@ -15,8 +15,9 @@ kept_distance: 3
 # path manager
 waypoints_distance: 0.05
 ideal_target_distance: 0.6
-env_types: [ "corridor","cross","office" ]
-env_probs: [ 0.5, 0.5, 1. ]
+
+# choose from "corridor","cross","office"
+scene_name: "office"
 
 #  pedestrian speed
 pedestrian_speed_range: [ 0.25, 0.65 ]

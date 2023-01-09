@@ -78,3 +78,8 @@ python3 run.py --render --env pybullet --in_folder=temporal_mass --in_model_inde
 ```
 
 ```
+
+#### human walking and collision detection
+```
+https://github.com/epfl-lasa/human-robot-collider.git
+```
