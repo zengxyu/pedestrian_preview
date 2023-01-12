@@ -28,7 +28,7 @@ from environment.robots.obstacle_collections import ObstacleCollections
 from environment.robots.turtlebot import TurtleBot
 
 from utils.config_utility import read_yaml
-from utils.math_helper import compute_yaw
+from utils.math_helper import compute_yaw, compute_distance
 from environment.gen_scene.scene_generator import load_environment_scene
 from environment.nav_utilities.coordinates_converter import cvt_to_bu
 from environment.path_manager import PathManager
@@ -79,6 +79,7 @@ class EnvironmentBullet(PybulletBaseEnv):
 
         self.get_action_space_keys()
 
+        self.last_distance = None
         """
         initialize environment
         initialize dynamic human npc
@@ -103,7 +104,9 @@ class EnvironmentBullet(PybulletBaseEnv):
         # randomize environment
         self.randomize_env()
 
-        return {}
+        state = self.get_state()
+
+        return state
 
     def get_action_space_keys(self):
         action_spaces_configs = read_yaml(self.args.action_space_config_folder, "action_space.yaml")
@@ -114,35 +117,58 @@ class EnvironmentBullet(PybulletBaseEnv):
         self.step_count += 1
 
         action = self.action_space.to_force(action=action)
-        action = np.array([0.1, 0])
 
-        success, collision = self.iterate_steps(*action)
+        reach_goal, collision = self.iterate_steps(*action)
+
+        state = self.get_state()
+        reward = self.get_reward(reach_goal=reach_goal)
 
         over_max_step = self.step_count >= self.max_step
 
-        # get next state and reward
-        width, height, rgb_image, depth_image, seg_image = self.robot.sensor.get_obs()
-
         # whether done
-        done = collision or success or over_max_step
+        done = collision or reach_goal or over_max_step
 
         # store information
-        info_for_last = {"collision": collision, "a_success": success,
+        info_for_last = {"collision": collision, "a_success": reach_goal,
                          "over_max_step": over_max_step, "step_count": self.step_count.value}
 
-        # print()
         if done:
-            print("success:{}; collision:{}; over_max_step:{}".format(success, collision, over_max_step))
+            print("success:{}; collision:{}; over_max_step:{}".format(reach_goal, collision, over_max_step))
 
-            # plot stored information
-        return {}, {}, done, {}, info_for_last
+        # plot stored information
+        return state, reward, done, {}, info_for_last
+
+    def get_reward(self, reach_goal):
+        if self.last_distance is None:
+            self.last_distance = compute_distance(self.g_bu_pose, self.s_bu_pose)
+
+        reward = 0
+        # compute distance from current to goal
+        distance = compute_distance(self.g_bu_pose, self.robot.get_position())
+        delta_distance = self.last_distance - distance
+        self.last_distance = distance
+
+        reward += delta_distance
+
+        if reach_goal:
+            reward += 100
+
+        return reward
+
+    def get_state(self):
+        # compute depth image
+        width, height, rgb_image, depth_image, seg_image = self.robot.sensor.get_obs()
+        # compute relative position to goal
+        relative_position = self.g_bu_pose - self.robot.get_position()
+        # visit map
+        return depth_image[np.newaxis, :, :], relative_position
 
     def p_step_simulation(self):
         self.p.stepSimulation()
         self.physical_steps += 1
 
     def _check_collision(self):
-        return check_collision(self.p, [self.robot.body_id], self.obstacle_ids)
+        return check_collision(self.p, [self.robot.robot_id], self.obstacle_ids)
 
     def iterate_steps(self, planned_v, planned_w):
         iterate_count = 0
@@ -156,7 +182,7 @@ class EnvironmentBullet(PybulletBaseEnv):
             self.p_step_simulation()
 
             collision = self._check_collision()
-
+            reach_goal = compute_distance(self.robot.get_position(), self.g_bu_pose) < 0.5
             iterate_count += 1
         return reach_goal, collision
 
@@ -283,11 +309,16 @@ class EnvironmentBullet(PybulletBaseEnv):
         # initialize robot
         logging.debug("Create the environment, Done...")
 
-        # self.robot = TurtleBot(self.p, self.client_id, self.physical_step_duration, self.args.robot_config, self.args,
-        #                        self.s_bu_pose, compute_yaw(self.s_bu_pose, self.g_bu_pose))
-        self.robot = self.initialize_human_agent(self.s_bu_pose)
+        # self.robot = self.initialize_human_agent(self.s_bu_pose)
+        self.robot = self.initialize_turtlebot()
+
+    def initialize_turtlebot(self):
+        turtlebot = TurtleBot(self.p, self.client_id, self.physical_step_duration, self.robot_config, self.args,
+                              self.s_bu_pose, compute_yaw(self.s_bu_pose, self.g_bu_pose))
+        return turtlebot
 
     def initialize_human_agent(self, start):
+
         human = Man(self.client_id, partitioned=True, timestep=self.physical_step_duration,
                     translation_scaling=0.95 / 5)
         human.reset()

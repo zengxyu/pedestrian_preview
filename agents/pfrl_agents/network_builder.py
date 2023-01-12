@@ -14,12 +14,10 @@ from agents.network.attention_spacial_temporal import STAttentionCritic, STAtten
 from agents.network.attention_temporal import AttentionTemporalCritic, AttentionTemporalActor
 from agents.network.attention_spacial import AttentionSpacialActor, AttentionSpacialCritic
 from agents.network.convolution_1d_network import CNNCriticNet, CNNActorNet
+from agents.network.simple_cnn_network import SimpleCnnCritic, SimpleCnnActor
 
 actor_critic_model_mapping = {
-    'CNN': (CNNActorNet, CNNCriticNet),
-    "AttentionSpacial": (AttentionSpacialActor, AttentionSpacialCritic),
-    "AttentionTemporal": (AttentionTemporalActor, AttentionTemporalCritic),
-    "STAttention": (STAttentionActor, STAttentionCritic),
+    'CNN': (SimpleCnnActor, SimpleCnnCritic),
 }
 
 

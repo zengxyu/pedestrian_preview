@@ -61,7 +61,6 @@ class Human:
     ):
         self.scaling = scaling
         self.setColor()
-        self.body_id = 0
         # Timestep
         self.timestep = timestep
         self.translation_scaling = translation_scaling

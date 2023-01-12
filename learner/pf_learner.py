@@ -106,7 +106,7 @@ class PFLearner:
         while not done:
             action = self.agent.act(state)
             state, reward, done, info_for_sum, info_for_last = self.env.step(action)
-            # self.agent.observe(obs=state, reward=reward, done=done, reset=False)
+            self.agent.observe(obs=state, reward=reward, done=done, reset=False)
             self.global_i_step += 1
 
             i_step += 1

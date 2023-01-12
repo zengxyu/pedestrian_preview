@@ -24,7 +24,7 @@ p.setAdditionalSearchPath(pybullet_data.getDataPath())  # used by loadURDF
 p.setGravity(0, 0, -10)
 planeId = p.loadURDF("plane.urdf")
 time_step = 0.01
-human = Man(physicsClient, partitioned=True, timestep=time_step, translation_scaling=0.95 / 5)
+human = Man(physicsClient, partitioned=True, timestep=time_step, translation_scaling=0.95 )
 human.reset()
 human.resetGlobalTransformation(
     xyz=np.array([0, 0, 0.94 * human.scaling]),
@@ -41,10 +41,10 @@ for i in range(1000000000000000000000):
     cubeOrn = p.getQuaternionFromEuler(np.array([0, 0, b]))
     w = np.pi / 2
     v = 1
-    human.advance(v, 0)
+    human.small_step(v, 0)
     p.stepSimulation()
     print("position:{}".format(human.get_position()))
     print("v:{};".format(human.get_v()))
-    # time.sleep(0.05)
+    time.sleep(0.05)
 
 p.disconnect()

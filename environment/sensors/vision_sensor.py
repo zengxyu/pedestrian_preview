@@ -38,9 +38,3 @@ class VisionSensor:
                                                                             projection_matrix, self.shadow,
                                                                             renderer=p.ER_BULLET_HARDWARE_OPENGL)
         return width, height, rgb_image, depth_image, seg_image
-
-    def get_rgb(self):
-        return
-
-    def get_depth(self):
-        return
