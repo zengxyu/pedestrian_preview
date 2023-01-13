@@ -141,6 +141,4 @@ def create_office_map(configs):
     occupancy_map = door_map.copy()
 
     make_exit_door(occupancy_map, configs, grid_resolution)
-    plt.imshow(occupancy_map)
-    plt.show()
     return occupancy_map, [start_goal_sampler2, static_obs_sampler, dynamic_obs_sampler]
