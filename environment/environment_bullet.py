@@ -81,6 +81,7 @@ class EnvironmentBullet(PybulletBaseEnv):
 
         self.last_distance = None
         self.Writer = SummaryWriter("runs/logs_reward")
+        self.step_nums = 0
         """
         initialize environment
         initialize dynamic human npc
@@ -116,13 +117,13 @@ class EnvironmentBullet(PybulletBaseEnv):
 
     def step(self, action):
         self.step_count += 1
-
+        self.step_nums += 1
         action = self.action_space.to_force(action=action)
 
         reach_goal, collision = self.iterate_steps(*action)
 
         state = self.get_state()
-        reward = self.get_reward(reach_goal=reach_goal,collision=collision,step_times=self.step_count)
+        reward = self.get_reward(reach_goal=reach_goal,collision=collision,step_times=self.step_nums,step_count=self.step_count.value)
         # print("reward=",reward)
         over_max_step = self.step_count >= self.max_step
 
@@ -139,7 +140,7 @@ class EnvironmentBullet(PybulletBaseEnv):
         # plot stored information
         return state, reward, done, {}, info_for_last
 
-    def get_reward(self, reach_goal,collision,step_times):
+    def get_reward(self, reach_goal,collision,step_times,step_count):
         if self.last_distance is None:
             self.last_distance = compute_distance(self.g_bu_pose, self.s_bu_pose)
         reward = 0
@@ -152,6 +153,8 @@ class EnvironmentBullet(PybulletBaseEnv):
             delta_distance = self.last_distance - distance
             self.last_distance = distance
             reward += delta_distance
+
+        reward -= float(np.log(step_count))
 
         if reach_goal:
             reward += 100
