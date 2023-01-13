@@ -124,3 +124,4 @@ class CNNCriticNet(BaseModel):
         out_waypoints = self.mlp_waypoints(out_waypoints)
         out = torch.cat([out_temporal_coordinates, out_waypoints, action], dim=-1)
         return self.mlp_value(out)
+

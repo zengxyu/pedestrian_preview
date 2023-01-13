@@ -12,7 +12,7 @@ from pfrl.replay_buffer import ReplayUpdater, batch_experiences
 from pfrl.utils.batch_states import batch_states
 from pfrl.utils.contexts import evaluating
 from pfrl.utils.copy_param import synchronize_parameters
-
+from torch.utils.tensorboard import SummaryWriter
 
 def _mean_or_nan(xs):
     """Return its mean a non-empty sequence, numpy.nan for a empty one."""
@@ -135,6 +135,7 @@ class DDPG(AttributeSavingMixin, BatchAgent):
         self.target_policy, self.target_q_function = self.target_model
 
         self.sync_target_network()
+        self.Writer = SummaryWriter("runs/Loss")
 
     def sync_target_network(self):
         """Synchronize target network with current network."""
@@ -193,12 +194,17 @@ class DDPG(AttributeSavingMixin, BatchAgent):
         batch = batch_experiences(experiences, self.device, self.phi, self.gamma)
 
         self.critic_optimizer.zero_grad()
-        self.compute_critic_loss(batch).backward()
+        critic_loss = self.compute_critic_loss(batch)
+        critic_loss.backward()
         self.critic_optimizer.step()
 
         self.actor_optimizer.zero_grad()
-        self.compute_actor_loss(batch).backward()
+        actor_loss = self.compute_actor_loss(batch)
+        actor_loss.backward()
         self.actor_optimizer.step()
+
+        self.Writer.add_scalar('actor_loss',actor_loss,self.n_updates)
+        self.Writer.add_scalar('critic_loss',critic_loss,self.n_updates)
 
         self.n_updates += 1
 

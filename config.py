@@ -14,7 +14,7 @@ def process_args():
     parser.add_argument("--in_model_index", type=int)
     parser.add_argument("--env", type=str, default="pybullet", help="choose ros or pybullet")
 
-    parser.add_argument("--num_episodes", type=int, default=1000000)
+    parser.add_argument("--num_episodes", type=int, default=50000)
     parser.add_argument("--train", action="store_true", default=False)
     parser.add_argument("--render", action="store_true", default=False)
     parser.add_argument("--store_data", action="store_true", default=False)
@@ -33,7 +33,7 @@ def process_args():
     parser.add_argument("--plot_trajectory", action="store_true", default=False)
     parser.add_argument("--plot_motion", action="store_true", default=False)
     parser.add_argument("--from_configs", type=str, default="configs")
-    parser.add_argument("--gpu", type=int, default=-1, help="gpu >=0 : use gpu; gpu <0 : use cpu")
+    parser.add_argument("--gpu", type=int, default=0, help="gpu >=0 : use gpu; gpu <0 : use cpu")
     # parser.add_argument("--running_config", type=str, default="running.yaml",
     #                     help="choose running config file from configs folder")
     parser.add_argument('--scene_name', type=str, help='')
