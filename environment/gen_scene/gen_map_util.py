@@ -88,6 +88,98 @@ def evolve_neighbors(occ_map, x, y):
     return occ_map
 
 
+def compute_edge_neighbor(occ_map, count=4):
+    """
+    compute the corner on four edges
+    """
+    edge_corner_map = occ_map.copy()
+    for i in range(occ_map.shape[0]):
+        for j in [0, occ_map.shape[1] - 1]:
+            value = np.sum(
+                occ_map[
+                max(0, i - 1): min(i + 2, occ_map.shape[0]),
+                max(0, j - 1): min(j + 2, occ_map.shape[1]),
+                ],
+            )
+            edge_corner_map[i, j] = (value == count) or (value == (count + 1))
+
+    for i in [0, occ_map.shape[0] - 1]:
+        for j in range(occ_map.shape[1]):
+            value = np.sum(occ_map[
+                           max(0, i - 1): min(i + 2, occ_map.shape[0]),
+                           max(0, j - 1): min(j + 2, occ_map.shape[1]),
+                           ])
+            edge_corner_map[i, j] = (value == count) or (value == (count + 1))
+
+    return edge_corner_map
+
+
+def evolve_edge_corner_map(edge_corner_map, exit_door_width):
+    """
+    extend corner to both sides
+    """
+    half_width = int(exit_door_width / 2)
+    edge_corner_map_copy = edge_corner_map.copy()
+    for i in range(edge_corner_map.shape[0]):
+        for j in [0, edge_corner_map.shape[1] - 1]:
+            if edge_corner_map[i, j]:
+                edge_corner_map_copy[max(0, i - half_width):min(i + half_width + 1, edge_corner_map.shape[0]), j] = 1
+
+    for i in [0, edge_corner_map.shape[0] - 1]:
+        for j in range(edge_corner_map.shape[1]):
+            if edge_corner_map[i, j]:
+                edge_corner_map_copy[i, max(0, j - half_width):min(j + half_width + 1, edge_corner_map.shape[1])] = 1
+    return edge_corner_map_copy
+
+
+def make_exit_door(occ_map, conf, res):
+    exit_door_width = int(conf["exit_doors"] / res)
+    half_width = int(exit_door_width / 2)
+    max_num_doors = int(conf["max_num_doors"])
+    num_doors = np.random.randint(1, max_num_doors)
+    edge_corner_map = compute_edge_neighbor(occ_map)
+    evolve_corner_map = evolve_edge_corner_map(edge_corner_map, exit_door_width=exit_door_width)
+    up_available_points = []
+    down_available_points = []
+    left_available_points = []
+    right_available_points = []
+    for i in range(occ_map.shape[0]):
+        if not evolve_corner_map[i, 0]:
+            up_available_points.append([i, 0])
+        if not evolve_corner_map[i, occ_map.shape[1] - 1]:
+            down_available_points.append([i, occ_map.shape[1] - 1])
+    for j in range(occ_map.shape[1]):
+        if not evolve_corner_map[0, j]:
+            left_available_points.append([0, j])
+        if not evolve_corner_map[occ_map.shape[0] - 1, j]:
+            right_available_points.append([occ_map.shape[0] - 1, j])
+
+    # sample one point from each edge
+    edges = [0, 1, 2, 3]
+    sampled_edges = np.random.choice(edges, num_doors, replace=False)
+    door_points = []
+    for edge_index in sampled_edges:
+        if edge_index == 0 and len(up_available_points) != 0:
+            i, j = up_available_points[np.random.randint(0, len(up_available_points))]
+        elif edge_index == 1 and len(down_available_points) != 0:
+            i, j = down_available_points[np.random.randint(0, len(down_available_points))]
+        elif edge_index == 2 and len(left_available_points) != 0:
+            i, j = left_available_points[np.random.randint(0, len(left_available_points))]
+        elif edge_index == 3 and len(right_available_points) != 0:
+            i, j = right_available_points[np.random.randint(0, len(right_available_points))]
+        else:
+            raise NotImplementedError
+        door_points.append([i, j])
+
+    # update exit door on occupancy map
+    for i, j in door_points:
+        if i == 0 or i == occ_map.shape[0] - 1:
+            occ_map[i, j - half_width:j + half_width + 1] = 0
+
+        elif j == 0 or j == occ_map.shape[1] - 1:
+            occ_map[i - half_width:i + half_width + 1, j] = 0
+
+
 def make_door(occ_map, out_map, door_list, x, y, conf, res):
     width = int(0.5 * conf["doors"] / res)
     narrow_width = int(conf["distance"] / res)
