@@ -57,6 +57,17 @@ def build_cnns(input_dim, cnn_dims, kernel_sizes, strides, activation_class=nn.R
     return net
 
 
+def build_cnns_2d(input_dim, cnn_dims, kernel_sizes, strides, activation_class=nn.ReLU):
+    layers = []
+    cnn_dims = [input_dim] + cnn_dims
+    for i in range(len(cnn_dims) - 1):
+        layers.append(torch.nn.Conv2d(cnn_dims[i], cnn_dims[i + 1], kernel_sizes[i], stride=strides[i], padding=1))
+        torch.nn.init.xavier_uniform_(layers[-1].weight)
+        layers.append(activation_class())
+    net = nn.Sequential(*layers)
+    return net
+
+
 def compute_spacial_weighted_feature(attention_scores, features):
     # attention_scores: (batch_size, self.seq_len, self.ray_part, 1)
     # features: (batch_size, self.seq_len, self.ray_part, v_dim)

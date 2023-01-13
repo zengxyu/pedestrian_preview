@@ -25,19 +25,5 @@ if __name__ == '__main__':
         env = EnvironmentBullet(args=args, action_space=action_space)
         learner = PFLearner(env=env, agent=agent, action_space=action_space, scheduler=scheduler, args=args).run()
 
-    elif args.env == Env.Gazebo or args.env == Env.Real:
-        from environment.environment_ros import EnvironmentROS
-
-        agent, action_space, scheduler, replay_buffer = build_agent(args)
-        env = EnvironmentROS(args=args, action_space=action_space)
-        learner = PFLearner(env=env, agent=agent, action_space=action_space, scheduler=scheduler, args=args).run()
-
-    elif args.env == Env.IGibson:
-        from environment.environment_gibson import EnvironmentGibson
-
-        agent, action_space, scheduler, replay_buffer = build_agent(args)
-        env = EnvironmentGibson(args=args, action_space=action_space)
-        learner = PFLearner(env=env, agent=agent, action_space=action_space, scheduler=scheduler, args=args).run()
-
     else:
         raise NotImplementedError

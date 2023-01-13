@@ -8,6 +8,7 @@ from pybullet_utils.bullet_client import BulletClient
 
 from environment.sensors.lidar_sensor import LidarSensor
 from environment.robots.base_differential_robot import BaseDifferentialRobot
+from environment.sensors.vision_sensor import VisionSensor
 from utils.config_utility import read_yaml
 from utils.fo_utility import get_project_path
 
@@ -34,7 +35,7 @@ class TurtleBot(BaseDifferentialRobot):
 
         self.sensor_config = args.sensors_config[self.robot_config["sensor"]]
 
-        self.sensor = LidarSensor(robot_id=self.robot_id, sensor_config=self.sensor_config)
+        self.sensor = VisionSensor(robot_id=self.robot_id, sensor_config=self.sensor_config)
 
         self.physical_step_duration = step_duration
 

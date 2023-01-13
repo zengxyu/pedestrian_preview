@@ -127,20 +127,6 @@ def gaussian2d(xx, yy, obstacle_x, obstacle_y):
     return Z
 
 
-# Functions to create different potential maps
-def trench(X, Y):
-    offs = -3 * 10 / 4
-    Z = -1 * np.exp(-(X - offs) ** 2) - 1 * np.exp(-(Y - offs) ** 2)
-    Z = np.where(Z < -1, -1, Z)
-    return Z
-
-
-def mortars(X, Y):
-    offs = -3 * 10 / 4
-    Z = +3 * np.exp(-0.1 * ((Y - 8) ** 2 + (X) ** 2)) + 3 * np.exp(-0.1 * ((X - 4) ** 2 + (Y + 7) ** 2))
-    return Z
-
-
 if __name__ == '__main__':
     v1 = np.array([0, 1])
     v2 = np.array([1, 0])

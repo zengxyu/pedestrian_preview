@@ -14,8 +14,6 @@ import pickle
 from typing import List, Dict
 import numpy as np
 
-from utils.info import EpisodeInfo
-
 
 def add_scalar(writer, phase, episode_info, i_episode):
     for key, item in episode_info.items():

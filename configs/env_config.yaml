@@ -1,0 +1,31 @@
+grid_res: 0.1
+step_duration: 0.05
+
+#  """ the resolution of bullet to occupancy map, one cell in occ map = 0.1 meter in bullet"""
+dilation_size: 4
+goal_reached_thresh: 0.2
+
+# obstacles generation [m]
+unobstructed_radius: 1
+distance_from_start: 1.2
+distance_to_end: 1.2
+kept_distance_to_start: 1.0
+kept_distance: 3
+
+# path manager
+waypoints_distance: 0.05
+ideal_target_distance: 0.6
+
+# choose from "corridor","cross","office"
+scene_name: "office"
+
+#  pedestrian speed
+pedestrian_speed_range: [ 0.25, 0.65 ]
+num_human_npc: 2
+pedestrian_lfd: 0.4
+
+# static pedestrians which do not have interaction with robots
+num_extra_pedestrians: 0
+
+
+

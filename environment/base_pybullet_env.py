@@ -38,22 +38,25 @@ class PybulletBaseEnv(gym.Env, ABC):
         # Set control type
         self.p.setRealTimeSimulation(False)  # Manual simulation call
         self.p.setTimeStep(self.physical_step_duration)
-        self.p.configureDebugVisualizer(p.COV_ENABLE_GUI, 0)
+        self.p.configureDebugVisualizer(p.COV_ENABLE_GUI, 1)
         self.p.configureDebugVisualizer(p.COV_ENABLE_TINY_RENDERER, 1)
-        self.p.resetDebugVisualizerCamera(cameraDistance=5, cameraYaw=0, cameraPitch=-30,
+        self.p.configureDebugVisualizer(p.COV_ENABLE_SEGMENTATION_MARK_PREVIEW, 1)
+        self.p.configureDebugVisualizer(p.COV_ENABLE_DEPTH_BUFFER_PREVIEW, 1)
+        self.p.configureDebugVisualizer(p.COV_ENABLE_RGB_BUFFER_PREVIEW, 1)
+        self.p.resetDebugVisualizerCamera(cameraDistance=8, cameraYaw=0, cameraPitch=-60,
                                           cameraTargetPosition=[3, 3, 0])
         # Create Plane
         self.p.createMultiBody(0, baseCollisionShapeIndex=p.createCollisionShape(p.GEOM_PLANE))
 
     def _gui_observe_entire_environment(self):
         self.p.resetDebugVisualizerCamera(
-            cameraDistance=7,
-            cameraYaw=90,
-            cameraPitch=-80,
+            cameraDistance=50,
+            cameraYaw=50,
+            cameraPitch=-60,
             cameraTargetPosition=(
                 self.occ_map.shape[0] * self.grid_res / 2,
                 self.occ_map.shape[1] * self.grid_res / 2,
-                0,
+                5,
             ),
         )
 

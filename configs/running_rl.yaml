@@ -8,7 +8,7 @@ evaluate_n_times: 200
 
 reward_config_name: reward_config1
 # choose from  input_spacial,input_temporal,input_cnn, input_st_attention_processing
-input_config_name: input_spacial
+input_config_name: input_cnn
 
 # choose from ddqn, ddqn_recurrent, ddpg, ddpg_recurrent, td3, td3_recurrent, sac
 agent: ddpg
