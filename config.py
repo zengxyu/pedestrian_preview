@@ -6,6 +6,8 @@ import numpy as np
 from utils.config_utility import *
 from utils.fo_utility import get_project_path
 
+os.environ['CUDA_LAUNCH_BLOCKING'] = ''
+
 
 def process_args():
     parser = argparse.ArgumentParser()

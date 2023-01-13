@@ -10,6 +10,7 @@ from environment.gen_scene.gen_office_map import create_office_map
 
 import logging as logger
 
+from environment.nav_utilities.coordinates_converter import cvt_to_bu
 from utils.image_utility import dilate_image
 
 from traditional_planner.a_star.astar import AStar
@@ -64,8 +65,10 @@ def load_environment_scene(p: BulletClient, env_config: Dict, world_config: Dict
 
     # create office entity in py bullet simulation environment
     obstacle_ids = drop_walls(p, occupancy_map.copy(), env_config["grid_res"], component_configs)
-
-    return maps, samplers, obstacle_ids, start, end
+    # sample start pose and goal pose
+    bu_start = cvt_to_bu(start, env_config["grid_res"])
+    bu_end = cvt_to_bu(end, env_config["grid_res"])
+    return maps, samplers, obstacle_ids, bu_start, bu_end
 
 
 def check_connectivity(dilated_occ_map, start, end):
