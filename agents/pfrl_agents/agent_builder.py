@@ -59,7 +59,8 @@ def build_ddpg_agent(parser_args, policy, q_func, agent_name, action_space):
 
     def burnin_action_func():
         """Select random actions until model is updated one or more times."""
-        return np.random.uniform(action_space.low, action_space.high).astype(np.float32)
+        random_action = np.random.uniform(action_space.low, action_space.high).astype(np.float32)
+        return random_action
 
     # Hyperparameters in http://arxiv.org/abs/1802.09477
     agent = DDPG(

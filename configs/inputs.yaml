@@ -10,6 +10,6 @@ input_cnn:
   robot_state: 0
 
   # choose from network configs [ ]
-  network: CNN
+  network: GlobalCnn
 
 
