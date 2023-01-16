@@ -108,8 +108,26 @@ class EnvironmentBullet(PybulletBaseEnv):
         self.randomize_env()
 
         state = self.get_state()
-
+        # self.visualize_ground_destination()
         return state
+
+    def visualize_ground_destination(self):
+        thetas = np.linspace(0, np.pi * 2, 50)
+        radius = 0.5
+        points_x = np.cos(thetas) * radius + self.g_bu_pose[0]
+        points_y = np.sin(thetas) * radius + self.g_bu_pose[1]
+        z = np.zeros_like(thetas)
+        points = np.array([points_x, points_y, z]).T
+        points_next = np.roll(points, -1, axis=0)
+        # froms = [[1, 1, 0], [-1, 1, 0], [-1, 1, 3], [1, 1, 3]]
+        # tos = [[-1, 1, 0], [-1, 1, 3], [1, 1, 3], [1, 1, 0]]
+        for f, t in zip(points, points_next):
+            self.p.addUserDebugLine(
+                lineFromXYZ=f,
+                lineToXYZ=t,
+                lineColorRGB=[0, 1, 0],
+                lineWidth=2
+            )
 
     def get_action_space_keys(self):
         action_spaces_configs = read_yaml(self.args.action_space_config_folder, "action_space.yaml")
@@ -187,9 +205,10 @@ class EnvironmentBullet(PybulletBaseEnv):
         relative_position = self.g_bu_pose - self.robot.get_position()
         relative_yaw = compute_yaw(self.g_bu_pose, self.robot.get_position()) - self.robot.get_yaw()
         relative_pose = np.array([relative_position[0], relative_position[1], relative_yaw])
-        global_map = np.resize(self.occ_map, (10, 10))
+        # global_map = np.(self.occ_map.astype(np.float), (10, 10))
         # visit map
-        return global_map[np.newaxis, :, :], depth_image[np.newaxis, :, :], relative_pose
+        # global_map[np.newaxis, :, :],
+        return depth_image[np.newaxis, :, :], relative_pose
 
     def p_step_simulation(self):
         self.p.stepSimulation()
@@ -213,14 +232,6 @@ class EnvironmentBullet(PybulletBaseEnv):
             reach_goal = compute_distance(self.robot.get_position(), self.g_bu_pose) < 0.5
             iterate_count += 1
         return reach_goal, collision
-
-    def init_human_npc(self, num_human_npc, ):
-        # compute the free cells from the dilated occupancy map
-        # sample randomized position from the free cells,
-        # keep distances between human > 0.5m
-        # plan an astar path for each human
-
-        return None
 
     # def randomize_dynamic_obstacles(self):
     #     if self.n_dynamic_obstacle_num == 0:
