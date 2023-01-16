@@ -1,6 +1,6 @@
 from agents.network.network_base import *
 import torch.nn.functional as F
-
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
 model_params = {
     'cnn': [32, 16, 8],
     'mlp': [32, 128],
@@ -38,19 +38,20 @@ class SimpleCnnActor(BaseModel):
 
         self.td3_end = nn.Sequential(nn.Tanh(), pfrl.policies.DeterministicHead())
 
-        self.mlp_action = build_mlp(1328,
+        self.mlp_action = build_mlp(1202,
                                     mlp_values_dims + [self.n_actions],
                                     activate_last_layer=False,
                                     )
 
     def forward(self, x):
         depth_image = x[0].float()
-        relative_position = x[1].float()
+        relative_position = x[1].float().to(device)
 
         batch_size = depth_image.size(0)
         out1 = self.cnn(depth_image)
         out1 = out1.reshape((batch_size, -1))
-        out2 = self.mlp_relative_position(relative_position)
+        # out2 = self.mlp_relative_position(relative_position)
+        out2 = relative_position
         # out =
         out = torch.cat((out1, out2), dim=1)
 
@@ -69,7 +70,7 @@ class SimpleCnnCritic(BaseModel):
         self.n_actions = len(action_space.low)
         mlp_values_dims = model_params["mlp_values"]
 
-        self.mlp_value = build_mlp(1328 + self.n_actions,
+        self.mlp_value = build_mlp(1202 + self.n_actions,
                                    mlp_values_dims + [1],
                                    activate_last_layer=False,
                                    )
@@ -77,12 +78,13 @@ class SimpleCnnCritic(BaseModel):
     def forward(self, x):
         x, action = x
         depth_image = x[0].float()
-        relative_position = x[1].float()
+        relative_position = x[1].float().to(device)
 
         batch_size = depth_image.size(0)
         out1 = self.cnn(depth_image)
         out1 = out1.reshape((batch_size, -1))
-        out2 = self.mlp_relative_position(relative_position)
+        # out2 = self.mlp_relative_position(relative_position)
+        out2 = relative_position
         # out =
         out = torch.cat((out1, out2, action), dim=1)
 

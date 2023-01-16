@@ -28,11 +28,10 @@ from environment.robots.obstacle_collections import ObstacleCollections
 from environment.robots.turtlebot import TurtleBot
 
 from utils.config_utility import read_yaml
-from utils.math_helper import compute_yaw, compute_distance
+from utils.math_helper import compute_yaw, compute_distance, compute_ManhattanDistance
 from environment.gen_scene.scene_generator import load_environment_scene
 from environment.nav_utilities.coordinates_converter import cvt_to_bu
 from environment.path_manager import PathManager
-from traditional_planner.a_star.astar import AStar
 from torch.utils.tensorboard import SummaryWriter
 
 class EnvironmentBullet(PybulletBaseEnv):
@@ -142,19 +141,22 @@ class EnvironmentBullet(PybulletBaseEnv):
 
     def get_reward(self, reach_goal,collision,step_times,step_count):
         if self.last_distance is None:
-            self.last_distance = compute_distance(self.g_bu_pose, self.s_bu_pose)
+            # self.last_distance = compute_distance(self.g_bu_pose, self.s_bu_pose)
+            self.last_distance = compute_ManhattanDistance(self.g_bu_pose, self.s_bu_pose)
+
         reward = 0
         distance,delta_distance = 0,0
         if (collision):
             reward -= 1
         else:
             # compute distance from current to goal
-            distance = compute_distance(self.g_bu_pose, self.robot.get_position())
+            # distance = compute_distance(self.g_bu_pose, self.robot.get_position())
+            distance = compute_ManhattanDistance(self.g_bu_pose, self.robot.get_position())
             delta_distance = self.last_distance - distance
             self.last_distance = distance
-            reward += delta_distance
+            reward += (delta_distance*10)
 
-        reward -= float(np.log(step_count))
+        reward -= float(np.log(step_count)*0.1)
 
         if reach_goal:
             reward += 100
