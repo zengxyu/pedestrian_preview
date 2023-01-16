@@ -9,7 +9,7 @@ input_cnn:
   dim_waypoints: 2
   robot_state: 0
 
-  # choose from network configs [ ]
-  network: CNN
+  # choose from network configs GlobalCnn, CNN
+  network: GlobalCnn
 
 

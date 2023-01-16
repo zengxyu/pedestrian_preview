@@ -207,12 +207,12 @@ class EnvironmentBullet(PybulletBaseEnv):
         relative_position = self.g_bu_pose - self.robot.get_position()
         relative_yaw = compute_yaw(self.g_bu_pose, self.robot.get_position()) - self.robot.get_yaw()
         relative_pose = np.array([relative_position[0], relative_position[1], relative_yaw])
-        # global_map = cv2.resize(self.occ_map.astype(np.float), (10, 10))
+        global_map = cv2.resize(self.occ_map.astype(np.float), (40, 40))
         resized_depth_image = cv2.resize(depth_image,
                                          (int(depth_image.shape[0] / 2), int(depth_image.shape[1] / 2)))
+
         # visit map
-        # global_map[np.newaxis, :, :],
-        return resized_depth_image[np.newaxis, :, :], relative_pose
+        return global_map[np.newaxis, :, :], resized_depth_image[np.newaxis, :, :], relative_pose
 
     def p_step_simulation(self):
         self.p.stepSimulation()

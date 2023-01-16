@@ -39,7 +39,7 @@ class GlobalCnnActor(BaseModel):
 
         self.td3_end = nn.Sequential(nn.Tanh(), pfrl.policies.DeterministicHead())
 
-        self.mlp_action = build_mlp(32 + 1200 + 3,
+        self.mlp_action = build_mlp(200 + 320 + 3,
                                     mlp_values_dims + [self.n_actions],
                                     activate_last_layer=False,
                                     )
@@ -75,7 +75,7 @@ class GlobalCnnCritic(BaseModel):
         self.n_actions = len(action_space.low)
         mlp_values_dims = model_params["mlp_values"]
 
-        self.mlp_value = build_mlp(32 + 1200 + 3 + self.n_actions,
+        self.mlp_value = build_mlp(200 + 320 + 3 + self.n_actions,
                                    mlp_values_dims + [1],
                                    activate_last_layer=False,
                                    )
