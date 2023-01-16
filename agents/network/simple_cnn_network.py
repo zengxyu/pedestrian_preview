@@ -37,7 +37,7 @@ class SimpleCnnActor(BaseModel):
 
         self.td3_end = nn.Sequential(nn.Tanh(), pfrl.policies.DeterministicHead())
 
-        self.mlp_action = build_mlp(1208,
+        self.mlp_action = build_mlp(328,
                                     mlp_values_dims + [self.n_actions],
                                     activate_last_layer=False,
                                     )
@@ -68,7 +68,7 @@ class SimpleCnnCritic(BaseModel):
         self.n_actions = len(action_space.low)
         mlp_values_dims = model_params["mlp_values"]
 
-        self.mlp_value = build_mlp(1208 + self.n_actions,
+        self.mlp_value = build_mlp(328 + self.n_actions,
                                    mlp_values_dims + [1],
                                    activate_last_layer=False,
                                    )
