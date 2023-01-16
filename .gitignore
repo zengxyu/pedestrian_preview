@@ -142,7 +142,4 @@ cython_debug/
 output
 out
 runs
-global_planner/out
-global_planner/data
-output_env
 
