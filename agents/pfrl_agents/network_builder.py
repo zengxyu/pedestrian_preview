@@ -10,10 +10,6 @@
 ===========================================
 """
 from agents.mapping import get_agent_name, get_network_config
-from agents.network.attention_spacial_temporal import STAttentionCritic, STAttentionActor
-from agents.network.attention_temporal import AttentionTemporalCritic, AttentionTemporalActor
-from agents.network.attention_spacial import AttentionSpacialActor, AttentionSpacialCritic
-from agents.network.convolution_1d_network import CNNCriticNet, CNNActorNet
 from agents.network.simple_cnn_network import SimpleCnnCritic, SimpleCnnActor
 
 actor_critic_model_mapping = {

@@ -1,9 +1,8 @@
 from agents.network.network_base import *
-import torch.nn.functional as F
 
 model_params = {
     'cnn': [32, 16, 8],
-    'mlp': [32, 128],
+    'mlp': [8],
     'kernel_sizes': [3, 3, 3],
     'strides': [2, 2, 2],
     'mlp_waypoints': [64, 40, 30],
@@ -22,7 +21,7 @@ class BaseModel(nn.Module):
         self.mlp_dims = model_params["mlp"]
 
         self.cnn = build_cnns_2d(1, self.cnn_dims, self.kernel_sizes, self.strides)
-        self.mlp_relative_position = build_mlp(2, self.mlp_dims, activate_last_layer=False)
+        self.mlp_relative_position = build_mlp(3, self.mlp_dims, activate_last_layer=False)
 
 
 class SimpleCnnActor(BaseModel):
@@ -38,7 +37,7 @@ class SimpleCnnActor(BaseModel):
 
         self.td3_end = nn.Sequential(nn.Tanh(), pfrl.policies.DeterministicHead())
 
-        self.mlp_action = build_mlp(1328,
+        self.mlp_action = build_mlp(1208,
                                     mlp_values_dims + [self.n_actions],
                                     activate_last_layer=False,
                                     )
@@ -69,7 +68,7 @@ class SimpleCnnCritic(BaseModel):
         self.n_actions = len(action_space.low)
         mlp_values_dims = model_params["mlp_values"]
 
-        self.mlp_value = build_mlp(1328 + self.n_actions,
+        self.mlp_value = build_mlp(1208 + self.n_actions,
                                    mlp_values_dims + [1],
                                    activate_last_layer=False,
                                    )

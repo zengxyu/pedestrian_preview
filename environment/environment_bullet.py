@@ -59,7 +59,7 @@ class EnvironmentBullet(PybulletBaseEnv):
         self.dilated_occ_map = None
         self.door_occ_map = None
 
-        self.s_om_pose, self.s_bu_pose, self.g_om_pose, self.g_bu_pose = [None] * 4
+        self.s_bu_pose, self.g_bu_pose = [None] * 2
 
         self.obstacle_collections: ObstacleCollections = ObstacleCollections(args)
         self.obstacle_ids = []
@@ -182,8 +182,10 @@ class EnvironmentBullet(PybulletBaseEnv):
         width, height, rgb_image, depth_image, seg_image = self.robot.sensor.get_obs()
         # compute relative position to goal
         relative_position = self.g_bu_pose - self.robot.get_position()
+        relative_yaw = compute_yaw(self.g_bu_pose, self.robot.get_position()) - self.robot.get_yaw()
+        relative_pose = np.array([relative_position[0], relative_position[1], relative_yaw])
         # visit map
-        return depth_image[np.newaxis, :, :], relative_position
+        return depth_image[np.newaxis, :, :], relative_pose
 
     def p_step_simulation(self):
         self.p.stepSimulation()
@@ -357,7 +359,7 @@ class EnvironmentBullet(PybulletBaseEnv):
         self.occ_map = None
         self.dilated_occ_map = None
         self.door_occ_map = None
-        self.s_om_pose, self.s_bu_pose, self.g_om_pose, self.g_bu_pose = [None] * 4
+        self.s_bu_pose, self.g_bu_pose = [None] * 2
 
         self.obstacle_collections.clear()
         self.last_distance = None
