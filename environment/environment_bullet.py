@@ -162,7 +162,7 @@ class EnvironmentBullet(PybulletBaseEnv):
         reward += delta_distance_reward
 
         """================step reward=================="""
-        step_count_reward = - float(np.log(step_count) * 0.1)
+        step_count_reward = - float(np.log(step_count) * 0.1) * 0
         reward += step_count_reward
 
         """================reach goal reward=================="""
