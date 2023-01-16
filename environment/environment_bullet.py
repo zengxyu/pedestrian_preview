@@ -35,6 +35,7 @@ from environment.path_manager import PathManager
 from traditional_planner.a_star.astar import AStar
 from torch.utils.tensorboard import SummaryWriter
 
+
 class EnvironmentBullet(PybulletBaseEnv):
     def __init__(self, args, action_space):
         PybulletBaseEnv.__init__(self, args)
@@ -80,7 +81,7 @@ class EnvironmentBullet(PybulletBaseEnv):
         self.get_action_space_keys()
 
         self.last_distance = None
-        self.Writer = SummaryWriter("runs/logs_reward")
+        self.writer = SummaryWriter("runs/logs_reward")
         self.step_nums = 0
         """
         initialize environment
@@ -123,7 +124,8 @@ class EnvironmentBullet(PybulletBaseEnv):
         reach_goal, collision = self.iterate_steps(*action)
 
         state = self.get_state()
-        reward = self.get_reward(reach_goal=reach_goal,collision=collision,step_times=self.step_nums,step_count=self.step_count.value)
+        reward = self.get_reward(reach_goal=reach_goal, collision=collision, step_times=self.step_nums,
+                                 step_count=self.step_count.value)
         # print("reward=",reward)
         over_max_step = self.step_count >= self.max_step
 
@@ -140,28 +142,39 @@ class EnvironmentBullet(PybulletBaseEnv):
         # plot stored information
         return state, reward, done, {}, info_for_last
 
-    def get_reward(self, reach_goal,collision,step_times,step_count):
+    def get_reward(self, reach_goal, collision, step_times, step_count):
         if self.last_distance is None:
             self.last_distance = compute_distance(self.g_bu_pose, self.s_bu_pose)
         reward = 0
-        distance,delta_distance = 0,0
-        if (collision):
-            reward -= 1
-        else:
-            # compute distance from current to goal
-            distance = compute_distance(self.g_bu_pose, self.robot.get_position())
-            delta_distance = self.last_distance - distance
-            self.last_distance = distance
-            reward += delta_distance
+        collision_reward = 0
+        reach_goal_reward = 0
+        """================collision reward=================="""
+        if collision:
+            collision_reward = -1
+            reward += collision_reward
 
-        reward -= float(np.log(step_count))
+        """================delta distance reward=================="""
+        # compute distance from current to goal
+        distance = compute_distance(self.g_bu_pose, self.robot.get_position())
+        delta_distance_reward = (self.last_distance - distance) * 100
+        self.last_distance = distance
+        reward += delta_distance_reward
+
+        """================step reward=================="""
+        step_count_reward = - float(np.log(step_count) * 0.1)
+        reward += step_count_reward
+
+        """================reach goal reward=================="""
 
         if reach_goal:
-            reward += 100
-
-        self.Writer.add_scalar('reward/distance',distance,step_times)
-        self.Writer.add_scalar('reward/delta_distance',delta_distance,step_times)
-        self.Writer.add_scalar('reward/reward',reward,step_times)
+            reach_goal_reward = 100
+            reward += reach_goal_reward
+        self.writer.add_scalar("reward/reward_collision", collision_reward, step_times)
+        self.writer.add_scalar('reward/distance', distance, step_times)
+        self.writer.add_scalar('reward/reward_delta_distance', delta_distance_reward, step_times)
+        self.writer.add_scalar('reward/reward_step_count', step_count_reward, step_times)
+        self.writer.add_scalar('reward/reward_reach_goal', reach_goal_reward, step_times)
+        self.writer.add_scalar('reward/reward', reward, step_times)
         return reward
 
     def get_state(self):

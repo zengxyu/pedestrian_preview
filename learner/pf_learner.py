@@ -94,8 +94,8 @@ class PFLearner:
             )
             with open(filename + "json", "w") as f:
                 json.dump(test_result, f)
-            self.env.Writer.close()
-            self.agent.Writer.close()
+            self.env.writer.close()
+            self.agent.writer.close()
 
     def train_once(self):
         phase = "Train"
