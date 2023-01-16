@@ -124,23 +124,24 @@ class EnvironmentBullet(PybulletBaseEnv):
         reach_goal, collision = self.iterate_steps(*action)
 
         state = self.get_state()
-        reward = self.get_reward(reach_goal=reach_goal, collision=collision, step_times=self.step_nums,
-                                 step_count=self.step_count.value)
+        reward, reward_info = self.get_reward(reach_goal=reach_goal, collision=collision, step_times=self.step_nums,
+                                              step_count=self.step_count.value)
         # print("reward=",reward)
         over_max_step = self.step_count >= self.max_step
 
         # whether done
-        # done = collision or reach_goal or over_max_step
-        done = reach_goal or over_max_step
+        done = collision or reach_goal or over_max_step
+        # done = reach_goal or over_max_step
+        step_info = reward_info
         # store information
-        info_for_last = {"collision": collision, "a_success": reach_goal,
-                         "over_max_step": over_max_step, "step_count": self.step_count.value}
+        episode_info = {"collision": collision, "a_success": reach_goal,
+                        "over_max_step": over_max_step, "step_count": self.step_count.value}
 
         if done:
             print("success:{}; collision:{}; over_max_step:{}".format(reach_goal, collision, over_max_step))
 
         # plot stored information
-        return state, reward, done, {}, info_for_last
+        return state, reward, done, step_info, episode_info
 
     def get_reward(self, reach_goal, collision, step_times, step_count):
         if self.last_distance is None:
@@ -169,13 +170,15 @@ class EnvironmentBullet(PybulletBaseEnv):
         if reach_goal:
             reach_goal_reward = 100
             reward += reach_goal_reward
-        self.writer.add_scalar("reward/reward_collision", collision_reward, step_times)
-        self.writer.add_scalar('reward/distance', distance, step_times)
-        self.writer.add_scalar('reward/reward_delta_distance', delta_distance_reward, step_times)
-        self.writer.add_scalar('reward/reward_step_count', step_count_reward, step_times)
-        self.writer.add_scalar('reward/reward_reach_goal', reach_goal_reward, step_times)
-        self.writer.add_scalar('reward/reward', reward, step_times)
-        return reward
+
+        reward_info = {"reward/reward_collision": collision_reward,
+                       "reward/reward_delta_distance": delta_distance_reward,
+                       "reward/reward_step_count": step_count_reward,
+                       "reward/distance": distance,
+                       "reward/reward_reach_goal": reach_goal_reward,
+                       "reward/reward": reward
+                       }
+        return reward, reward_info
 
     def get_state(self):
         # compute depth image
