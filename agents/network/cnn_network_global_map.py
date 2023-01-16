@@ -23,7 +23,7 @@ class BaseModel(nn.Module):
         self.cnn = build_cnns_2d(1, self.cnn_dims, self.kernel_sizes, self.strides)
         self.cnn_global = build_cnns_2d(1, self.cnn_dims, self.kernel_sizes, self.strides)
 
-        self.mlp_relative_position = build_mlp(3, self.mlp_dims, activate_last_layer=False)
+        self.mlp_relative_position = build_mlp(6, self.mlp_dims, activate_last_layer=False)
 
 
 class GlobalCnnActor(BaseModel):
@@ -39,7 +39,7 @@ class GlobalCnnActor(BaseModel):
 
         self.td3_end = nn.Sequential(nn.Tanh(), pfrl.policies.DeterministicHead())
 
-        self.mlp_action = build_mlp(200 + 320 + 3,
+        self.mlp_action = build_mlp(200 + 320 + 8,
                                     mlp_values_dims + [self.n_actions],
                                     activate_last_layer=False,
                                     )
@@ -56,7 +56,7 @@ class GlobalCnnActor(BaseModel):
         out2 = self.cnn(depth_image)
         out2 = out2.reshape((batch_size, -1))
 
-        out3 = relative_position
+        out3 = self.mlp_relative_position(relative_position)
         # out =
         out = torch.cat((out1, out2, out3), dim=1)
 
@@ -75,7 +75,7 @@ class GlobalCnnCritic(BaseModel):
         self.n_actions = len(action_space.low)
         mlp_values_dims = model_params["mlp_values"]
 
-        self.mlp_value = build_mlp(200 + 320 + 3 + self.n_actions,
+        self.mlp_value = build_mlp(200 + 320 + 8 + self.n_actions,
                                    mlp_values_dims + [1],
                                    activate_last_layer=False,
                                    )
@@ -93,7 +93,7 @@ class GlobalCnnCritic(BaseModel):
         out2 = self.cnn(depth_image)
         out2 = out2.reshape((batch_size, -1))
 
-        out3 = relative_position
+        out3 = self.mlp_relative_position(relative_position)
         # out =
         out = torch.cat((out1, out2, out3, action), dim=1)
 

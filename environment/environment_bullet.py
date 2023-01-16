@@ -32,7 +32,7 @@ from environment.robots.turtlebot import TurtleBot
 from utils.config_utility import read_yaml
 from utils.math_helper import compute_yaw, compute_distance
 from environment.gen_scene.scene_generator import load_environment_scene
-from environment.nav_utilities.coordinates_converter import cvt_to_bu
+from environment.nav_utilities.coordinates_converter import cvt_to_bu, cvt_to_om
 from environment.path_manager import PathManager
 from traditional_planner.a_star.astar import AStar
 from torch.utils.tensorboard import SummaryWriter
@@ -208,11 +208,19 @@ class EnvironmentBullet(PybulletBaseEnv):
         relative_yaw = compute_yaw(self.g_bu_pose, self.robot.get_position()) - self.robot.get_yaw()
         relative_pose = np.array([relative_position[0], relative_position[1], relative_yaw])
         global_map = cv2.resize(self.occ_map.astype(np.float), (40, 40))
+        s_om_pose = cvt_to_om(self.s_bu_pose, self.grid_res)
+        s_om_pose = np.array([s_om_pose[0] / global_map.shape[0], s_om_pose[1] / global_map.shape[1]]) * 40
+        g_om_pose = cvt_to_om(self.g_bu_pose, self.grid_res)
+        g_om_pose = np.array([g_om_pose[0] / global_map.shape[0], g_om_pose[1] / global_map.shape[1]]) * 40
+        cur_om_pose = cvt_to_om(self.robot.get_position(), self.grid_res)
+        cur_om_pose = np.array([cur_om_pose[0] / global_map.shape[0], cur_om_pose[1] / global_map.shape[1]]) * 40
+
         resized_depth_image = cv2.resize(depth_image,
                                          (int(depth_image.shape[0] / 2), int(depth_image.shape[1] / 2)))
 
         # visit map
-        return global_map[np.newaxis, :, :], resized_depth_image[np.newaxis, :, :], relative_pose
+        return global_map[np.newaxis, :, :], resized_depth_image[np.newaxis, :, :], np.array(
+            [s_om_pose, g_om_pose, cur_om_pose]).flatten()
 
     def p_step_simulation(self):
         self.p.stepSimulation()
