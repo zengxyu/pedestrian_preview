@@ -1,7 +1,7 @@
 from agents.network.network_base import *
 
 model_params = {
-    'cnn': [32, 16, 8],
+    'cnn': [16, 64, 16],
     'mlp': [8],
     'kernel_sizes': [3, 3, 3],
     'strides': [2, 2, 2],
