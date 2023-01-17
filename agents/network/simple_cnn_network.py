@@ -68,7 +68,7 @@ class SimpleCnnCritic(BaseModel):
         self.n_actions = len(action_space.low)
         mlp_values_dims = model_params["mlp_values"]
 
-        self.mlp_value = build_mlp(100 + self.n_actions,
+        self.mlp_value = build_mlp(200 + self.n_actions,
                                    mlp_values_dims + [1],
                                    activate_last_layer=False,
                                    )
