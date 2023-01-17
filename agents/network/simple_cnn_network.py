@@ -29,7 +29,7 @@ class SimpleCnnActor(BaseModel):
     Apply attention mechanism on lidar measurements
     """
 
-    def __init__(self, action_space, **kwargs):
+    def __init__(self, agent_type, action_space, **kwargs):
         super().__init__(**kwargs)
         self.n_actions = len(action_space.low)
 
@@ -50,7 +50,6 @@ class SimpleCnnActor(BaseModel):
         out1 = self.cnn(depth_image)
         out1 = out1.reshape((batch_size, -1))
         out2 = self.mlp_relative_position(relative_position)
-        # out =
         out = torch.cat((out1, out2), dim=1)
 
         out = self.mlp_action(out)
@@ -63,7 +62,7 @@ class SimpleCnnCritic(BaseModel):
     Apply attention mechanism on lidar measurements
     """
 
-    def __init__(self, action_space, **kwargs):
+    def __init__(self, agent_type, action_space, **kwargs):
         super().__init__(**kwargs)
         self.n_actions = len(action_space.low)
         mlp_values_dims = model_params["mlp_values"]

@@ -17,7 +17,6 @@ from agents.network.simple_mlp import SimpleMlpActor, SimpleMlpCritic
 actor_critic_model_mapping = {
     'MLP': (SimpleMlpActor, SimpleMlpCritic),
     'CNN': (SimpleCnnActor, SimpleCnnCritic),
-    'GlobalCnn': (GlobalCnnActor, GlobalCnnCritic),
 
 }
 
@@ -27,20 +26,19 @@ def get_actor_critic_class(network_name):
 
 
 def build_network(parser_args, action_space, input_kwargs):
-    agent = get_agent_name(parser_args)
+    agent_type = get_agent_name(parser_args)
     network_name = get_network_config(parser_args)
     actor_class, critic_class = get_actor_critic_class(network_name)
-
-    if agent == "ddpg" or agent == "ddpg_recurrent":
-        actor_network = actor_class(action_space, **input_kwargs)
-        critic_network = critic_class(action_space, **input_kwargs)
+    if agent_type == "ddpg" or agent_type == "ddpg_recurrent":
+        actor_network = actor_class(agent_type, action_space, **input_kwargs)
+        critic_network = critic_class(agent_type, action_space, **input_kwargs)
         return actor_network, critic_network
 
-    elif agent == "td3" or agent == "sac":
-        actor_network = actor_class(action_space, **input_kwargs)
-        critic_network1 = critic_class(action_space, **input_kwargs)
-        critic_network2 = critic_class(action_space, **input_kwargs)
+    elif agent_type == "td3" or agent_type == "sac":
+        actor_network = actor_class(agent_type, action_space, **input_kwargs)
+        critic_network1 = critic_class(agent_type, action_space, **input_kwargs)
+        critic_network2 = critic_class(agent_type, action_space, **input_kwargs)
         return actor_network, critic_network1, critic_network2
 
     else:
-        raise NotImplementedError("agent : {} no such an agent".format(agent))
+        raise NotImplementedError("agent : {} no such an agent".format(agent_type))
