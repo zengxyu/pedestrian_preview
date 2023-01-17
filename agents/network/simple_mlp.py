@@ -38,7 +38,7 @@ class SimpleMlpActor(BaseModel):
 
         self.td3_end = nn.Sequential(nn.Tanh(), pfrl.policies.DeterministicHead())
 
-        self.mlp_action = build_mlp(self.mlp_dims[-1] + self.mlp_depth_dims[-1],
+        self.mlp_action = build_mlp(self.mlp_dims[-1],
                                     mlp_values_dims + [self.n_actions],
                                     activate_last_layer=False,
                                     )
@@ -47,10 +47,10 @@ class SimpleMlpActor(BaseModel):
         depth_image = x[0].float()
         relative_position = x[1].float()
 
-        out1 = self.mlp_depth(depth_image)
+        # out1 = self.mlp_depth(depth_image)
         out2 = self.mlp_relative_position(relative_position)
-        out = torch.cat((out1, out2), dim=1)
-        out = self.mlp_action(out)
+        # out = torch.cat((out2), dim=1)
+        out = self.mlp_action(out2)
         out = self.td3_end(out)
         return out
 
@@ -65,7 +65,7 @@ class SimpleMlpCritic(BaseModel):
         self.n_actions = len(action_space.low)
         mlp_values_dims = model_params["mlp_values"]
 
-        self.mlp_value = build_mlp(self.mlp_dims[-1] + self.mlp_depth_dims[-1] + self.n_actions,
+        self.mlp_value = build_mlp(self.mlp_dims[-1] + self.n_actions,
                                    mlp_values_dims + [1],
                                    activate_last_layer=False,
                                    )
@@ -74,8 +74,8 @@ class SimpleMlpCritic(BaseModel):
         x, action = x
         depth_image = x[0].float()
         relative_position = x[1].float()
-        out1 = self.mlp_depth(depth_image)
+        # out1 = self.mlp_depth(depth_image)
         out2 = self.mlp_relative_position(relative_position)
-        out = torch.cat((out1, out2, action), dim=1)
+        out = torch.cat((out2, action), dim=1)
 
         return self.mlp_value(out)
