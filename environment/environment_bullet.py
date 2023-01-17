@@ -201,7 +201,7 @@ class EnvironmentBullet(PybulletBaseEnv):
         return reward, reward_info
 
     def get_state(self):
-        return self.get_state1()
+        return self.get_state2()
 
     def get_state1(self):
         # compute depth image
@@ -237,9 +237,9 @@ class EnvironmentBullet(PybulletBaseEnv):
         relative_pose = np.array([relative_position[0], relative_position[1], relative_yaw])
 
         resized_depth_image = cv2.resize(depth_image,
-                                         (int(depth_image.shape[0] / 2), int(depth_image.shape[1] / 2)))
+                                         (int(depth_image.shape[0] / 4), int(depth_image.shape[1] / 4)))
 
-        return resized_depth_image[np.newaxis, :, :], relative_pose.flatten()
+        return resized_depth_image[np.newaxis, :, :].flatten(), relative_pose.flatten()
 
     def p_step_simulation(self):
         self.p.stepSimulation()
