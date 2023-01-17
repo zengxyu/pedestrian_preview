@@ -81,6 +81,7 @@ class EnvironmentBullet(PybulletBaseEnv):
         self.last_distance = None
         self.Writer = SummaryWriter("runs/logs_reward")
         self.step_nums = 0
+        self.imglength = 5
         """
         initialize environment
         initialize dynamic human npc
@@ -106,7 +107,6 @@ class EnvironmentBullet(PybulletBaseEnv):
         self.randomize_env()
 
         state = self.get_state()
-
         return state
 
     def get_action_space_keys(self):
@@ -127,8 +127,8 @@ class EnvironmentBullet(PybulletBaseEnv):
         over_max_step = self.step_count >= self.max_step
 
         # whether done
-        # done = collision or reach_goal or over_max_step
-        done = reach_goal or over_max_step
+        done = collision or reach_goal or over_max_step
+        # done = reach_goal or over_max_step
         # store information
         info_for_last = {"collision": collision, "a_success": reach_goal,
                          "over_max_step": over_max_step, "step_count": self.step_count.value}
@@ -147,7 +147,7 @@ class EnvironmentBullet(PybulletBaseEnv):
         reward = 0
         distance,delta_distance = 0,0
         if (collision):
-            reward -= 0.5
+            reward -= 100
         else:
             # compute distance from current to goal
             # distance = compute_distance(self.g_bu_pose, self.robot.get_position())
