@@ -14,21 +14,26 @@ from agents.network.attention_spacial_temporal import STAttentionCritic, STAtten
 from agents.network.attention_temporal import AttentionTemporalCritic, AttentionTemporalActor
 from agents.network.attention_spacial import AttentionSpacialActor, AttentionSpacialCritic
 from agents.network.convolution_1d_network import CNNCriticNet, CNNActorNet
-from agents.network.simple_cnn_network import SimpleCnnCritic, SimpleCnnActor
+from agents.network.simple_cnn_network import SimpleCnnCritic, SimpleCnnActor, StochasticSampleCnnActor, StochasticSampleCnnCritic
 
 actor_critic_model_mapping = {
     'CNN': (SimpleCnnActor, SimpleCnnCritic),
 }
+sac_actor_critic_model_mapping = {
+    'CNN': (StochasticSampleCnnActor, StochasticSampleCnnCritic),
+}
 
-
-def get_actor_critic_class(network_name):
-    return actor_critic_model_mapping[network_name]
+def get_actor_critic_class(agent, network_name):
+    if agent == "sac":
+        return sac_actor_critic_model_mapping[network_name]
+    elif agent == "ddpg":
+        return actor_critic_model_mapping[network_name]
 
 
 def build_network(parser_args, action_space, input_kwargs):
     agent = get_agent_name(parser_args)
     network_name = get_network_config(parser_args)
-    actor_class, critic_class = get_actor_critic_class(network_name)
+    actor_class, critic_class = get_actor_critic_class(agent, network_name)
 
     if agent == "ddpg" or agent == "ddpg_recurrent":
         actor_network = actor_class(action_space, **input_kwargs)

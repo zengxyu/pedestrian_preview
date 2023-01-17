@@ -42,7 +42,12 @@ def build_agent(args):
         logging.info("actor_network:{}, critic_network1:{}, critic_network2:{}".format(actor_network, critic_network1,
                                                                                        critic_network2))
         agent = build_sac_agent(args, actor_network, critic_network1, critic_network2, agent_name, action_space)
-    return agent, action_space, scheduler, replay_buffer
+    if agent_name == "sac":
+        return agent, action_space
+    else:
+        return agent, action_space, scheduler, replay_buffer
+
+
 
 
 def build_ddpg_agent(parser_args, policy, q_func, agent_name, action_space):

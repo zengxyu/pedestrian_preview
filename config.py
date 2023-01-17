@@ -40,6 +40,7 @@ def process_args():
     parser.add_argument("--max_speed", type=float, help='')
     parser.add_argument("--dynamic_num", type=int, help='')
     parser.add_argument("--static_num", type=int, help='')
+    parser.add_argument("--out_board", type=str, default="runs")
 
     # parser.add_argument("--in_motion_model_path", type=str,
     #                     default="motion/motion_speed_control_0.1/model/model_epi_500")

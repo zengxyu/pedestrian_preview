@@ -147,17 +147,17 @@ class EnvironmentBullet(PybulletBaseEnv):
         reward = 0
         distance,delta_distance = 0,0
         if (collision):
-            reward -= 1
+            reward -= 0.5
         else:
             # compute distance from current to goal
             # distance = compute_distance(self.g_bu_pose, self.robot.get_position())
             distance = compute_ManhattanDistance(self.g_bu_pose, self.robot.get_position())
             delta_distance = self.last_distance - distance
             self.last_distance = distance
-            reward += (delta_distance*10)
+            reward += (delta_distance*50)
 
         reward -= float(np.log(step_count)*0.1)
-
+        # print("np.log(step_count)*0.1 = ",np.log(step_count)*0.1,"reward = ",reward)
         if reach_goal:
             reward += 100
 

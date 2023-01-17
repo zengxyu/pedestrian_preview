@@ -188,7 +188,6 @@ class SoftActorCritic(AttributeSavingMixin, BatchAgent):
         self.q_func1_loss_record = collections.deque(maxlen=100)
         self.q_func2_loss_record = collections.deque(maxlen=100)
         self.n_policy_updates = 0
-
     @property
     def temperature(self):
         if self.entropy_target is None:
