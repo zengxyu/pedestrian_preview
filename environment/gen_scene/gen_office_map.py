@@ -4,6 +4,8 @@ import sys
 from environment.gen_scene.gen_map_util import *
 from environment.gen_scene.common_sampler import *
 
+import matplotlib.pyplot as plt
+
 
 def create_office_map(configs):
     logging.info("creating office map")
@@ -32,10 +34,12 @@ def create_office_map(configs):
             ),
             dtype=bool,
         )
+
+        # 此处采样出口
         occupancy_map[:, [0, -1]] = True
         occupancy_map[[0, -1], :] = True
-
         par_walls, total_walls = 2, 4
+
         while (
                 (np.sum(occupancy_map) / np.prod(occupancy_map.shape))
                 < wall_ratio
@@ -127,9 +131,14 @@ def create_office_map(configs):
         door_map, door_list = make_door(
             occupancy_map, door_map, door_list, x, y, configs, grid_resolution
         )
+
+    # plt.imshow(door_map)
+    # plt.show()
     door_list = sorted(door_list)
     door_list = list(door for door, _ in itertools.groupby(door_list))
 
     corridor_map = get_corridor_map(occupancy_map, door_list, configs)
     occupancy_map = door_map.copy()
+
+    make_exit_door(occupancy_map, configs, grid_resolution)
     return occupancy_map, [start_goal_sampler2, static_obs_sampler, dynamic_obs_sampler]

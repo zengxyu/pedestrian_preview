@@ -39,7 +39,7 @@ class SimpleMlpActor(BaseModel):
 
         mlp_values_dims = model_params["mlp_values"]
 
-        self.head = build_head(agent_type)
+        self.head = build_head(agent_type, action_space)
 
         self.mlp_action = build_mlp(self.mlp_depth_dims[-1] + self.mlp_dims[-1],
                                     mlp_values_dims + [self.n_actions * 2],
