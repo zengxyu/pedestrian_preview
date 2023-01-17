@@ -1,4 +1,5 @@
 from agents.network.network_base import *
+from agents.network.network_head import *
 
 model_params = {
     'cnn': [16, 64, 16],
@@ -35,10 +36,10 @@ class SimpleCnnActor(BaseModel):
 
         mlp_values_dims = model_params["mlp_values"]
 
-        self.td3_end = nn.Sequential(nn.Tanh(), pfrl.policies.DeterministicHead())
+        self.head = build_head(agent_type, action_space)
 
         self.mlp_action = build_mlp(200,
-                                    mlp_values_dims + [self.n_actions],
+                                    mlp_values_dims + [self.n_actions * 2],
                                     activate_last_layer=False,
                                     )
 
@@ -53,7 +54,7 @@ class SimpleCnnActor(BaseModel):
         out = torch.cat((out1, out2), dim=1)
 
         out = self.mlp_action(out)
-        out = self.td3_end(out)
+        out = self.head(out)
         return out
 
 

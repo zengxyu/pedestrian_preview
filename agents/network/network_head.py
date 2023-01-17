@@ -25,10 +25,12 @@ def build_td3_head():
     return nn.Sequential(nn.Tanh(), pfrl.policies.DeterministicHead())
 
 
-def build_head(agent_type):
+def build_head(agent_type, action_space):
     if agent_type == "ddpg" or agent_type == "td3":
         return build_td3_head()
     elif agent_type == "sac":
+        action_dim = len(action_space.low)
+        # linear
         return build_sac_head()
     else:
         raise NotImplementedError
