@@ -4,8 +4,8 @@ model_params = {
     'cnn': [32, 16, 8],
     'kernel_sizes': [3, 3, 3],
     'strides': [2, 2, 2],
-    'mlp': [8, 16],
-    'mlp_depth': [256, 384, 64],
+    'mlp': [8, 16, 32],
+    'mlp_depth': [256, 128, 64, 32],
     'mlp_values': [256, 128, 64],
 
 }
