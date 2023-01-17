@@ -5,7 +5,7 @@ model_params = {
     'kernel_sizes': [3, 3, 3],
     'strides': [2, 2, 2],
     'mlp': [8, 16, 32],
-    'mlp_depth': [256, 128, 64, 32],
+    'mlp_depth': [32, 128, 64, 32],
     'mlp_values': [256, 128, 64],
 
 }
@@ -22,7 +22,7 @@ class BaseModel(nn.Module):
         self.mlp_depth_dims = model_params["mlp_depth"]
         self.cnn = build_cnns_2d(1, self.cnn_dims, self.kernel_sizes, self.strides)
         self.mlp_relative_position = build_mlp(3, self.mlp_dims, activate_last_layer=False)
-        self.mlp_depth = build_mlp(150, self.mlp_depth_dims, activate_last_layer=False)
+        self.mlp_depth = build_mlp(10, self.mlp_depth_dims, activate_last_layer=False)
 
 
 class SimpleMlpActor(BaseModel):

@@ -221,7 +221,6 @@ class EnvironmentBullet(PybulletBaseEnv):
 
         resized_depth_image = cv2.resize(depth_image,
                                          (int(depth_image.shape[0] / 4), int(depth_image.shape[1] / 4)))
-
         # visit map
         return resized_depth_image[np.newaxis, :, :], relative_pose
 
@@ -238,8 +237,11 @@ class EnvironmentBullet(PybulletBaseEnv):
 
         resized_depth_image = cv2.resize(depth_image,
                                          (int(depth_image.shape[0] / 8), int(depth_image.shape[1] / 8)))
-
-        return resized_depth_image[np.newaxis, :, :].flatten(), relative_pose.flatten()
+        resized_depth_image = resized_depth_image[int(resized_depth_image.shape[0] / 2)]
+        if np.isnan(relative_pose).any():
+            print(
+                "relative_pose contains nan====================================================================================")
+        return resized_depth_image.flatten(), relative_pose.flatten()
 
     def p_step_simulation(self):
         self.p.stepSimulation()
