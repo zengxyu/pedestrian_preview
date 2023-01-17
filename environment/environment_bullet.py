@@ -144,7 +144,7 @@ class EnvironmentBullet(PybulletBaseEnv):
         reach_goal, collision = self.iterate_steps(*action)
 
         state = self.get_state()
-        reward, reward_info = self.get_reward(reach_goal=reach_goal, collision=collision, step_times=self.step_nums,
+        reward, reward_info = self.get_reward(reach_goal=reach_goal, collision=collision,
                                               step_count=self.step_count.value)
         # print("reward=",reward)
         over_max_step = self.step_count >= self.max_step
@@ -163,7 +163,7 @@ class EnvironmentBullet(PybulletBaseEnv):
         # plot stored information
         return state, reward, done, step_info, episode_info
 
-    def get_reward(self, reach_goal, collision, step_times, step_count):
+    def get_reward(self, reach_goal, collision, step_count):
         if self.last_distance is None:
             self.last_distance = compute_distance(self.g_bu_pose, self.s_bu_pose)
         reward = 0
@@ -171,7 +171,7 @@ class EnvironmentBullet(PybulletBaseEnv):
         reach_goal_reward = 0
         """================collision reward=================="""
         if collision:
-            collision_reward = -1
+            collision_reward = -100
             reward += collision_reward
 
         """================delta distance reward=================="""
@@ -201,6 +201,9 @@ class EnvironmentBullet(PybulletBaseEnv):
         return reward, reward_info
 
     def get_state(self):
+        return self.get_state2()
+
+    def get_state1(self):
         # compute depth image
         width, height, rgb_image, depth_image, seg_image = self.robot.sensor.get_obs()
         # compute relative position to goal
@@ -208,6 +211,7 @@ class EnvironmentBullet(PybulletBaseEnv):
         relative_yaw = compute_yaw(self.g_bu_pose, self.robot.get_position()) - self.robot.get_yaw()
         relative_pose = np.array([relative_position[0], relative_position[1], relative_yaw])
         global_map = cv2.resize(self.occ_map.astype(np.float), (40, 40))
+
         s_om_pose = cvt_to_om(self.s_bu_pose, self.grid_res)
         s_om_pose = np.array([s_om_pose[0] / global_map.shape[0], s_om_pose[1] / global_map.shape[1]]) * 40
         g_om_pose = cvt_to_om(self.g_bu_pose, self.grid_res)
@@ -221,6 +225,22 @@ class EnvironmentBullet(PybulletBaseEnv):
         # visit map
         return global_map[np.newaxis, :, :], resized_depth_image[np.newaxis, :, :], np.array(
             [s_om_pose, g_om_pose, cur_om_pose]).flatten()
+
+    def get_state2(self):
+        # compute depth image
+        width, height, rgb_image, depth_image, seg_image = self.robot.sensor.get_obs()
+
+        # compute relative position to goal
+        relative_position = self.g_bu_pose - self.robot.get_position()
+
+        relative_yaw = compute_yaw(self.g_bu_pose, self.robot.get_position()) - self.robot.get_yaw()
+
+        relative_pose = np.array([relative_position[0], relative_position[1], relative_yaw])
+
+        resized_depth_image = cv2.resize(depth_image,
+                                         (int(depth_image.shape[0] / 2), int(depth_image.shape[1] / 2)))
+
+        return resized_depth_image[np.newaxis, :, :], relative_pose.flatten()
 
     def p_step_simulation(self):
         self.p.stepSimulation()
