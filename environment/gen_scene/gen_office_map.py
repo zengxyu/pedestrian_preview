@@ -132,4 +132,4 @@ def create_office_map(configs):
 
     corridor_map = get_corridor_map(occupancy_map, door_list, configs)
     occupancy_map = door_map.copy()
-    return occupancy_map, [distant_start_end_sampler, static_obs_sampler, dynamic_obs_sampler]
+    return occupancy_map, [start_goal_sampler2, static_obs_sampler, dynamic_obs_sampler]
