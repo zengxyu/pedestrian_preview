@@ -21,6 +21,9 @@ def build_agent(args):
     input_kwargs.update({"visualize_attention": args.visualize_attention})
     agent = None
     agent_name = get_agent_name(parser_args=args)
+
+    scheduler, replay_buffer = None, None
+
     if agent_name in ["ddpg", "ddpg_recurrent"]:
         actor_network, critic_network = build_network(parser_args=args, action_space=action_space,
                                                       input_kwargs=input_kwargs)
@@ -32,7 +35,8 @@ def build_agent(args):
     elif agent_name in ["td3", "td3_recurrent"]:
         actor_network, critic_network1, critic_network2 = build_network(parser_args=args, action_space=action_space,
                                                                         input_kwargs=input_kwargs)
-        agent = build_td3_agent(args, actor_network, critic_network1, critic_network2, agent_name, action_space)
+        agent, scheduler, replay_buffer = build_td3_agent(args, actor_network, critic_network1, critic_network2,
+                                                          agent_name, action_space)
         logging.info("actor_network:{}, critic_network1:{}, critic_network2:{}".format(actor_network, critic_network1,
                                                                                        critic_network2))
     elif agent_name in ["sac"]:
@@ -41,7 +45,8 @@ def build_agent(args):
 
         logging.info("actor_network:{}, critic_network1:{}, critic_network2:{}".format(actor_network, critic_network1,
                                                                                        critic_network2))
-        agent = build_sac_agent(args, actor_network, critic_network1, critic_network2, agent_name, action_space)
+        agent, scheduler, replay_buffer = build_sac_agent(args, actor_network, critic_network1, critic_network2,
+                                                          agent_name, action_space)
     return agent, action_space, scheduler, replay_buffer
 
 
@@ -90,6 +95,8 @@ def build_td3_agent(parser_args, policy, q_func1, q_func2, agent_name, action_sp
     optimizer_critic1 = get_optimizer_by_name(parser_args, agent_config["optimizer"], q_func1)
     optimizer_critic2 = get_optimizer_by_name(parser_args, agent_config["optimizer"], q_func2)
     explorer = get_explorer_by_name(parser_args, agent_config["explorer"], action_space=action_space)
+    scheduler = SchedulerHandler(parser_args, agent_config["scheduler"],
+                                 [optimizer_actor, optimizer_critic1, optimizer_critic2])
 
     replay_buffer = get_replay_buffer_by_name(parser_args, agent_config["replay_buffer"])
 
@@ -114,7 +121,7 @@ def build_td3_agent(parser_args, policy, q_func1, q_func2, agent_name, action_sp
         minibatch_size=agent_config["batch_size"],
         burnin_action_func=burnin_action_func,
     )
-    return agent
+    return agent, scheduler, replay_buffer
 
 
 def build_sac_agent(parser_args, policy, q_func1, q_func2, agent_name, action_space):
@@ -122,6 +129,8 @@ def build_sac_agent(parser_args, policy, q_func1, q_func2, agent_name, action_sp
     optimizer_actor = get_optimizer_by_name(parser_args, agent_config["optimizer"], policy)
     optimizer_critic1 = get_optimizer_by_name(parser_args, agent_config["optimizer"], q_func1)
     optimizer_critic2 = get_optimizer_by_name(parser_args, agent_config["optimizer"], q_func2)
+    scheduler = SchedulerHandler(parser_args, agent_config["scheduler"],
+                                 [optimizer_actor, optimizer_critic1, optimizer_critic2])
 
     replay_buffer = get_replay_buffer_by_name(parser_args, agent_config["replay_buffer"])
 
@@ -147,4 +156,4 @@ def build_sac_agent(parser_args, policy, q_func1, q_func2, agent_name, action_sp
         temperature_optimizer_lr=agent_config["temperature_optimizer_lr"],
     )
 
-    return agent
+    return agent, scheduler, replay_buffer

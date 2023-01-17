@@ -66,3 +66,4 @@ sac:
   optimizer: Adam
   replay_buffer: ReplayBuffer
   temperature_optimizer_lr: 0.0003
+  scheduler: StepLR
