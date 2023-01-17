@@ -12,7 +12,6 @@ def process_args():
     parser.add_argument("--out_folder", type=str, default="test_folder")
     parser.add_argument("--in_folder", type=str, default=None)
     parser.add_argument("--in_model_index", type=int)
-    parser.add_argument("--env", type=str, default="pybullet", help="choose ros or pybullet")
 
     parser.add_argument("--num_episodes", type=int, default=50000)
     parser.add_argument("--train", action="store_true", default=False)
