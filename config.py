@@ -18,17 +18,14 @@ def process_args():
     parser.add_argument("--num_episodes", type=int, default=50000)
     parser.add_argument("--train", action="store_true", default=False)
     parser.add_argument("--render", action="store_true", default=False)
-    parser.add_argument("--store_data", action="store_true", default=False)
+    parser.add_argument("--resume", action="store_true", default=False)
 
     parser.add_argument("--visualize", action="store_true", default=False)
     parser.add_argument("--save", action="store_true", default=False)
 
-    parser.add_argument("--visualize_attention", action="store_true", default=False)
     parser.add_argument("--plot_env", action="store_true", default=False)
     parser.add_argument("--plot_path", action="store_true", default=False)
     parser.add_argument("--plot_action", action="store_true", default=False)
-
-    parser.add_argument("--resume", action="store_true", default=False)
 
     # parser.add_argument("--resume_model_path", action="store_true", default=False)
     parser.add_argument("--plot_trajectory", action="store_true", default=False)
