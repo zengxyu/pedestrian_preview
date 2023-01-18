@@ -12,7 +12,6 @@ from pfrl.replay_buffer import ReplayUpdater, batch_experiences
 from pfrl.utils.batch_states import batch_states
 from pfrl.utils.contexts import evaluating
 from pfrl.utils.copy_param import synchronize_parameters
-from torch.utils.tensorboard import SummaryWriter
 
 
 def _mean_or_nan(xs):
