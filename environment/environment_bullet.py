@@ -13,6 +13,7 @@
 import logging
 import os
 import sys
+import time
 
 import cv2
 
@@ -160,6 +161,9 @@ class EnvironmentBullet(PybulletBaseEnv):
         if done:
             print("success:{}; collision:{}; over_max_step:{}".format(reach_goal, collision, over_max_step))
 
+        if done and not self.args.train:
+            self.add_episode_end_prompt(episode_info)
+
         # plot stored information
         return state, reward, done, step_info, episode_info
 
@@ -239,6 +243,19 @@ class EnvironmentBullet(PybulletBaseEnv):
             reach_goal = compute_distance(self.robot.get_position(), self.g_bu_pose) < 0.5
             iterate_count += 1
         return reach_goal, collision
+
+    def add_episode_end_prompt(self, info):
+        display_duration = 0.5
+        if info["a_success"]:
+            self.p.addUserDebugText("Success!", textPosition=[1.5, 1.5, 1.], textColorRGB=[0, 1, 0], textSize=5)
+            time.sleep(display_duration)
+        elif info["collision"]:
+            self.p.addUserDebugText("collision!", textPosition=[1.5, 1.5, 1.], textColorRGB=[1, 0, 0], textSize=5)
+            time.sleep(display_duration)
+        else:
+            self.p.addUserDebugText("Over the max step!", textPosition=[1.5, 1.5, 1.], textColorRGB=[0, 0, 1],
+                                    textSize=5)
+            time.sleep(display_duration)
 
     # def randomize_dynamic_obstacles(self):
     #     if self.n_dynamic_obstacle_num == 0:
