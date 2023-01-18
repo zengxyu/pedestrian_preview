@@ -14,6 +14,7 @@ from pfrl.utils.contexts import evaluating
 from pfrl.utils.copy_param import synchronize_parameters
 from torch.utils.tensorboard import SummaryWriter
 
+
 def _mean_or_nan(xs):
     """Return its mean a non-empty sequence, numpy.nan for a empty one."""
     return np.mean(xs) if xs else np.nan
@@ -58,28 +59,28 @@ class DDPG(AttributeSavingMixin, BatchAgent):
     saved_attributes = ("model", "target_model", "actor_optimizer", "critic_optimizer")
 
     def __init__(
-        self,
-        policy,
-        q_func,
-        actor_optimizer,
-        critic_optimizer,
-        replay_buffer,
-        gamma,
-        explorer,
-        gpu=None,
-        replay_start_size=50000,
-        minibatch_size=32,
-        update_interval=1,
-        target_update_interval=10000,
-        phi=lambda x: x,
-        target_update_method="hard",
-        soft_update_tau=1e-2,
-        n_times_update=1,
-        recurrent=False,
-        episodic_update_len=None,
-        logger=getLogger(__name__),
-        batch_states=batch_states,
-        burnin_action_func=None,
+            self,
+            policy,
+            q_func,
+            actor_optimizer,
+            critic_optimizer,
+            replay_buffer,
+            gamma,
+            explorer,
+            gpu=None,
+            replay_start_size=50000,
+            minibatch_size=32,
+            update_interval=1,
+            target_update_interval=10000,
+            phi=lambda x: x,
+            target_update_method="hard",
+            soft_update_tau=1e-2,
+            n_times_update=1,
+            recurrent=False,
+            episodic_update_len=None,
+            logger=getLogger(__name__),
+            batch_states=batch_states,
+            burnin_action_func=None,
     ):
 
         self.model = nn.ModuleList([policy, q_func])
@@ -135,7 +136,6 @@ class DDPG(AttributeSavingMixin, BatchAgent):
         self.target_policy, self.target_q_function = self.target_model
 
         self.sync_target_network()
-        self.Writer = SummaryWriter("runs/Loss")
 
     def sync_target_network(self):
         """Synchronize target network with current network."""
@@ -162,7 +162,7 @@ class DDPG(AttributeSavingMixin, BatchAgent):
             next_actions = self.target_policy(batch_next_state).sample()
             next_q = self.target_q_function((batch_next_state, next_actions))
             target_q = batch_rewards + self.gamma * (
-                1.0 - batch_terminal
+                    1.0 - batch_terminal
             ) * next_q.reshape((batchsize,))
 
         predict_q = self.q_function((batch_state, batch_actions)).reshape((batchsize,))
@@ -202,9 +202,6 @@ class DDPG(AttributeSavingMixin, BatchAgent):
         actor_loss = self.compute_actor_loss(batch)
         actor_loss.backward()
         self.actor_optimizer.step()
-
-        self.Writer.add_scalar('actor_loss',actor_loss,self.n_updates)
-        self.Writer.add_scalar('critic_loss',critic_loss,self.n_updates)
 
         self.n_updates += 1
 
