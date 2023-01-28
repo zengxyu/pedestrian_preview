@@ -218,7 +218,7 @@ class EnvironmentBullet(PybulletBaseEnv):
 
         relative_pose = np.array([relative_position[0], relative_position[1], relative_yaw])
 
-        depth_image = np.resize(depth_image, (int(depth_image.shape[0] / 2), (int(depth_image.shape[1] / 2))))
+        depth_image = cv2.resize(depth_image, (int(depth_image.shape[0] / 2), (int(depth_image.shape[1] / 2))))
         return depth_image[np.newaxis, :, :], relative_pose.flatten()
 
     def p_step_simulation(self):
