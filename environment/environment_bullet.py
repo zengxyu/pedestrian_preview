@@ -102,7 +102,7 @@ class EnvironmentBullet(PybulletBaseEnv):
 
         # randomize environment
         self.randomize_env()
-        self.randomize_human_npc()
+        # self.randomize_human_npc()
         state = self.get_state()
         # self.visualize_ground_destination()
         return state
