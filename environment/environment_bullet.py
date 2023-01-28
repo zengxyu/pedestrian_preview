@@ -17,6 +17,8 @@ import time
 
 import cv2
 
+from environment.human_npc_generator import generate_human_npc
+from environment.robots.dynamic_obstacle import DynamicObstacleGroup
 from environment.robots.human import Man
 
 sys.path.append(
@@ -68,15 +70,6 @@ class EnvironmentBullet(PybulletBaseEnv):
         self.obstacle_ids = []
         # n_radius, n_from_start, n_to_end [unit: pixel]
         # generate human agent, and other human npc
-        self.n_radius = int(self.env_config["unobstructed_radius"] / self.grid_res)
-        self.n_from_start = int(self.env_config["distance_from_start"] / self.grid_res)
-        self.n_to_end = int(self.env_config["distance_to_end"] / self.grid_res)
-        self.n_dynamic_obstacle_num = self.env_config["pedestrian_dynamic_num"]
-        self.n_static_obstacle_num = self.env_config["pedestrian_static_num"]
-
-        self.n_kept_distance = int(self.env_config["kept_distance"] / self.grid_res)
-        self.n_kept_distance_to_start = int(self.env_config["kept_distance_to_start"] / self.grid_res)
-        self.dilation_size = self.env_config["dilation_size"]
         self.start_goal_sampler, self.static_obs_sampler, self.dynamic_obs_sampler = None, None, None
         self.action_space_keys = None
         self.physical_steps = Counter()
@@ -109,7 +102,7 @@ class EnvironmentBullet(PybulletBaseEnv):
 
         # randomize environment
         self.randomize_env()
-
+        self.randomize_human_npc()
         state = self.get_state()
         # self.visualize_ground_destination()
         return state
@@ -257,89 +250,27 @@ class EnvironmentBullet(PybulletBaseEnv):
                                     textSize=5)
             time.sleep(display_duration)
 
-    # def randomize_dynamic_obstacles(self):
-    #     if self.n_dynamic_obstacle_num == 0:
-    #         return
-    #
-    #     logging.debug(
-    #         "randomize dynamic obstacles... length of original path:{}".format(len(self.path_manager.original_path)))
-    #
-    #     # randomize the start and end position for occupancy map
-    #     obs_bu_starts = []
-    #     obs_bu_ends = []
-    #     obs_bu_paths = []
-    #     start_index = self.n_from_start
-    #     end_index = len(self.om_path) - self.n_to_end
-    #     equal_n = (end_index - start_index) / 4
-    #
-    #     seg_start_indexes = np.arange(start_index, end_index - equal_n, equal_n)
-    #     seg_end_indexes = np.arange(start_index + equal_n, end_index, equal_n)
-    #
-    #     assert len(seg_start_indexes) == len(seg_end_indexes)
-    #     used_indexes = []
-    #     count = 0
-    #     while count < 30 and len(obs_bu_starts) < self.n_dynamic_obstacle_num - 1:
-    #         count += 1
-    #         index = self.sample_segment_index(used_indexes, seg_start_indexes, seg_end_indexes)
-    #         seg_start, seg_end = seg_start_indexes[index], seg_end_indexes[index]
-    #         [obs_om_start, obs_om_end], sample_success = self.dynamic_obs_sampler(
-    #             occupancy_map=dilate_image(self.occ_map, 2),
-    #             door_map=self.door_occ_map,
-    #             robot_om_path=self.om_path,
-    #             margin=self.dilation_size + 1,
-    #             radius=self.n_radius,
-    #             start_index=seg_start,
-    #             end_index=seg_end,
-    #             kept_distance=self.n_kept_distance,
-    #             kept_distance_to_start=self.n_kept_distance_to_start)
-    #
-    #         # if sample obstacle start position and end position failed, continue to next loop and resample
-    #         if not sample_success:
-    #             continue
-    #
-    #         # plan a global path for this (start, end) pair
-    #         obs_om_path = AStar(dilate_image(self.occ_map, 2)).search_path(tuple(self.s_om_pose), tuple(self.g_om_pose))
-    #
-    #         if len(obs_om_path) == 0:
-    #             continue
-    #         logging.debug("There are now {} sampled obstacles".format(len(obs_bu_starts)))
-    #         obs_bu_path = cvt_to_bu(obs_om_path, self.grid_res)
-    #         obs_bu_start = cvt_to_bu(obs_om_start, self.grid_res)
-    #         obs_bu_end = cvt_to_bu(obs_om_end, self.grid_res)
-    #
-    #         obs_bu_paths.append(obs_bu_path)
-    #         obs_bu_starts.append(obs_bu_start)
-    #         obs_bu_ends.append(obs_bu_end)
-    #
-    #         if len(obs_bu_starts) >= self.n_dynamic_obstacle_num - 1:
-    #             break
-    #
-    #     # 添加障碍物， 该障碍物从机器人路径倒着走回
-    #     self.add_one_backwards(obs_bu_starts, obs_bu_ends, obs_bu_paths)
-    #
-    #     if len(obs_bu_starts) == 0 and self.n_dynamic_obstacle_num > 0:
-    #         return self.restart_environment()
-    #
-    #     # create n dynamic obstacles, put them into the environment
-    #     dynamic_obstacle_group = DynamicObstacleGroup(self.p, self.args, self.physical_step_duration).create(
-    #         obs_bu_starts,
-    #         obs_bu_ends,
-    #         obs_bu_paths)
-    #
-    #     self.obstacle_collections.add(dynamic_obstacle_group, dynamic=True)
-    #     self.obstacle_ids.extend(self.obstacle_collections.get_obstacle_ids())
+    def randomize_human_npc(self):
+        """
+        add human npc
+        """
+        # randomize the start and end position for occupancy map
+        obs_bu_starts, obs_bu_ends, obs_bu_paths = generate_human_npc(dynamic_obs_sampler=self.dynamic_obs_sampler,
+                                                                      env_config=self.env_config,
+                                                                      occ_map=self.occ_map,
+                                                                      robot_start=self.s_bu_pose,
+                                                                      robot_end=self.g_bu_pose)
 
-    def add_one_backwards(self, obs_bu_starts, obs_bu_ends, obs_bu_paths):
-        len_original_path = len(self.path_manager.original_path)
-        random_start_index = np.random.randint(int(0.5 * len_original_path), len_original_path - 2)
-        # random_start_index = min(int(0.5 * len_original_path), len_original_path - 1)
-        random_start = self.path_manager.original_path[random_start_index]
-        path = self.path_manager.original_path[:random_start_index + 1, :]
-        path_inverse = path[::-1]
-        if len(path) > 15:
-            obs_bu_starts.append(random_start)
-            obs_bu_ends.append(self.s_bu_pose)
-            obs_bu_paths.append(path_inverse)
+        # create n dynamic obstacles, put them into the environment
+        dynamic_obstacle_group = DynamicObstacleGroup(p=self.p,
+                                                      args=self.args,
+                                                      step_duration=self.physical_step_duration).create(
+            start_positions=obs_bu_starts,
+            end_positions=obs_bu_ends,
+            paths=obs_bu_paths)
+
+        self.obstacle_collections.add(dynamic_obstacle_group, dynamic=True)
+        self.obstacle_ids.extend(self.obstacle_collections.get_obstacle_ids())
 
     def randomize_env(self):
         """
