@@ -148,8 +148,8 @@ def dynamic_obs_sampler(**kwargs):
     logging.debug("sampling dynamic obstacles;")
     # logging.info("kwargs:{}".format(kwargs))
 
-    # [start_position, end_position], no_points_available = distant_two_points_sampler(**kwargs)
-    [start_position, end_position], sample_success = opposite_two_points_sampler(**kwargs)
+    [start_position, end_position], sample_success = distant_two_points_sampler(**kwargs)
+    # [start_position, end_position], sample_success = opposite_two_points_sampler(**kwargs)
     return [start_position, end_position], sample_success
 
 
@@ -187,7 +187,7 @@ def distant_two_points_sampler(**kwargs):
     :return: [start_position, end_position],
             distance_less_than_thresh: no point sampled available
     """
-    occupancy_map, door_map, robot_om_path = kwargs["occupancy_map"], kwargs["door_map"], kwargs["robot_om_path"]
+    occupancy_map, robot_start, robot_end = kwargs["occupancy_map"], kwargs["robot_om_start"], kwargs["robot_om_end"]
     kept_distance = kwargs["kept_distance"]
     kept_distance_to_start = kwargs["kept_distance_to_start"]
     count_outer = 0
@@ -201,8 +201,8 @@ def distant_two_points_sampler(**kwargs):
         end_position = point_sampler(occupancy_map)
         distance_less_than_thresh = compute_distance(start_position, end_position) < kept_distance
 
-        distance_to_start_less_than_thresh = compute_distance(start_position, robot_om_path[0]) < kept_distance_to_start
-        distance_to_end_less_than_thresh = compute_distance(end_position, robot_om_path[-1]) < kept_distance_to_start
+        distance_to_start_less_than_thresh = compute_distance(start_position, robot_start) < kept_distance_to_start
+        distance_to_end_less_than_thresh = compute_distance(end_position, robot_end) < kept_distance_to_start
 
         distance_less_than_thresh = distance_less_than_thresh or distance_to_start_less_than_thresh or distance_to_end_less_than_thresh
         count_outer += 1
