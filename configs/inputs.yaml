@@ -1,14 +1,6 @@
 input_cnn:
   # sector_processing: 0; tagd_processing: 1;
-  process: baseline_processing
-  seq_indexes: [ -3,-2,-1 ]
-  num_rays: 30
-  num_points: 180
-  dim_points: 2
-  num_waypoints: 5
-  dim_waypoints: 2
-  robot_state: 0
-
+  seq_len: 5
   # choose from network configs GlobalCnn, CNN, MLP
   network: CNN
 

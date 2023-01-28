@@ -14,6 +14,7 @@ import logging
 import os
 import sys
 import time
+from collections import deque
 
 import cv2
 
@@ -79,6 +80,11 @@ class EnvironmentBullet(PybulletBaseEnv):
         self.last_distance = None
         self.writer = SummaryWriter("runs/logs_reward")
         self.step_nums = 0
+
+        self.depth_images = None
+        self.relative_poses = None
+        self.max_len = self.args.input_config[self.running_config['input_config_name']]["seq_len"]
+
         """
         initialize environment
         initialize dynamic human npc
@@ -102,7 +108,7 @@ class EnvironmentBullet(PybulletBaseEnv):
 
         # randomize environment
         self.randomize_env()
-        # self.randomize_human_npc()
+        self.randomize_human_npc()
         state = self.get_state()
         # self.visualize_ground_destination()
         return state
@@ -212,7 +218,19 @@ class EnvironmentBullet(PybulletBaseEnv):
         relative_pose = np.array([relative_position[0], relative_position[1], relative_yaw])
 
         depth_image = np.resize(depth_image, (int(depth_image.shape[0] / 2), (int(depth_image.shape[1] / 2))))
-        return depth_image[np.newaxis, :, :], relative_pose.flatten()
+
+        if len(self.depth_images) == 0:
+            for i in range(self.max_len - 1):
+                temp = np.zeros_like(depth_image)
+                self.depth_images.append(temp)
+                temp2 = np.zeros_like(relative_pose)
+                self.relative_poses.append(temp2)
+
+        self.depth_images.append(depth_image)
+        self.relative_poses.append(relative_pose)
+
+        # return depth_image[np.newaxis, :, :], relative_pose.flatten()
+        return np.array(self.depth_images), np.array(self.relative_poses).flatten()
 
     def p_step_simulation(self):
         self.p.stepSimulation()
@@ -334,6 +352,8 @@ class EnvironmentBullet(PybulletBaseEnv):
         self.obstacle_collections.clear()
         self.last_distance = None
         self.obstacle_ids = []
+        self.depth_images = deque(maxlen=self.max_len)
+        self.relative_poses = deque(maxlen=self.max_len)
 
     def logging_action(self, action):
         logging_str = ""
