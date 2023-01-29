@@ -174,7 +174,7 @@ class EnvironmentBullet(PybulletBaseEnv):
         reach_goal_reward = 0
         """================collision reward=================="""
         if collision:
-            collision_reward = -100
+            collision_reward = -200
             reward += collision_reward
 
         """================delta distance reward=================="""
