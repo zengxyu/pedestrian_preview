@@ -1,7 +1,7 @@
 # train
 save_result_n: 1000
 max_steps: 150
-inference_per_duration: 0.2 # [s]
+inference_per_duration: 0.4 # [s]
 
 evaluate_every_n_training: 1000
 evaluate_n_times: 200
