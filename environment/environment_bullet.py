@@ -193,7 +193,8 @@ class EnvironmentBullet(PybulletBaseEnv):
         if reach_goal:
             reach_goal_reward = 100
             reward += reach_goal_reward
-
+        else:
+            reward -= 100
         reward_info = {"reward/reward_collision": collision_reward,
                        "reward/reward_delta_distance": delta_distance_reward,
                        "reward/reward_step_count": step_count_reward,
