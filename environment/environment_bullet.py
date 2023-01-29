@@ -174,7 +174,7 @@ class EnvironmentBullet(PybulletBaseEnv):
         reach_goal_reward = 0
         """================collision reward=================="""
         if collision:
-            collision_reward = -200
+            collision_reward = -100
             reward += collision_reward
 
         """================delta distance reward=================="""
@@ -218,7 +218,7 @@ class EnvironmentBullet(PybulletBaseEnv):
 
         relative_pose = np.array([relative_position[0], relative_position[1], relative_yaw])
 
-        depth_image = np.resize(depth_image, (int(depth_image.shape[0] / 2), (int(depth_image.shape[1] / 2))))
+        depth_image = cv2.resize(depth_image, (int(depth_image.shape[0] / 2), int(depth_image.shape[1] / 2)))
 
         if len(self.depth_images) == 0:
             for i in range(self.max_len - 1):
