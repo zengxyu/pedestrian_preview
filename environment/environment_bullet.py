@@ -34,7 +34,7 @@ from environment.robots.obstacle_collections import ObstacleCollections
 from environment.robots.turtlebot import TurtleBot
 
 from utils.config_utility import read_yaml
-from utils.math_helper import compute_yaw, compute_distance
+from utils.math_helper import compute_yaw, compute_distance, compute_ManhattanDistance
 from environment.gen_scene.scene_generator import load_environment_scene
 from environment.nav_utilities.coordinates_converter import cvt_to_bu, cvt_to_om
 from environment.path_manager import PathManager
@@ -168,24 +168,24 @@ class EnvironmentBullet(PybulletBaseEnv):
 
     def get_reward(self, reach_goal, collision, step_count):
         if self.last_distance is None:
-            self.last_distance = compute_distance(self.g_bu_pose, self.s_bu_pose)
+            self.last_distance = compute_ManhattanDistance(self.g_bu_pose, self.s_bu_pose)
         reward = 0
         collision_reward = 0
         reach_goal_reward = 0
         """================collision reward=================="""
         if collision:
-            collision_reward = -100
+            collision_reward = -200
             reward += collision_reward
 
         """================delta distance reward=================="""
         # compute distance from current to goal
-        distance = compute_distance(self.g_bu_pose, self.robot.get_position())
-        delta_distance_reward = (self.last_distance - distance) * 100
+        distance = compute_ManhattanDistance(self.g_bu_pose, self.robot.get_position())
+        delta_distance_reward = (self.last_distance - distance) * 50
         self.last_distance = distance
         reward += delta_distance_reward
 
         """================step reward=================="""
-        step_count_reward = - float(np.log(step_count) * 0.1) * 0
+        step_count_reward = - float(np.log(step_count) * 0.1)
         reward += step_count_reward
 
         """================reach goal reward=================="""
@@ -193,8 +193,7 @@ class EnvironmentBullet(PybulletBaseEnv):
         if reach_goal:
             reach_goal_reward = 100
             reward += reach_goal_reward
-        else:
-            reward -= 100
+
         reward_info = {"reward/reward_collision": collision_reward,
                        "reward/reward_delta_distance": delta_distance_reward,
                        "reward/reward_step_count": step_count_reward,
@@ -205,7 +204,7 @@ class EnvironmentBullet(PybulletBaseEnv):
         return reward, reward_info
 
     def get_state(self):
-        return self.get_state2()
+        return self.get_state3()
 
     def get_state2(self):
         # compute depth image
@@ -233,6 +232,23 @@ class EnvironmentBullet(PybulletBaseEnv):
         # return depth_image[np.newaxis, :, :], relative_pose.flatten()
         return np.array(self.depth_images), np.array(self.relative_poses).flatten()
 
+    def get_state3(self):
+        # compute depth image
+        width, height, rgb_image, depth_image, seg_image = self.robot.sensor.get_obs()
+        # compute relative position to goal
+        relative_position = self.g_bu_pose - self.robot.get_position()
+        # relative_yaw = compute_yaw(self.g_bu_pose, self.robot.get_position()) - self.robot.get_yaw()
+        relative_pose = np.array([relative_position[0], relative_position[1]])
+
+        depth_image = cv2.resize(depth_image, (int(depth_image.shape[1] / 2), int(depth_image.shape[0] / 2)))
+
+        if len(self.depth_images) == 0:
+            for i in range(self.max_len - 1):
+                temp = np.zeros_like(depth_image)
+                self.depth_images.append(temp)
+        self.depth_images.append(depth_image)
+        # return depth_image[np.newaxis, :, :], relative_pose.flatten()
+        return np.array(self.depth_images), relative_position
     def p_step_simulation(self):
         self.p.stepSimulation()
         self.physical_steps += 1

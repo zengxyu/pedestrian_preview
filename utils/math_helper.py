@@ -17,7 +17,8 @@ def compute_distance(point1, point2):
     :return:
     """
     return np.linalg.norm(np.array(point1) - np.array(point2))
-
+def compute_ManhattanDistance(point1, point2):
+    return np.linalg.norm(np.array(point1)-np.array(point2), ord=1)
 
 def compute_amplitude(point1, point2, line_point1, line_point2):
     distance = compute_distance(point1, point2)
