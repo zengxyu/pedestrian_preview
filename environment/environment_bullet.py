@@ -28,7 +28,7 @@ print(sys.path)
 import numpy as np
 from agents.action_space.high_level_action_space import AbstractHighLevelActionSpace
 from environment.base_pybullet_env import PybulletBaseEnv
-from environment.nav_utilities.check_helper import check_collision
+from environment.nav_utilities.check_helper import check_collision, CollisionType
 from environment.nav_utilities.counter import Counter
 from environment.robots.obstacle_collections import ObstacleCollections
 from environment.robots.turtlebot import TurtleBot
@@ -68,7 +68,9 @@ class EnvironmentBullet(PybulletBaseEnv):
         self.s_bu_pose, self.g_bu_pose = [None] * 2
 
         self.obstacle_collections: ObstacleCollections = ObstacleCollections(args)
-        self.obstacle_ids = []
+
+        self.wall_obstacle_ids = []
+        self.pedestrian_obstacle_ids = []
         # n_radius, n_from_start, n_to_end [unit: pixel]
         # generate human agent, and other human npc
         self.start_goal_sampler, self.static_obs_sampler, self.dynamic_obs_sampler = None, None, None
@@ -150,7 +152,7 @@ class EnvironmentBullet(PybulletBaseEnv):
         over_max_step = self.step_count >= self.max_step
 
         # whether done
-        done = collision or reach_goal or over_max_step
+        done = (collision == CollisionType.CollisionWithWall) or reach_goal or over_max_step
         # done = reach_goal or over_max_step
         step_info = reward_info
         # store information
@@ -173,7 +175,7 @@ class EnvironmentBullet(PybulletBaseEnv):
         collision_reward = 0
         reach_goal_reward = 0
         """================collision reward=================="""
-        if collision:
+        if collision == CollisionType.CollisionWithWall:
             collision_reward = -200
             reward += collision_reward
 
@@ -254,7 +256,12 @@ class EnvironmentBullet(PybulletBaseEnv):
         self.physical_steps += 1
 
     def _check_collision(self):
-        return check_collision(self.p, [self.robot.robot_id], self.obstacle_ids)
+        if check_collision(self.p, [self.robot.robot_id], self.wall_obstacle_ids):
+            return CollisionType.CollisionWithWall
+        elif check_collision(self.p, [self.robot.robot_id], self.pedestrian_obstacle_ids):
+            return CollisionType.CollisionWithPedestrian
+        else:
+            return False
 
     def iterate_steps(self, planned_v, planned_w):
         iterate_count = 0
@@ -305,7 +312,7 @@ class EnvironmentBullet(PybulletBaseEnv):
             paths=obs_bu_paths)
 
         self.obstacle_collections.add(dynamic_obstacle_group, dynamic=True)
-        self.obstacle_ids.extend(self.obstacle_collections.get_obstacle_ids())
+        self.pedestrian_obstacle_ids = self.obstacle_collections.get_obstacle_ids()
 
     def randomize_env(self):
         """
@@ -328,7 +335,7 @@ class EnvironmentBullet(PybulletBaseEnv):
         # sample start pose and goal pose
         self.s_bu_pose = cvt_to_bu(start, self.grid_res)
         self.g_bu_pose = cvt_to_bu(end, self.grid_res)
-        self.obstacle_ids = obstacle_ids
+        self.wall_obstacle_ids = obstacle_ids
         self.occ_map = maps["occ_map"]
         self.dilated_occ_map = maps["dilated_occ_map"]
         self.door_occ_map = maps["door_map"]
@@ -368,7 +375,7 @@ class EnvironmentBullet(PybulletBaseEnv):
 
         self.obstacle_collections.clear()
         self.last_distance = None
-        self.obstacle_ids = []
+        self.wall_obstacle_ids = []
         self.depth_images = deque(maxlen=self.max_len)
         self.relative_poses = deque(maxlen=self.max_len)
 

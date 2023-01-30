@@ -21,7 +21,7 @@ scene_name: "office"
 
 #  pedestrian speed
 pedestrian_speed_range: [ 0.25, 0.5 ]
-num_human_npc: 1
+num_human_npc: 10
 pedestrian_lfd: 0.4
 
 # static pedestrians which do not have interaction with robots
