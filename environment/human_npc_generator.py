@@ -45,7 +45,8 @@ def generate_human_npc(dynamic_obs_sampler, env_config: Dict, occ_map: np.array,
             continue
 
         # plan a global path for this (start, end) pair
-        occ_path = plan_a_star_path(dilate_image(occ_map, 2), robot_occ_start, robot_occ_end)
+        occ_path = plan_a_star_path(dilate_image(occ_map, 2), np.array(obs_occ_start, dtype=np.float),
+                                    np.array(obs_occ_end, dtype=np.float))
         if occ_path is None or len(occ_path) is None:
             continue
         logging.debug("There are now {} sampled obstacles".format(len(obs_bu_starts)))
@@ -53,7 +54,7 @@ def generate_human_npc(dynamic_obs_sampler, env_config: Dict, occ_map: np.array,
         obs_bu_start = cvt_to_bu(obs_occ_start, grid_res)
         obs_bu_end = cvt_to_bu(obs_occ_end, grid_res)
 
-        obs_bu_paths.append(obs_bu_path)
+        obs_bu_paths.append(obs_bu_path.copy())
         obs_bu_starts.append(obs_bu_start)
         obs_bu_ends.append(obs_bu_end)
 
