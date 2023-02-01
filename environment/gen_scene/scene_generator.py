@@ -4,12 +4,14 @@ import numpy as np
 from pybullet_utils.bullet_client import BulletClient
 
 from environment.gen_scene.build_office_world import drop_walls
+from environment.gen_scene.common_sampler import start_goal_sampler, distant_start_end_sampler
 from environment.gen_scene.gen_corridor_map import create_corridor_map
 from environment.gen_scene.gen_cross_map import create_cross_map
 from environment.gen_scene.gen_office_map import create_office_map
 
 import logging as logger
 
+from environment.nav_utilities.coordinates_converter import cvt_to_bu
 from utils.image_utility import dilate_image
 
 from traditional_planner.a_star.astar import AStar
@@ -52,12 +54,25 @@ def load_environment_scene(p: BulletClient, env_config: Dict, world_config: Dict
     door_occ_map = compute_door_map(dilated_occ_map)
 
     # sample start position and goal position
-    start_goal_sampler = samplers[0]
-    [start, end], sample_success = start_goal_sampler(occupancy_map=dilated_occ_map, margin=env_config["dilation_size"])
+    # start_goal_sampler = samplers[0]
 
-    # check the connectivity between the start and end position
-    if not sample_success or not check_connectivity(dilated_occ_map, start, end):
-        load_environment_scene(p, env_config, world_config)
+    bu_starts = []
+    bu_ends = []
+    for i in range(env_config["num_agents"]):
+        # [start, end], sample_success = start_goal_sampler(occupancy_map=dilated_occ_map,
+        #                                                   margin=env_config["dilation_size"])
+
+        [start, end], sample_success = distant_start_end_sampler(occupancy_map=dilated_occ_map,
+                                                                 margin=env_config["dilation_size"])
+
+        # check the connectivity between the start and end position
+        if not sample_success or not check_connectivity(dilated_occ_map, start, end):
+            load_environment_scene(p, env_config, world_config)
+
+        bu_start = cvt_to_bu(start, env_config["grid_res"])
+        bu_end = cvt_to_bu(end, env_config["grid_res"])
+        bu_starts.append(bu_start)
+        bu_ends.append(bu_end)
 
     # map results
     maps = {"occ_map": occupancy_map, "dilated_occ_map": dilated_occ_map, "door_map": door_occ_map}
@@ -65,7 +80,7 @@ def load_environment_scene(p: BulletClient, env_config: Dict, world_config: Dict
     # create office entity in py bullet simulation environment
     obstacle_ids = drop_walls(p, occupancy_map.copy(), env_config["grid_res"], component_configs)
 
-    return maps, samplers, obstacle_ids, start, end
+    return maps, samplers, obstacle_ids, bu_starts, bu_ends
 
 
 def check_connectivity(dilated_occ_map, start, end):

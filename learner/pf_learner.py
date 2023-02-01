@@ -31,7 +31,6 @@ class PFLearner:
         self.test_collector = EpisodeInfo()
         self.eval = not args.train
 
-
     def run(self):
         print("========================================Start running========================================")
         if self.eval or self.args.resume:
@@ -63,7 +62,7 @@ class PFLearner:
 
             pbar = tqdm(range(self.args.num_episodes))
             for i in pbar:
-                self.maevaluate_once()
+                info = self.maevaluate_once()
                 # info = self.evaluate_once()
                 # if info['a_success']:
                 #     success_num += 1
@@ -73,7 +72,7 @@ class PFLearner:
                 #     timeout_num += 1
                 # navigation_time_on_success_episodes["{}".format(i)] = info['step_count']
 
-                pbar.set_description("Success rate:{}".format(self.test_collector.get_success_rate()))
+                # pbar.set_description("Success rate:{}".format(self.test_collector.get_success_rate()))
             # self.env.save_metrics()
 
             test_result = {
@@ -91,7 +90,8 @@ class PFLearner:
             # store test result
             filename = os.path.join(
                 save_folder,
-                "dynamic_{}+static_{}_speed_{}.".format(self.args.dynamic_num, self.args.static_num, self.args.max_speed)
+                "dynamic_{}+static_{}_speed_{}.".format(self.args.dynamic_num, self.args.static_num,
+                                                        self.args.max_speed)
             )
             with open(filename + "json", "w") as f:
                 json.dump(test_result, f)
@@ -150,13 +150,15 @@ class PFLearner:
         logging.info('Complete evaluation episode {}'.format(self.test_i_episode))
 
         return info_for_last
+
     def maevaluate_once(self):
         state = self.env.reset()
         done = False
         with self.agent.eval_mode():
             while not done:
                 action = self.agent.batch_act(state)
-                state, reach_goals = self.env.evaluate_step(action)
+                state, reward, done, info_for_sum, info_for_last = self.env.step(action)
+        return info_for_last
 
     def evaluate_n_times(self, n_times):
         phase = "ZEvaluation"
