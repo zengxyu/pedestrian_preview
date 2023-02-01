@@ -123,7 +123,7 @@ class EnvironmentBullet(PybulletBaseEnv):
 
     def visualize_ground_destination(self):
         thetas = np.linspace(0, np.pi * 2, 50)
-        radius = 0.5
+        radius = 0.2
         for i in range(len(self.bu_goals)):
             points_x = np.cos(thetas) * radius + self.bu_goals[i][0]
             points_y = np.sin(thetas) * radius + self.bu_goals[i][1]
@@ -158,7 +158,10 @@ class EnvironmentBullet(PybulletBaseEnv):
         over_max_step = self.step_count >= self.max_step
 
         # whether done
-        done = (collision == CollisionType.CollisionWithWall) or reach_goal or over_max_step
+        if self.args.train:
+            done = (collision == CollisionType.CollisionWithWall) or reach_goal or over_max_step
+        else:
+            done = reach_goal or over_max_step
         # done = reach_goal or over_max_step
         step_info = reward_info
         # store information
@@ -316,11 +319,13 @@ class EnvironmentBullet(PybulletBaseEnv):
 
     def iterate_steps(self, actions):
         iterate_count = 0
-        reach_goal, collision = False, False
+        reach_goals = []
+        collision = False
+        all_reach_goal = False
         # 0.4/0.05 = 8
         n_step = np.round(self.inference_every_duration / self.physical_step_duration)
 
-        while iterate_count < n_step and not reach_goal and not collision:
+        while iterate_count < n_step and not all_reach_goal and not collision:
             for i, robot in enumerate(self.robots):
                 planned_v, planned_w = self.action_space.to_force(action=actions[i])
                 robot.small_step(planned_v, planned_w)
@@ -328,10 +333,14 @@ class EnvironmentBullet(PybulletBaseEnv):
             self.p_step_simulation()
 
             collision = self._check_collision()
+
             for i, robot in enumerate(self.robots):
-                reach_goal = compute_distance(robot.get_position(), self.bu_goals) < 0.5
+                reach_goal = compute_distance(robot.get_position(), self.bu_goals[i]) < 0.5
+                reach_goals.append(reach_goal)
+
             iterate_count += 1
-        return reach_goal, collision
+            all_reach_goal = all(reach_goals)
+        return all_reach_goal, collision
 
     def add_episode_end_prompt(self, info):
         display_duration = 0.5
@@ -395,7 +404,7 @@ class EnvironmentBullet(PybulletBaseEnv):
         self.start_goal_sampler, self.static_obs_sampler, self.dynamic_obs_sampler = samplers
 
         self.bu_starts = bu_starts
-        self.bu_goals = bu_goals
+        self.bu_goals = [bu_goals[i] for i in range(self.num_agents)]
         # initialize robot
         logging.debug("Create the environment, Done...")
 
