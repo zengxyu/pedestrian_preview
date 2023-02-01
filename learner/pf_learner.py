@@ -63,14 +63,15 @@ class PFLearner:
 
             pbar = tqdm(range(self.args.num_episodes))
             for i in pbar:
-                info = self.evaluate_once()
-                if info['a_success']:
-                    success_num += 1
-                elif info["collision"]:
-                    collision_num += 1
-                else:
-                    timeout_num += 1
-                navigation_time_on_success_episodes["{}".format(i)] = info['step_count']
+                self.maevaluate_once()
+                # info = self.evaluate_once()
+                # if info['a_success']:
+                #     success_num += 1
+                # elif info["collision"]:
+                #     collision_num += 1
+                # else:
+                #     timeout_num += 1
+                # navigation_time_on_success_episodes["{}".format(i)] = info['step_count']
 
                 pbar.set_description("Success rate:{}".format(self.test_collector.get_success_rate()))
             # self.env.save_metrics()
@@ -149,6 +150,13 @@ class PFLearner:
         logging.info('Complete evaluation episode {}'.format(self.test_i_episode))
 
         return info_for_last
+    def maevaluate_once(self):
+        state = self.env.reset()
+        done = False
+        with self.agent.eval_mode():
+            while not done:
+                action = self.agent.batch_act(state)
+                state, reach_goals = self.env.evaluatestep(action)
 
     def evaluate_n_times(self, n_times):
         phase = "ZEvaluation"
