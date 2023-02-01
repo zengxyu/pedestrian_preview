@@ -87,12 +87,12 @@ class EnvironmentBullet(PybulletBaseEnv):
         self.relative_poses = None
         self.max_len = self.args.input_config[self.running_config['input_config_name']]["seq_len"]
 
-        self.evaluatecrowd = True
+        self.evaluate_crowd = True
         self.robots = None
-        self.initcoorindinates = [[5,1]]
-        self.madepth_images = None
-        self.marelative_poses = []
-        self.robots_listid = []
+        self.init_coordinates = [[5, 1]]
+        self.ma_depth_images = None
+        self.ma_relative_poses = []
+        self.robots_list_id = []
         self.ma_depth_images_deque = None
 
         """
@@ -176,10 +176,11 @@ class EnvironmentBullet(PybulletBaseEnv):
 
         # plot stored information
         return state, reward, done, step_info, episode_info
-    def evaluatestep(self,actions):
+
+    def evaluate_step(self, actions):
         reach_goals = []
         for i, rt in enumerate(self.robots):
-            planned_v,planned_w = actions[i]
+            planned_v, planned_w = actions[i]
             rt.small_step(planned_v, planned_w)
             reach_goals.append(compute_distance(rt.get_position(), self.g_bu_pose) < 0.5)
         self.obstacle_collections.step()
@@ -187,7 +188,6 @@ class EnvironmentBullet(PybulletBaseEnv):
         stats = self.get_state()
 
         return stats, reach_goals
-
 
     def get_reward(self, reach_goal, collision, step_count):
         if self.last_distance is None:
@@ -257,8 +257,8 @@ class EnvironmentBullet(PybulletBaseEnv):
 
     def get_state3(self):
         # compute depth image
-        if self.evaluatecrowd:
-            madepthImages = []
+        if self.evaluate_crowd:
+            ma_depth_images = []
             res = []
             for i, rt in enumerate(self.robots):
                 width, height, rgb_image, depth_image, seg_image = rt.sensor.get_obs()
@@ -272,11 +272,11 @@ class EnvironmentBullet(PybulletBaseEnv):
 
                 self.ma_depth_images_deque[i].append(depth_image)
                 ls = np.array(self.ma_depth_images_deque[i])
-                madepthImages.append(ls)
-                self.marelative_poses.append(relative_position)
+                ma_depth_images.append(ls)
+                self.ma_relative_poses.append(relative_position)
 
             for i in range(len(self.robots)):
-                res.append([madepthImages[i], self.marelative_poses[i]])
+                res.append([ma_depth_images[i], self.ma_relative_poses[i]])
             return res
         else:
             width, height, rgb_image, depth_image, seg_image = self.robot.sensor.get_obs()
@@ -294,6 +294,7 @@ class EnvironmentBullet(PybulletBaseEnv):
             self.depth_images.append(depth_image)
             # return depth_image[np.newaxis, :, :], relative_pose.flatten()
             return np.array(self.depth_images), relative_position
+
     def p_step_simulation(self):
         self.p.stepSimulation()
         self.physical_steps += 1
@@ -303,7 +304,7 @@ class EnvironmentBullet(PybulletBaseEnv):
             return CollisionType.CollisionWithWall
         elif check_collision(self.p, [self.robot.robot_id], self.pedestrian_obstacle_ids):
             return CollisionType.CollisionWithPedestrian
-        elif check_collision(self.p, self.robots_listid, self.robots_listid):
+        elif check_collision(self.p, self.robots_list_id, self.robots_list_id):
             return CollisionType.CollisionWithAgent
         else:
             return False
@@ -391,19 +392,19 @@ class EnvironmentBullet(PybulletBaseEnv):
         logging.debug("Create the environment, Done...")
 
         # self.robot = self.initialize_human_agent(self.s_bu_pose)
-        if self.evaluatecrowd:
-            self.robots = self.initrobots(self.initcoorindinates)
+        if self.evaluate_crowd:
+            self.robots = self.init_robots(self.init_coordinates)
         else:
             self.robot = self.initialize_turtlebot()
 
-    def initrobots(self,initcoorindinates):
-        Agents = list()
-        for initcoorindinate in initcoorindinates:
+    def init_robots(self, init_coordinates):
+        agents = list()
+        for init_coordinate in init_coordinates:
             turtlebot = TurtleBot(self.p, self.client_id, self.physical_step_duration, self.robot_config, self.args,
-                                  initcoorindinate, compute_yaw(self.s_bu_pose, self.g_bu_pose))
-            self.robots_listid.append(turtlebot.robot_id)
-            Agents.append(turtlebot)
-        return Agents
+                                  init_coordinate, compute_yaw(self.s_bu_pose, self.g_bu_pose))
+            self.robots_list_id.append(turtlebot.robot_id)
+            agents.append(turtlebot)
+        return agents
 
     def initialize_turtlebot(self):
         turtlebot = TurtleBot(self.p, self.client_id, self.physical_step_duration, self.robot_config, self.args,
@@ -436,11 +437,11 @@ class EnvironmentBullet(PybulletBaseEnv):
         self.depth_images = deque(maxlen=self.max_len)
         self.relative_poses = deque(maxlen=self.max_len)
 
-        self.ma_depth_images_deque = [deque(maxlen=self.max_len) for i in range(len(self.initcoorindinates))]
-        self.madepth_images = []
-        self.marelative_poses = []
+        self.ma_depth_images_deque = [deque(maxlen=self.max_len) for i in range(len(self.init_coordinates))]
+        self.ma_depth_images = []
+        self.ma_relative_poses = []
         self.robots = None
-        self.robots_listid = []
+        self.robots_list_id = []
 
     def logging_action(self, action):
         logging_str = ""

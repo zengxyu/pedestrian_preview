@@ -156,7 +156,7 @@ class PFLearner:
         with self.agent.eval_mode():
             while not done:
                 action = self.agent.batch_act(state)
-                state, reach_goals = self.env.evaluatestep(action)
+                state, reach_goals = self.env.evaluate_step(action)
 
     def evaluate_n_times(self, n_times):
         phase = "ZEvaluation"
