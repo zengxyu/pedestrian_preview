@@ -66,6 +66,7 @@ class DifferentialRaceCar(BaseDifferentialRobot):
         race_car_path = os.path.join(
             get_project_path(),
             "environment",
+            "robots",
             "urdf",
             "differentialDriveCar.urdf",
         )

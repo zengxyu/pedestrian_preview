@@ -17,7 +17,9 @@ action_space: ContinuousVWActionSpace
 
 sensor_name: vision
 # choose from [race_car, turtlebot]
-robot_name: turtlebot
+robot_name: race_car
+
+
 
 
 

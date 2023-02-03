@@ -29,9 +29,31 @@ def load_environment_scene(p: BulletClient, env_config: Dict, worlds_config: Dic
     logger.info("Create a building...")
     scene_name = env_config["scene_name"]
 
-    component_configs = worlds_config[scene_name]
-    component_configs.update(worlds_config["configs_all"])
-    occupancy_map, samplers = create_simple_environment(component_configs)
+    if scene_name == "office":
+        # create a new office
+        component_configs = worlds_config["office"]
+        component_configs.update(worlds_config["configs_all"])
+        occupancy_map, samplers = create_office_map(component_configs)
+
+    elif scene_name == "corridor":
+        # create a tunnel
+        component_configs = worlds_config["corridor"]
+        component_configs.update(worlds_config["configs_all"])
+        occupancy_map, samplers = create_corridor_map(component_configs)
+
+    elif scene_name == "cross":
+        # create a cross
+        component_configs = worlds_config["cross"]
+        component_configs.update(worlds_config["configs_all"])
+        occupancy_map, samplers = create_cross_map(component_configs)
+
+    elif scene_name == "empty":
+        component_configs = worlds_config[scene_name]
+        component_configs.update(worlds_config["configs_all"])
+        occupancy_map, samplers = create_simple_environment(component_configs)
+
+    else:
+        raise NotImplementedError
 
     # dilate image
     dilated_occ_map = dilate_image(occupancy_map, env_config["dilation_size"])
