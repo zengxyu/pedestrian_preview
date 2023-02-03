@@ -112,15 +112,12 @@ def create_cylinder(_bullet_client, pose, goal_id=None, height=None, radius=None
     x, y = pose
     if goal_id:
         _bullet_client.removeBody(goal_id)
-    return (
-        _bullet_client.createMultiBody(
-            0,
-            _bullet_client.createCollisionShape(
-                _bullet_client.GEOM_CYLINDER,
-                radius=radius,
-                height=height,
-            ),
-            basePosition=[x, y, 0.5],
+    return _bullet_client.createMultiBody(
+        0,
+        _bullet_client.createCollisionShape(
+            _bullet_client.GEOM_CYLINDER,
+            radius=radius,
+            height=height,
         ),
-        (x, y),
+        basePosition=[x, y, 0.5],
     )

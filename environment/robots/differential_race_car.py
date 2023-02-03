@@ -86,6 +86,4 @@ class DifferentialRaceCar(BaseDifferentialRobot):
             if "joint_right_wheel" in str(self.p.getJointInfo(race_car, j)[1]):
                 right_joint = j
 
-        self.wheel_dist = 0.115 * 2
-
         self.robot_id, self.left_wheel_id, self.right_wheel_id = race_car, left_joint, right_joint

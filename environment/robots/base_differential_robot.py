@@ -1,13 +1,5 @@
-from typing import Dict
-
 from pybullet_utils.bullet_client import BulletClient
-
-from utils.math_helper import clockwise_radian
 from environment.robots.base_robot import BaseRobot
-
-import numpy as np
-
-import pybullet as p
 
 
 class BaseDifferentialRobot(BaseRobot):

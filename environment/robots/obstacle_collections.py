@@ -14,7 +14,7 @@ from typing import List
 import numpy as np
 
 from environment.robots.base_obstacle import BaseObstacle, BaseObstacleGroup
-from environment.robots.dynamic_obstacle import DynamicObstacle
+from environment.robots.npc import Npc
 
 
 class ObstacleCollections:
@@ -27,8 +27,7 @@ class ObstacleCollections:
 
     def step(self):
         for obstacle in self.obstacles:
-            if isinstance(obstacle, DynamicObstacle):
-                obstacle.step()
+            obstacle.small_step()
 
     def add(self, obstacle_group: BaseObstacleGroup, dynamic: bool):
         self.obstacles.extend(obstacle_group.get_obstacles())

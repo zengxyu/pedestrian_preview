@@ -20,9 +20,9 @@ import cv2
 
 from environment.human_npc_generator import generate_human_npc
 from environment.robots.differential_race_car import DifferentialRaceCar
-from environment.robots.dynamic_obstacle import DynamicObstacleGroup
+from environment.robots.npc import DynamicObstacleGroup
 from environment.robots.human import Man
-from environment.robots.robot_types import RobotTypes
+from environment.robots.robot_types import RobotTypes, init_robot
 
 sys.path.append(
     os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), "traditional_planner", "a_star"))
@@ -38,7 +38,6 @@ from environment.robots.turtlebot import TurtleBot
 from utils.config_utility import read_yaml
 from utils.math_helper import compute_yaw, compute_distance, compute_manhattan_distance
 from environment.gen_scene.scene_generator import load_environment_scene
-from environment.nav_utilities.coordinates_converter import cvt_to_bu, cvt_to_om
 from environment.path_manager import PathManager
 from traditional_planner.a_star.astar import AStar
 
@@ -312,11 +311,10 @@ class EnvironmentBullet(PybulletBaseEnv):
 
         # create n dynamic obstacles, put them into the environment
         dynamic_obstacle_group = DynamicObstacleGroup(p=self.p,
+                                                      client_id=self.client_id,
                                                       args=self.args,
-                                                      step_duration=self.physical_step_duration).create(
-            start_positions=obs_bu_starts,
-            end_positions=obs_bu_ends,
-            paths=obs_bu_paths)
+                                                      step_duration=self.physical_step_duration,
+                                                      paths=obs_bu_paths)
 
         self.obstacle_collections.add(dynamic_obstacle_group, dynamic=True)
         self.pedestrian_obstacle_ids = self.obstacle_collections.get_obstacle_ids()
@@ -357,21 +355,11 @@ class EnvironmentBullet(PybulletBaseEnv):
     def init_robots(self):
         agents = []
         for i in range(self.num_agents):
-            robot = self.init_robot(self.bu_starts[i], compute_yaw(self.bu_starts[i], self.bu_goals[i]))
+            robot = init_robot(self.p, self.client_id, self.robot_name, self.physical_step_duration, self.robot_config,
+                               self.sensor_config, self.bu_starts[i], compute_yaw(self.bu_starts[i], self.bu_goals[i]))
             self.robot_ids.append(robot.robot_id)
             agents.append(robot)
         return agents
-
-    def init_robot(self, start, yaw):
-        if self.robot_name == RobotTypes.RaceCar:
-            robot = DifferentialRaceCar(self.p, self.client_id, self.physical_step_duration, self.robot_config,
-                                        self.sensor_config, start, yaw)
-        elif self.robot_name == RobotTypes.Turtlebot:
-            robot = TurtleBot(self.p, self.client_id, self.physical_step_duration, self.robot_config,
-                              self.sensor_config, start, yaw)
-        else:
-            raise NotImplementedError
-        return robot
 
     def clear_variables(self):
         self.step_count = Counter()
