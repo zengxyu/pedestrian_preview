@@ -117,8 +117,8 @@ def create_cylinder(_bullet_client, pose, goal_id=None, height=None, radius=None
             0,
             _bullet_client.createCollisionShape(
                 _bullet_client.GEOM_CYLINDER,
-                radius=(radius or 0.1),
-                height=(height or 1.0),
+                radius=radius,
+                height=height,
             ),
             basePosition=[x, y, 0.5],
         ),

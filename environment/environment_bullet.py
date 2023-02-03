@@ -81,12 +81,9 @@ class EnvironmentBullet(PybulletBaseEnv):
         self.get_action_space_keys()
 
         self.last_distance = None
-        self.writer = SummaryWriter("runs/logs_reward")
-        self.step_nums = 0
 
         self.max_len = self.args.input_config[self.running_config['input_config_name']]["seq_len"]
 
-        self.evaluate_crowd = False
         self.robots = None
         self.num_agents = self.args.env_config["num_agents"]
         self.ma_relative_poses_deque = []
@@ -119,7 +116,8 @@ class EnvironmentBullet(PybulletBaseEnv):
         self.randomize_env()
         self.randomize_human_npc()
         state = self.get_state()
-        self.visualize_ground_destination()
+        if not self.args.train:
+            self.visualize_ground_destination()
         return state
 
     def visualize_ground_destination(self):
@@ -148,13 +146,11 @@ class EnvironmentBullet(PybulletBaseEnv):
 
     def step(self, actions):
         self.step_count += 1
-        self.step_nums += 1
-
+        # print("actions:{}".format(actions))
         reach_goal, collision = self.iterate_steps(actions)
-
+        # print("v:{};w:{}".format(*self.robots[0].get_v_w()))
         state = self.get_state()
-        reward, reward_info = self.get_reward(reach_goal=reach_goal, collision=collision,
-                                              step_count=self.step_count.value)
+        reward, reward_info = self.get_reward(reach_goal=reach_goal, collision=collision)
         # print("reward=",reward)
         over_max_step = self.step_count >= self.max_step
 
@@ -178,22 +174,9 @@ class EnvironmentBullet(PybulletBaseEnv):
         # plot stored information
         return state, reward, done, step_info, episode_info
 
-    def evaluate_step(self, actions):
-        reach_goals = []
-        for i, rt in enumerate(self.robots):
-            planned_v, planned_w = actions[i]
-
-            rt.small_step(planned_v, planned_w)
-            reach_goals.append(compute_distance(rt.get_position(), self.bu_goals) < 0.5)
-        self.obstacle_collections.step()
-        self.p_step_simulation()
-        stats = self.get_state()
-
-        return stats, reach_goals
-
-    def get_reward(self, reach_goal, collision, step_count):
+    def get_reward(self, reach_goal, collision):
         if self.last_distance is None:
-            self.last_distance = compute_manhattan_distance(self.bu_goals, self.bu_starts)
+            self.last_distance = compute_distance(self.bu_goals[0], self.bu_starts)
         reward = 0
         collision_reward = 0
         reach_goal_reward = 0
@@ -204,14 +187,10 @@ class EnvironmentBullet(PybulletBaseEnv):
 
         """================delta distance reward=================="""
         # compute distance from current to goal
-        distance = compute_manhattan_distance(self.bu_goals, self.robots[0].get_position())
+        distance = compute_distance(self.bu_goals[0], self.robots[0].get_position())
         delta_distance_reward = (self.last_distance - distance) * 50
         self.last_distance = distance
         reward += delta_distance_reward
-
-        """================step reward=================="""
-        step_count_reward = - float(np.log(step_count) * 0.1)
-        reward += step_count_reward
 
         """================reach goal reward=================="""
 
@@ -221,7 +200,6 @@ class EnvironmentBullet(PybulletBaseEnv):
 
         reward_info = {"reward/reward_collision": collision_reward,
                        "reward/reward_delta_distance": delta_distance_reward,
-                       "reward/reward_step_count": step_count_reward,
                        "reward/distance": distance,
                        "reward/reward_reach_goal": reach_goal_reward,
                        "reward/reward": reward
@@ -236,9 +214,9 @@ class EnvironmentBullet(PybulletBaseEnv):
         width, height, rgb_image, depth_image, seg_image = self.robot.sensor.get_obs()
 
         # compute relative position to goal
-        relative_position = self.bu_goals - self.robot.get_position()
+        relative_position = self.bu_goals[0] - self.robot.get_position()
 
-        relative_yaw = compute_yaw(self.bu_goals, self.robot.get_position()) - self.robot.get_yaw()
+        relative_yaw = compute_yaw(self.bu_goals[0], self.robot.get_position()) - self.robot.get_yaw()
 
         relative_pose = np.array([relative_position[0], relative_position[1], relative_yaw])
 
@@ -259,50 +237,33 @@ class EnvironmentBullet(PybulletBaseEnv):
 
     def get_state3(self):
         # compute depth image
-        if self.evaluate_crowd:
-            ma_depth_images = []
-            ma_relative_poses = []
-            res = []
-            for i, rt in enumerate(self.robots):
-                width, height, rgb_image, depth_image, seg_image = rt.sensor.get_obs()
-                relative_position = self.bu_goals[i] - rt.get_position()
-                relative_yaw = compute_yaw(self.bu_goals[i], rt.get_position()) - rt.get_yaw()
-                relative_pose = np.array([relative_position[0], relative_position[1], relative_yaw])
-
-                depth_image = cv2.resize(depth_image, (int(depth_image.shape[1] / 2), int(depth_image.shape[0] / 2)))
-
-                if len(self.ma_depth_images_deque[i]) == 0:
-                    for j in range(self.max_len - 1):
-                        temp = np.zeros_like(depth_image)
-                        self.ma_depth_images_deque[i].append(temp)
-                        temp2 = np.zeros_like(relative_pose)
-                        self.ma_relative_poses_deque[i].append(temp2)
-
-                self.ma_depth_images_deque[i].append(depth_image)
-                ma_depth_images.append(np.array(self.ma_depth_images_deque[i]))
-
-                self.ma_relative_poses_deque[i].append(relative_pose)
-                ma_relative_poses.append(np.array([self.ma_relative_poses_deque[i]]).flatten())
-
-            for i in range(len(self.robots)):
-                res.append([ma_depth_images[i], ma_relative_poses[i]])
-            return res
-        else:
-            width, height, rgb_image, depth_image, seg_image = self.robots[0].sensor.get_obs()
-            # compute relative position to goal
-            relative_position = self.bu_goals - self.robot.get_position()
-            # relative_yaw = compute_yaw(self.g_bu_pose, self.robot.get_position()) - self.robot.get_yaw()
-            # relative_pose = np.array([relative_position[0], relative_position[1]])
+        ma_depth_images = []
+        ma_relative_poses = []
+        res = []
+        for i, rt in enumerate(self.robots):
+            width, height, rgb_image, depth_image, seg_image = rt.sensor.get_obs()
+            relative_position = self.bu_goals[i] - rt.get_position()
+            relative_yaw = compute_yaw(self.bu_goals[i], rt.get_position()) - rt.get_yaw()
+            relative_pose = np.array([relative_position[0], relative_position[1], relative_yaw])
 
             depth_image = cv2.resize(depth_image, (int(depth_image.shape[1] / 2), int(depth_image.shape[0] / 2)))
 
-            if len(self.depth_images) == 0:
-                for i in range(self.max_len - 1):
+            if len(self.ma_depth_images_deque[i]) == 0:
+                for j in range(self.max_len - 1):
                     temp = np.zeros_like(depth_image)
-                    self.depth_images.append(temp)
-            self.depth_images.append(depth_image)
-            # return depth_image[np.newaxis, :, :], relative_pose.flatten()
-            return np.array(self.depth_images), relative_position
+                    self.ma_depth_images_deque[i].append(temp)
+                    temp2 = np.zeros_like(relative_pose)
+                    self.ma_relative_poses_deque[i].append(temp2)
+
+            self.ma_depth_images_deque[i].append(depth_image)
+            ma_depth_images.append(np.array(self.ma_depth_images_deque[i]))
+
+            self.ma_relative_poses_deque[i].append(relative_pose)
+            ma_relative_poses.append(np.array([self.ma_relative_poses_deque[i]]).flatten())
+
+        for i in range(len(self.robots)):
+            res.append([ma_depth_images[i], ma_relative_poses[i]])
+        return res
 
     def p_step_simulation(self):
         self.p.stepSimulation()
@@ -332,10 +293,10 @@ class EnvironmentBullet(PybulletBaseEnv):
                 reach_goal = compute_distance(robot.get_position(), self.bu_goals[i]) < 0.5
                 if reach_goal:
                     robot.small_step(0, 0)
-                    print("robot {} reached goal".format(i))
+                    # print("robot {} reached goal".format(i))
                 else:
                     robot.small_step(planned_v, planned_w)
-                    print("robot {} not reached goal".format(i))
+                    # print("robot {} not reached goal".format(i))
 
             self.obstacle_collections.step()
             self.p_step_simulation()
@@ -450,8 +411,6 @@ class EnvironmentBullet(PybulletBaseEnv):
         self.obstacle_collections.clear()
         self.last_distance = None
         self.wall_obstacle_ids = []
-        self.depth_images = deque(maxlen=self.max_len)
-        self.relative_poses = deque(maxlen=self.max_len)
 
         self.ma_depth_images_deque = [deque(maxlen=self.max_len) for i in range(self.num_agents)]
         self.ma_relative_poses_deque = [deque(maxlen=self.max_len) for i in range(self.num_agents)]

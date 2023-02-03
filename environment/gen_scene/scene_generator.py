@@ -59,11 +59,11 @@ def load_environment_scene(p: BulletClient, env_config: Dict, world_config: Dict
     bu_starts = []
     bu_ends = []
     for i in range(env_config["num_agents"]):
-        # [start, end], sample_success = start_goal_sampler(occupancy_map=dilated_occ_map,
-        #                                                   margin=env_config["dilation_size"])
+        [start, end], sample_success = start_goal_sampler(occupancy_map=dilated_occ_map,
+                                                          margin=env_config["dilation_size"])
 
-        [start, end], sample_success = distant_start_end_sampler(occupancy_map=dilated_occ_map,
-                                                                 margin=env_config["dilation_size"])
+        # [start, end], sample_success = distant_start_end_sampler(occupancy_map=dilated_occ_map,
+        #                                                          margin=env_config["dilation_size"])
 
         # check the connectivity between the start and end position
         if not sample_success or not check_connectivity(dilated_occ_map, start, end):

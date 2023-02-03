@@ -20,14 +20,11 @@ ideal_target_distance: 0.6
 scene_name: "office"
 
 #  pedestrian speed
-pedestrian_speed_range: [ 0.25, 0.5 ]
+pedestrian_speed_range: [ 0.6, 1.2 ]
 num_human_npc: 10
 pedestrian_lfd: 0.4
 pedestrian_radius_range: [0.2, 0.3]
 pedestrian_height_range: [0.4, 0.8]
-
-# static pedestrians which do not have interaction with robots
-num_extra_pedestrians: 0
 
 num_agents: 1
 

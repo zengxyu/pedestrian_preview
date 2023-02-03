@@ -62,7 +62,6 @@ class PFLearner:
 
             pbar = tqdm(range(self.args.num_episodes))
             for i in pbar:
-                # info = self.maevaluate_once()
                 info = self.evaluate_once()
                 # if info['a_success']:
                 #     success_num += 1
@@ -72,8 +71,7 @@ class PFLearner:
                 #     timeout_num += 1
                 # navigation_time_on_success_episodes["{}".format(i)] = info['step_count']
 
-                # pbar.set_description("Success rate:{}".format(self.test_collector.get_success_rate()))
-            # self.env.save_metrics()
+                pbar.set_description("Success rate:{}".format(self.test_collector.get_success_rate()))
 
             test_result = {
                 "success": success_num,
@@ -107,9 +105,9 @@ class PFLearner:
         done = False
         i_step = 0
         while not done:
-            action = self.agent.act(state)
+            action = self.agent.act(state[0])
             state, reward, done, info_for_sum, info_for_last = self.env.step(action)
-            self.agent.observe(obs=state, reward=reward, done=done, reset=False)
+            self.agent.observe(obs=state[0], reward=reward, done=done, reset=False)
             self.global_i_step += 1
 
             i_step += 1
@@ -135,8 +133,8 @@ class PFLearner:
         i_step = 0
         with self.agent.eval_mode():
             while not done:
-                action = self.agent.act(state)
-                state, reward, done, info_for_sum, info_for_last = self.env.step(action)
+                actions = self.agent.batch_act(state)
+                state, reward, done, info_for_sum, info_for_last = self.env.step(actions[0])
                 self.agent.observe(obs=state, reward=reward, done=done, reset=False)
                 self.global_i_step += 1
                 i_step += 1
@@ -149,15 +147,6 @@ class PFLearner:
 
         logging.info('Complete evaluation episode {}'.format(self.test_i_episode))
 
-        return info_for_last
-
-    def maevaluate_once(self):
-        state = self.env.reset()
-        done = False
-        with self.agent.eval_mode():
-            while not done:
-                action = self.agent.batch_act(state)
-                state, reward, done, info_for_sum, info_for_last = self.env.step(action)
         return info_for_last
 
     def evaluate_n_times(self, n_times):
