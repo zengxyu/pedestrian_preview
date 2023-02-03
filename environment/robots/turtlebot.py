@@ -65,6 +65,7 @@ class TurtleBot(BaseDifferentialRobot):
         turtle_bot_path = os.path.join(
             get_project_path(),
             "environment",
+            "robots",
             "urdf",
             "turtlebot",
             "turtlebot.urdf",
