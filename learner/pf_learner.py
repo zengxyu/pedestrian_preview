@@ -62,8 +62,8 @@ class PFLearner:
 
             pbar = tqdm(range(self.args.num_episodes))
             for i in pbar:
-                info = self.maevaluate_once()
-                # info = self.evaluate_once()
+                # info = self.maevaluate_once()
+                info = self.evaluate_once()
                 # if info['a_success']:
                 #     success_num += 1
                 # elif info["collision"]:

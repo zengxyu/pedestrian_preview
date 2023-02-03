@@ -19,6 +19,7 @@ from collections import deque
 import cv2
 
 from environment.human_npc_generator import generate_human_npc
+from environment.robots.differential_race_car import DifferentialRaceCar
 from environment.robots.dynamic_obstacle import DynamicObstacleGroup
 from environment.robots.human import Man
 
@@ -85,7 +86,7 @@ class EnvironmentBullet(PybulletBaseEnv):
 
         self.max_len = self.args.input_config[self.running_config['input_config_name']]["seq_len"]
 
-        self.evaluate_crowd = True
+        self.evaluate_crowd = False
         self.robots = None
         self.num_agents = self.args.env_config["num_agents"]
         self.ma_relative_poses_deque = []
@@ -124,7 +125,7 @@ class EnvironmentBullet(PybulletBaseEnv):
     def visualize_ground_destination(self):
         thetas = np.linspace(0, np.pi * 2, 50)
         radius = 0.2
-        for i in range(len(self.bu_goals)):
+        for i in range(1):
             points_x = np.cos(thetas) * radius + self.bu_goals[i][0]
             points_y = np.sin(thetas) * radius + self.bu_goals[i][1]
             z = np.zeros_like(thetas)
@@ -287,7 +288,7 @@ class EnvironmentBullet(PybulletBaseEnv):
                 res.append([ma_depth_images[i], ma_relative_poses[i]])
             return res
         else:
-            width, height, rgb_image, depth_image, seg_image = self.robot.sensor.get_obs()
+            width, height, rgb_image, depth_image, seg_image = self.robots[0].sensor.get_obs()
             # compute relative position to goal
             relative_position = self.bu_goals - self.robot.get_position()
             # relative_yaw = compute_yaw(self.g_bu_pose, self.robot.get_position()) - self.robot.get_yaw()
@@ -328,7 +329,14 @@ class EnvironmentBullet(PybulletBaseEnv):
         while iterate_count < n_step and not all_reach_goal and not collision:
             for i, robot in enumerate(self.robots):
                 planned_v, planned_w = self.action_space.to_force(action=actions[i])
-                robot.small_step(planned_v, planned_w)
+                reach_goal = compute_distance(robot.get_position(), self.bu_goals[i]) < 0.5
+                if reach_goal:
+                    robot.small_step(0, 0)
+                    print("robot {} reached goal".format(i))
+                else:
+                    robot.small_step(planned_v, planned_w)
+                    print("robot {} not reached goal".format(i))
+
             self.obstacle_collections.step()
             self.p_step_simulation()
 
@@ -363,8 +371,8 @@ class EnvironmentBullet(PybulletBaseEnv):
         obs_bu_starts, obs_bu_ends, obs_bu_paths = generate_human_npc(dynamic_obs_sampler=self.dynamic_obs_sampler,
                                                                       env_config=self.env_config,
                                                                       occ_map=self.occ_map,
-                                                                      robot_start=self.bu_starts,
-                                                                      robot_end=self.bu_goals)
+                                                                      robot_start=self.bu_starts[0],
+                                                                      robot_end=self.bu_goals[0])
 
         # create n dynamic obstacles, put them into the environment
         dynamic_obstacle_group = DynamicObstacleGroup(p=self.p,
@@ -404,7 +412,7 @@ class EnvironmentBullet(PybulletBaseEnv):
         self.start_goal_sampler, self.static_obs_sampler, self.dynamic_obs_sampler = samplers
 
         self.bu_starts = bu_starts
-        self.bu_goals = [bu_goals[i] for i in range(self.num_agents)]
+        self.bu_goals = [bu_goals[0] for i in range(self.num_agents)]
         # initialize robot
         logging.debug("Create the environment, Done...")
 
@@ -413,8 +421,9 @@ class EnvironmentBullet(PybulletBaseEnv):
     def init_robots(self):
         agents = []
         for i in range(self.num_agents):
-            turtlebot = TurtleBot(self.p, self.client_id, self.physical_step_duration, self.robot_config, self.args,
-                                  self.bu_starts[i], compute_yaw(self.bu_starts[i], self.bu_goals[i]))
+            turtlebot = DifferentialRaceCar(self.p, self.client_id, self.physical_step_duration, self.robot_config,
+                                            self.args,
+                                            self.bu_starts[i], compute_yaw(self.bu_starts[i], self.bu_goals[i]))
             self.robot_ids.append(turtlebot.robot_id)
             agents.append(turtlebot)
         return agents

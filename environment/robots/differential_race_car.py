@@ -15,7 +15,7 @@ from utils.fo_utility import get_project_path
 np.set_printoptions(precision=3, suppress=True)
 
 
-class TurtleBot(BaseDifferentialRobot):
+class DifferentialRaceCar(BaseDifferentialRobot):
     def __init__(self, p: BulletClient, client_id: int, step_duration: float, robot_config: Dict, args,
                  start_position, start_yaw):
         super().__init__(p, client_id)
@@ -74,32 +74,28 @@ class TurtleBot(BaseDifferentialRobot):
         load turtle bot from urdf, turtlebot urdf is from rl_utils
         :return:
         """
-        turtle_bot_path = os.path.join(
+        race_car_path = os.path.join(
             get_project_path(),
             "environment",
             "urdf",
-            "turtlebot",
-            "turtlebot.urdf",
+            "differentialDriveCar.urdf",
         )
-
-        turtle = self.p.loadURDF(
-            turtle_bot_path,
+        race_car = self.p.loadURDF(
+            race_car_path,
             [cur_x, cur_y, 0],
             self.p.getQuaternionFromEuler([0, 0, cur_yaw]),
             flags=self.p.URDF_USE_INERTIA_FROM_FILE
                   | self.p.URDF_USE_IMPLICIT_CYLINDER,
         )
 
-        left_joint, right_joint, lidar_joint = -1, -1, -1
+        left_joint, right_joint = -1, -1
         # Find relevant joints
-        for j in range(self.p.getNumJoints(turtle)):
-            if "wheel_left_joint" in str(self.p.getJointInfo(turtle, j)[1]):
+        for j in range(self.p.getNumJoints(race_car)):
+            if "joint_left_wheel" in str(self.p.getJointInfo(race_car, j)[1]):
                 left_joint = j
-            if "wheel_right_joint" in str(self.p.getJointInfo(turtle, j)[1]):
+            if "joint_right_wheel" in str(self.p.getJointInfo(race_car, j)[1]):
                 right_joint = j
-            if "rplidar_joint" in str(self.p.getJointInfo(turtle, j)[1]):
-                lidar_joint = j
 
         self.wheel_dist = 0.115 * 2
 
-        self.robot_id, self.left_wheel_id, self.right_wheel_id, self.lidar_joint_id = turtle, left_joint, right_joint, lidar_joint
+        self.robot_id, self.left_wheel_id, self.right_wheel_id = race_car, left_joint, right_joint

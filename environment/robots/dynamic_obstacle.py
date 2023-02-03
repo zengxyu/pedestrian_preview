@@ -38,9 +38,15 @@ class DynamicObstacle(BaseObstacle):
         # set speed
         self.pedestrian_speed = self.env_config["pedestrian_speed_range"]
         self.pedestrian_lfd = self.env_config["pedestrian_lfd"]
+        self.pedestrian_radius_range = self.env_config["pedestrian_radius_range"]
+        self.pedestrian_height_range = self.env_config["pedestrian_height_range"]
 
         self.speed = np.random.random() * (self.pedestrian_speed[1] - self.pedestrian_speed[0]) + self.pedestrian_speed[
             0]
+        self.radius = np.random.random() * (self.pedestrian_radius_range[1] - self.pedestrian_radius_range[0]) + \
+                      self.pedestrian_radius_range[0]
+        self.height = np.random.random() * (self.pedestrian_height_range[1] - self.pedestrian_height_range[0]) + \
+                      self.pedestrian_height_range[0]
         logging.info("pedestrian id:{}; pedestrian speed:{}".format(self.obstacle_id, self.speed))
         self.verbose = True
         self.path_manager = PathManager(self.args)
@@ -49,7 +55,7 @@ class DynamicObstacle(BaseObstacle):
     def create(self, start_position, end_position, path):
         logger.debug("create a dynamic obstacle")
 
-        self.obstacle_id, self.start_position = create_cylinder(self.p, start_position, height=0.8, radius=0.13)
+        self.obstacle_id, self.start_position = create_cylinder(self.p, start_position, height=self.height, radius=self.radius)
         self.cur_position = self.start_position
 
         self.end_position = end_position
