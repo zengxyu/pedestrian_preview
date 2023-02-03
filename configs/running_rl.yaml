@@ -16,8 +16,8 @@ agent: sac
 action_space: ContinuousVWActionSpace
 
 sensor_name: vision
-
-robot_name: race_car
+# choose from [race_car, turtlebot]
+robot_name: turtlebot
 
 
 

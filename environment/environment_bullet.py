@@ -22,6 +22,7 @@ from environment.human_npc_generator import generate_human_npc
 from environment.robots.differential_race_car import DifferentialRaceCar
 from environment.robots.dynamic_obstacle import DynamicObstacleGroup
 from environment.robots.human import Man
+from environment.robots.robot_types import RobotTypes
 
 sys.path.append(
     os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), "traditional_planner", "a_star"))
@@ -51,6 +52,8 @@ class EnvironmentBullet(PybulletBaseEnv):
         self.worlds_config = args.worlds_config
         self.robot_config = args.robots_config[self.running_config["robot_name"]]
         self.sensor_config = args.sensors_config[self.running_config["sensor_name"]]
+
+        self.robot_name = self.running_config["robot_name"]
 
         self.render = args.render
 
@@ -360,8 +363,14 @@ class EnvironmentBullet(PybulletBaseEnv):
         return agents
 
     def init_robot(self, start, yaw):
-        robot = DifferentialRaceCar(self.p, self.client_id, self.physical_step_duration, self.robot_config,
-                                    self.sensor_config, start, yaw)
+        if self.robot_name == RobotTypes.RaceCar:
+            robot = DifferentialRaceCar(self.p, self.client_id, self.physical_step_duration, self.robot_config,
+                                        self.sensor_config, start, yaw)
+        elif self.robot_name == RobotTypes.Turtlebot:
+            robot = TurtleBot(self.p, self.client_id, self.physical_step_duration, self.robot_config,
+                              self.sensor_config, start, yaw)
+        else:
+            raise NotImplementedError
         return robot
 
     def clear_variables(self):
