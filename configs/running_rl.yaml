@@ -19,7 +19,7 @@ sensor_name: vision
 # choose from [race_car, turtlebot, object_robot]
 robot_name: race_car
 
-npc_name: object_robot
+npc_name: race_car
 
 
 
