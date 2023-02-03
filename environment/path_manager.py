@@ -16,7 +16,7 @@ class PathManager:
         self.args = args
         self.env_config = args.env_config
         self.grid_res = self.args.env_config["grid_res"]
-        self.world_config = args.world_config
+        self.world_config = args.worlds_config
         self.running_config = args.running_config
         self._human_control = args.render
         # looking-forward target: the next n waypoints

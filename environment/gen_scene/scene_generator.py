@@ -11,43 +11,27 @@ from environment.gen_scene.gen_office_map import create_office_map
 
 import logging as logger
 
+from environment.gen_scene.gen_simple_map import create_simple_environment
 from environment.nav_utilities.coordinates_converter import cvt_to_bu
 from utils.image_utility import dilate_image
 
 from traditional_planner.a_star.astar import AStar
 
 
-def load_environment_scene(p: BulletClient, env_config: Dict, world_config: Dict):
+def load_environment_scene(p: BulletClient, env_config: Dict, worlds_config: Dict):
     """
     load scene
     :param p:
     :param env_config:
-    :param world_config:
+    :param worlds_config:
     :return:
     """
     logger.info("Create a building...")
     scene_name = env_config["scene_name"]
 
-    if scene_name == "office":
-        # create a new office
-        component_configs = world_config["office"]
-        component_configs.update(world_config["configs_all"])
-        occupancy_map, samplers = create_office_map(component_configs)
-
-    elif scene_name == "corridor":
-        # create a tunnel
-        component_configs = world_config["corridor"]
-        component_configs.update(world_config["configs_all"])
-        occupancy_map, samplers = create_corridor_map(component_configs)
-
-    elif scene_name == "cross":
-        # create a cross
-        component_configs = world_config["cross"]
-        component_configs.update(world_config["configs_all"])
-        occupancy_map, samplers = create_cross_map(component_configs)
-
-    else:
-        raise NotImplementedError
+    component_configs = worlds_config[scene_name]
+    component_configs.update(worlds_config["configs_all"])
+    occupancy_map, samplers = create_simple_environment(component_configs)
 
     # dilate image
     dilated_occ_map = dilate_image(occupancy_map, env_config["dilation_size"])
@@ -67,7 +51,7 @@ def load_environment_scene(p: BulletClient, env_config: Dict, world_config: Dict
 
         # check the connectivity between the start and end position
         if not sample_success or not check_connectivity(dilated_occ_map, start, end):
-            load_environment_scene(p, env_config, world_config)
+            load_environment_scene(p, env_config, worlds_config)
 
         bu_start = cvt_to_bu(start, env_config["grid_res"])
         bu_end = cvt_to_bu(end, env_config["grid_res"])

@@ -1,0 +1,6 @@
+turtlebot:
+  v_ctrl_factor: 14
+  w_ctrl_factor: 30
+race_car:
+  v_ctrl_factor: 5
+  w_ctrl_factor: 30

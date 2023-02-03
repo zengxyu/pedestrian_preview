@@ -50,8 +50,6 @@ class PFLearner:
                     self.agent.save("{}/model_epi_{}".format(self.args.out_model, self.test_i_episode))
                     self.scheduler.lr_schedule(self.test_collector.get_smooth_success_rate())
 
-                # if (i + 1) % self.running_config["learn_segmentation_every_n_training"] == 0:
-                #     self.segmentation_learner.run()
 
         else:
             print("Start evaluating")
@@ -106,7 +104,7 @@ class PFLearner:
         i_step = 0
         while not done:
             action = self.agent.act(state[0])
-            state, reward, done, info_for_sum, info_for_last = self.env.step(action)
+            state, reward, done, info_for_sum, info_for_last = self.env.step([action])
             self.agent.observe(obs=state[0], reward=reward, done=done, reset=False)
             self.global_i_step += 1
 
@@ -134,7 +132,7 @@ class PFLearner:
         with self.agent.eval_mode():
             while not done:
                 actions = self.agent.batch_act(state)
-                state, reward, done, info_for_sum, info_for_last = self.env.step(actions[0])
+                state, reward, done, info_for_sum, info_for_last = self.env.step(actions)
                 self.agent.observe(obs=state, reward=reward, done=done, reset=False)
                 self.global_i_step += 1
                 i_step += 1

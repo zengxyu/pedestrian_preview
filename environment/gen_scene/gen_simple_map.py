@@ -26,7 +26,7 @@ def create_simple_environment(configs):
     occupancy_map = np.zeros((int(width / grid_resolution), int(length / grid_resolution)), dtype=bool)
 
     # outer wall
-    # occupancy_map[:, [0, -1]] = True
-    # occupancy_map[[0, -1], :] = True
+    occupancy_map[:, [0, -1]] = True
+    occupancy_map[[0, -1], :] = True
 
-    return occupancy_map, [start_goal_sampler, static_obs_sampler, opposite_two_points_sampler]
+    return occupancy_map, [start_goal_sampler, static_obs_sampler, dynamic_obs_sampler]

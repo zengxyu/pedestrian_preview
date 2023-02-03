@@ -15,7 +15,9 @@ agent: sac
 
 action_space: ContinuousVWActionSpace
 
+sensor_name: vision
 
+robot_name: race_car
 
 
 

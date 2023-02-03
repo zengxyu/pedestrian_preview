@@ -16,12 +16,12 @@ kept_distance: 3
 waypoints_distance: 0.05
 ideal_target_distance: 0.6
 
-# choose from "corridor","cross","office"
-scene_name: "office"
+# choose from "corridor","cross","office","empty"
+scene_name: "empty"
 
 #  pedestrian speed
-pedestrian_speed_range: [ 0.6, 1.2 ]
-num_human_npc: 10
+pedestrian_speed_range: [ 1.19, 1.2 ]
+num_human_npc: 1
 pedestrian_lfd: 0.4
 pedestrian_radius_range: [0.2, 0.3]
 pedestrian_height_range: [0.4, 0.8]

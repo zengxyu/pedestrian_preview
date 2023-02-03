@@ -40,7 +40,6 @@ from environment.gen_scene.scene_generator import load_environment_scene
 from environment.nav_utilities.coordinates_converter import cvt_to_bu, cvt_to_om
 from environment.path_manager import PathManager
 from traditional_planner.a_star.astar import AStar
-from torch.utils.tensorboard import SummaryWriter
 
 
 class EnvironmentBullet(PybulletBaseEnv):
@@ -48,9 +47,11 @@ class EnvironmentBullet(PybulletBaseEnv):
         PybulletBaseEnv.__init__(self, args)
         self.args = args
         self.running_config = args.running_config
-        self.robot_config = args.robot_config
         self.env_config = args.env_config
-        self.world_config = args.world_config
+        self.worlds_config = args.worlds_config
+        self.robot_config = args.robots_config[self.running_config["robot_name"]]
+        self.sensor_config = args.sensors_config[self.running_config["sensor_name"]]
+
         self.render = args.render
 
         self.grid_res = self.env_config["grid_res"]
@@ -61,7 +62,6 @@ class EnvironmentBullet(PybulletBaseEnv):
 
         self.path_manager = PathManager(self.args)
 
-        self.robot: TurtleBot = None
         self.occ_map = None
         self.dilated_occ_map = None
         self.door_occ_map = None
@@ -82,7 +82,7 @@ class EnvironmentBullet(PybulletBaseEnv):
 
         self.last_distance = None
 
-        self.max_len = self.args.input_config[self.running_config['input_config_name']]["seq_len"]
+        self.max_len = self.args.inputs_config[self.running_config['input_config_name']]["seq_len"]
 
         self.robots = None
         self.num_agents = self.args.env_config["num_agents"]
@@ -140,9 +140,8 @@ class EnvironmentBullet(PybulletBaseEnv):
                 )
 
     def get_action_space_keys(self):
-        action_spaces_configs = read_yaml(self.args.action_space_config_folder, "action_space.yaml")
         action_class = self.action_space.__class__.__name__
-        self.action_space_keys = list(action_spaces_configs[action_class].keys())
+        self.action_space_keys = list(self.args.action_spaces_config[action_class].keys())
 
     def step(self, actions):
         self.step_count += 1
@@ -207,32 +206,6 @@ class EnvironmentBullet(PybulletBaseEnv):
 
     def get_state(self):
         return self.get_state3()
-
-    def get_state2(self):
-        # compute depth image
-        width, height, rgb_image, depth_image, seg_image = self.robot.sensor.get_obs()
-
-        # compute relative position to goal
-        relative_position = self.bu_goals[0] - self.robot.get_position()
-
-        relative_yaw = compute_yaw(self.bu_goals[0], self.robot.get_position()) - self.robot.get_yaw()
-
-        relative_pose = np.array([relative_position[0], relative_position[1], relative_yaw])
-
-        depth_image = cv2.resize(depth_image, (int(depth_image.shape[0] / 2), int(depth_image.shape[1] / 2)))
-
-        if len(self.depth_images) == 0:
-            for i in range(self.max_len - 1):
-                temp = np.zeros_like(depth_image)
-                self.depth_images.append(temp)
-                temp2 = np.zeros_like(relative_pose)
-                self.relative_poses.append(temp2)
-
-        self.depth_images.append(depth_image)
-        self.relative_poses.append(relative_pose)
-
-        # return depth_image[np.newaxis, :, :], relative_pose.flatten()
-        return np.array(self.depth_images), np.array(self.relative_poses).flatten()
 
     def get_state3(self):
         # compute depth image
@@ -361,7 +334,7 @@ class EnvironmentBullet(PybulletBaseEnv):
         # randomize building
         maps, samplers, obstacle_ids, bu_starts, bu_goals = load_environment_scene(p=self.p,
                                                                                    env_config=self.env_config,
-                                                                                   world_config=self.world_config)
+                                                                                   worlds_config=self.worlds_config)
 
         # sample start pose and goal pose
         self.wall_obstacle_ids = obstacle_ids
@@ -381,24 +354,15 @@ class EnvironmentBullet(PybulletBaseEnv):
     def init_robots(self):
         agents = []
         for i in range(self.num_agents):
-            turtlebot = DifferentialRaceCar(self.p, self.client_id, self.physical_step_duration, self.robot_config,
-                                            self.args,
-                                            self.bu_starts[i], compute_yaw(self.bu_starts[i], self.bu_goals[i]))
-            self.robot_ids.append(turtlebot.robot_id)
-            agents.append(turtlebot)
+            robot = self.init_robot(self.bu_starts[i], compute_yaw(self.bu_starts[i], self.bu_goals[i]))
+            self.robot_ids.append(robot.robot_id)
+            agents.append(robot)
         return agents
 
-    def initialize_human_agent(self, start):
-
-        human = Man(self.client_id, partitioned=True, timestep=self.physical_step_duration,
-                    translation_scaling=0.95 / 5)
-        human.reset()
-        human.resetGlobalTransformation(
-            xyz=np.array([start[0], start[1], 0.94 * human.scaling]),
-            rpy=np.array([0, 0, 0]),
-            gait_phase_value=0
-        )
-        return human
+    def init_robot(self, start, yaw):
+        robot = DifferentialRaceCar(self.p, self.client_id, self.physical_step_duration, self.robot_config,
+                                    self.sensor_config, start, yaw)
+        return robot
 
     def clear_variables(self):
         self.step_count = Counter()

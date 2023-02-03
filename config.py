@@ -70,18 +70,16 @@ def process_args():
     # load some yaml files
     # configs_folder = os.path.join(parser_args.out_folder, "configs")
     parser_args.configs_folder = configs_folder
-    parser_args.network_configs_folder = os.path.join(configs_folder, "network_config")
-    parser_args.robot_config_folder = os.path.join(configs_folder, "robot_config")
     parser_args.agents_config_folder = os.path.join(configs_folder, "agents_config")
-    parser_args.action_space_config_folder = os.path.join(configs_folder, "action_space_config")
 
-    parser_args.input_config = read_yaml(parser_args.configs_folder, "inputs.yaml")
-    parser_args.robot_config = read_yaml(parser_args.robot_config_folder, "robot.yaml")
     parser_args.agents_config = read_yaml(parser_args.agents_config_folder, "agents.yaml")
-    parser_args.env_config = read_yaml(configs_folder, "env_config.yaml")
-    parser_args.world_config = read_yaml(configs_folder, "world_config.yaml")
-    parser_args.sensors_config = read_yaml(configs_folder, "sensors_config.yaml")
-    parser_args.running_config = read_yaml(configs_folder, "running_rl.yaml")
+    parser_args.inputs_config = read_yaml(parser_args.configs_folder, "inputs_config.yaml")
+    parser_args.action_spaces_config = read_yaml(parser_args.configs_folder, "action_spaces_config.yaml")
+    parser_args.robots_config = read_yaml(parser_args.configs_folder, "robots_config.yaml")
+    parser_args.worlds_config = read_yaml(parser_args.configs_folder, "worlds_config.yaml")
+    parser_args.sensors_config = read_yaml(parser_args.configs_folder, "sensors_config.yaml")
+    parser_args.env_config = read_yaml(parser_args.configs_folder, "env_config.yaml")
+    parser_args.running_config = read_yaml(parser_args.configs_folder, "running_rl.yaml")
 
     # evaluation时动态配置的环境参数，
     if not parser_args.train or parser_args.resume:
@@ -103,8 +101,6 @@ def process_args():
             parser_args.env_config["pedestrian_static_num"] = parser_args.static_num
 
     print("\nYaml env_config config:", parser_args.env_config)
-    print("\nYaml agents_config config:", parser_args.agents_config)
     print("\nYaml training config:", parser_args.running_config)
-    print("\nYaml world config:", parser_args.world_config)
     print("\n==============================================================================================\n")
     return parser_args

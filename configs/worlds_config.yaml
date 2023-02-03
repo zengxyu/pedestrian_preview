@@ -2,7 +2,7 @@ configs_all:
   height: 2.5
   thickness: 0.05
 
-simple:
+empty:
   corridor_width: [ 6.0, 8.0 ]
   corridor_height: [ 6.0, 8.0 ]
   distance: 0.5

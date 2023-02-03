@@ -25,8 +25,7 @@ def build_action_space(parser_args):
         raise NotImplementedError
 
     # get action config
-    action_spaces_configs = read_yaml(parser_args.action_space_config_folder, "action_space.yaml")
-    action_space_config = action_spaces_configs[action_class.__name__]
+    action_space_config = parser_args.action_spaces_config[action_class.__name__]
     action_space = action_class(**action_space_config)
 
     return action_space
