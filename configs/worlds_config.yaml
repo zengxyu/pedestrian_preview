@@ -16,6 +16,9 @@ office:
   distance: 1.0
   doors: 1
   blocked_width: 2
+  exit_door_width: 1.2
+  max_num_doors: 0
+
 
 corridor:
   # tunnel limit: [[width low width high] [height low height high]]
