@@ -18,7 +18,6 @@ from agents.pfrl_agents.replay_buffer_builder import get_replay_buffer_by_name
 def build_agent(args):
     action_space = build_action_space(args)
     input_kwargs: Dict = get_input_config(args)
-    input_kwargs.update({"visualize_attention": args.visualize_attention})
     agent = None
     agent_name = get_agent_name(parser_args=args)
 

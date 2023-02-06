@@ -19,9 +19,8 @@ from collections import deque
 import cv2
 
 from environment.human_npc_generator import generate_human_npc
-from environment.robots.differential_race_car import DifferentialRaceCar
 from environment.robots.npc import DynamicObstacleGroup
-from environment.robots.human import Man
+from environment.robots.robot_roles import RobotRoles
 from environment.robots.robot_types import RobotTypes, init_robot
 
 sys.path.append(
@@ -33,9 +32,6 @@ from environment.base_pybullet_env import PybulletBaseEnv
 from environment.nav_utilities.check_helper import check_collision, CollisionType
 from environment.nav_utilities.counter import Counter
 from environment.robots.obstacle_collections import ObstacleCollections
-from environment.robots.turtlebot import TurtleBot
-
-from utils.config_utility import read_yaml
 from utils.math_helper import compute_yaw, compute_distance, compute_manhattan_distance
 from environment.gen_scene.scene_generator import load_environment_scene
 from environment.path_manager import PathManager
@@ -264,7 +260,7 @@ class EnvironmentBullet(PybulletBaseEnv):
         while iterate_count < n_step and not all_reach_goal and not collision:
             for i, robot in enumerate(self.robots):
                 planned_v, planned_w = self.action_space.to_force(action=actions[i])
-                reach_goal = compute_distance(robot.get_position(), self.bu_goals[i]) < 0.5
+                reach_goal = compute_distance(robot.get_position(), self.bu_goals[i]) < 1
                 if reach_goal:
                     robot.small_step(0, 0)
                     print("robot {} reached goal".format(i))
@@ -278,7 +274,7 @@ class EnvironmentBullet(PybulletBaseEnv):
             collision = self._check_collision()
 
             for i, robot in enumerate(self.robots):
-                reach_goal = compute_distance(robot.get_position(), self.bu_goals[i]) < 0.5
+                reach_goal = compute_distance(robot.get_position(), self.bu_goals[i]) < 1
                 reach_goals.append(reach_goal)
 
             iterate_count += 1
@@ -355,8 +351,9 @@ class EnvironmentBullet(PybulletBaseEnv):
     def init_robots(self):
         agents = []
         for i in range(self.num_agents):
-            robot = init_robot(self.p, self.client_id, self.robot_name, self.physical_step_duration, self.robot_config,
-                               self.sensor_config, self.bu_starts[i], compute_yaw(self.bu_starts[i], self.bu_goals[i]))
+            robot = init_robot(self.p, self.client_id, self.robot_name, RobotRoles.AGENT, self.physical_step_duration,
+                               self.robot_config, self.sensor_config, self.bu_starts[i],
+                               compute_yaw(self.bu_starts[i], self.bu_goals[i]))
             self.robot_ids.append(robot.robot_id)
             agents.append(robot)
         return agents

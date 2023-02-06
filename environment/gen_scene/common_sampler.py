@@ -172,7 +172,7 @@ def distant_point_sampler(occupancy_map, from_point=None, distance=100):
 def distant_start_end_sampler(**kwargs):
     occupancy_map = kwargs["occupancy_map"]
     x_start, y_start = point_sampler(occupancy_map)
-    distance = 0.3 * min(occupancy_map.shape[0], occupancy_map.shape[1])
+    distance = 0.4 * min(occupancy_map.shape[0], occupancy_map.shape[1])
 
     x_end, y_end = point_sampler(occupancy_map)
     while np.sqrt(np.square(x_end - x_start) + np.square(y_end - y_start)) < distance:
@@ -211,52 +211,6 @@ def distant_two_points_sampler(**kwargs):
     return [start_position, end_position], sample_success
 
 
-def opposite_two_points_sampler(**kwargs):
-    """
-    randomize two points on the two sides of the path, and keep distance = given kept_distance
-    :param kwargs:
-    :return:
-    """
-    occupancy_map, door_map, robot_om_path = kwargs["occupancy_map"], kwargs["door_map"], kwargs["robot_om_path"]
-    start_index, end_index, radius = kwargs["start_index"], kwargs["end_index"], kwargs["radius"]
-    kept_distance = kwargs["kept_distance"]
-    kept_distance_to_start = kwargs["kept_distance_to_start"]
-
-    # sample one waypoint from path
-    candidate_waypoints, candidate_yaws = sample_waypoints_from_path(door_map, robot_om_path, start_index, end_index,
-                                                                     radius)
-
-    if len(candidate_waypoints) == 0:
-        logging.error("Sample waypoints from path -- Failed")
-        return [None, None], False
-
-    # if the size of candidate waypoints > 0, 开始采样起点和终点
-    om_path_start = robot_om_path[0]
-    om_path_end = robot_om_path[-1]
-    candidate_indexes = np.arange(0, len(candidate_waypoints), 1).tolist()
-
-    while len(candidate_indexes) > 0:
-        candidate_index = np.random.choice(candidate_indexes)
-        candidate_indexes.remove(candidate_index)
-        candidate_point = candidate_waypoints[candidate_index]
-        candidate_yaw = candidate_yaws[candidate_index]
-        candidate_point = np.array(candidate_point)
-
-        [start_point, end_point], sample_two_points_success = distant_two_points_sampler_along_theta(occupancy_map,
-                                                                                                     om_path_start,
-                                                                                                     om_path_end,
-                                                                                                     candidate_point,
-                                                                                                     candidate_yaw,
-                                                                                                     kept_distance,
-                                                                                                     kept_distance_to_start)
-        if sample_two_points_success:
-            logging.debug("Sample start and goal point for dynamic obstacles -- Success; ")
-            return [start_point, end_point], sample_two_points_success
-
-    logging.error("Sample start and goal point for dynamic obstacles -- Failed")
-    return [None, None], False
-
-
 def in_line_left(om_center, theta, point):
     x = point[0]
     y = point[1]
@@ -269,71 +223,6 @@ def in_line_right(om_center, theta, point):
     y = point[1]
     line_left = np.tan(theta) * (x - om_center[0] - 5) + om_center[1] - y > 0
     return line_left
-
-
-def distant_two_points_sampler_along_theta(occupancy_map: np.array, om_path_start: np.array, om_path_end: np.array,
-                                           om_center: np.array, pivot_yaw: float, kept_distance: int,
-                                           kept_distance_to_start: int):
-    """
-    sample point along theta, one on the left of the om_center, the other one on the right of the om_center
-    :param om_path_start:
-    :param pivot_yaw:
-    :param occupancy_map: np.array
-    :param om_center: [pixel]
-    :param kept_distance: [pixel]
-    :return:
-    """
-    # sample window
-    radius = 17
-    window_min_x = max(om_center[0] - radius, 0)
-    window_max_x = min(om_center[0] + radius, occupancy_map.shape[1])
-    window_min_y = max(om_center[1] - radius, 0)
-    window_max_y = min(om_center[1] + radius, occupancy_map.shape[1])
-    candidates_left = []
-    candidates_right = []
-
-    # add all free points into 2 candidate collections
-    for x in range(window_min_x, window_max_x, 1):
-        for y in range(window_min_y, window_max_y, 1):
-            if occupancy_map[x][y]:
-                continue
-
-            if compute_distance([x, y], om_center) < kept_distance / 4:
-                continue
-
-            distance_to_start = compute_distance([x, y], om_path_start)
-            if distance_to_start < kept_distance_to_start:
-                continue
-
-            distance_to_end = compute_distance(([x, y]), om_path_end)
-            if distance_to_end < kept_distance_to_start:
-                continue
-
-            if in_line_left(om_center, pivot_yaw, [x, y]):
-                candidates_left.append([x, y])
-            elif in_line_right(om_center, pivot_yaw, [x, y]):
-                candidates_right.append([x, y])
-            else:
-                pass
-
-    logging.debug("There are {} candidates in candidates_left;".format(len(candidates_left)))
-    logging.debug("There are {} candidates in candidates_right".format(len(candidates_right)))
-
-    # pair them, check the pair with distance more than kept_distance
-    np.random.shuffle(candidates_left)
-    np.random.shuffle(candidates_right)
-
-    for point_left in candidates_left:
-        for point_right in candidates_right:
-            distance = compute_distance(point_left, point_right)
-            if distance > kept_distance:
-                # Randomly switch start point or end point, randomly switch start point and end point
-                start_point, end_point = point_left, point_right
-                if np.random.choice([True, False]):
-                    start_point, end_point = swap_value(point_left, point_right)
-                return [start_point, end_point], True
-
-    return [None, None], False
 
 
 def sample_waypoint_from_path(door_map, robot_om_path, start_index, end_index, sur_radius):

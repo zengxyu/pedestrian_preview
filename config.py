@@ -16,32 +16,16 @@ def process_args():
     parser.add_argument("--num_episodes", type=int, default=50000)
     parser.add_argument("--train", action="store_true", default=False)
     parser.add_argument("--render", action="store_true", default=False)
-    parser.add_argument("--store_data", action="store_true", default=False)
-
-    parser.add_argument("--visualize", action="store_true", default=False)
-    parser.add_argument("--save", action="store_true", default=False)
-
-    parser.add_argument("--visualize_attention", action="store_true", default=False)
-    parser.add_argument("--plot_env", action="store_true", default=False)
-    parser.add_argument("--plot_path", action="store_true", default=False)
-    parser.add_argument("--plot_action", action="store_true", default=False)
 
     parser.add_argument("--resume", action="store_true", default=False)
-
-    # parser.add_argument("--resume_model_path", action="store_true", default=False)
-    parser.add_argument("--plot_trajectory", action="store_true", default=False)
-    parser.add_argument("--plot_motion", action="store_true", default=False)
     parser.add_argument("--from_configs", type=str, default="configs")
     parser.add_argument("--gpu", type=int, default=0, help="gpu >=0 : use gpu; gpu <0 : use cpu")
-    # parser.add_argument("--running_config", type=str, default="running.yaml",
-    #                     help="choose running config file from configs folder")
     parser.add_argument('--scene_name', type=str, help='')
     parser.add_argument("--max_speed", type=float, help='')
     parser.add_argument("--dynamic_num", type=int, help='')
     parser.add_argument("--static_num", type=int, help='')
+    parser.add_argument("--max_steps", type=int, help='')
 
-    # parser.add_argument("--in_motion_model_path", type=str,
-    #                     default="motion/motion_speed_control_0.1/model/model_epi_500")
     # motion/motion_speed_control_0.1/model/model_epi_1000
     parser_args = parser.parse_args()
     parser_args.out_folder = os.path.join(get_project_path(), "output", parser_args.out_folder)
@@ -89,7 +73,8 @@ def process_args():
             else:
                 scene_name = parser_args.scene_name
             parser_args.env_config["scene_name"] = scene_name
-
+        if parser_args.max_steps is not None:
+            parser_args.running_config["max_steps"] = parser_args.max_steps
         if parser_args.max_speed is not None:
             parser_args.env_config["pedestrian_speed_range"] = [parser_args.max_speed - 0.01,
                                                                 parser_args.max_speed]

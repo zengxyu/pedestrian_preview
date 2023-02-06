@@ -9,12 +9,13 @@ from environment.robots.base_robot import BaseRobot
 
 
 class ObjectRobot(BaseRobot):
-    def __init__(self, p: BulletClient, client_id: int, step_duration: float, robot_config: Dict, sensor_config: Dict,
-                 start_position, start_yaw):
+    def __init__(self, p: BulletClient, client_id: int, robot_role: str, step_duration: float, robot_config: Dict,
+                 sensor_config: Dict, start_position, start_yaw):
         super().__init__(p, client_id)
 
         self.p = p
         self.client_id = client_id
+        self.robot_role = robot_role
         self.robot_config = robot_config
         self.sensor_config = sensor_config
 

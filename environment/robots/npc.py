@@ -10,6 +10,7 @@ from environment.robots.base_obstacle import BaseObstacleGroup
 
 from environment.path_manager import PathManager
 from environment.robots.base_robot import BaseRobot
+from environment.robots.robot_roles import RobotRoles
 from environment.robots.robot_types import init_robot
 from utils.math_helper import swap_value, compute_yaw, compute_distance
 
@@ -32,7 +33,7 @@ class Npc:
         self.inference_every_duration = self.running_config["inference_per_duration"]
 
         self.speed_range = self.args.env_config["npc_speed_range"]
-        self.lfd = self.args.env_config["npc_lfd"]
+        self.lfd = 0.4
         self.speed = np.random.random() * (self.speed_range[1] - self.speed_range[0]) + self.speed_range[0]
         self.step_count = Counter()
 
@@ -48,7 +49,8 @@ class Npc:
     def create(self, path):
         logger.debug("create a dynamic obstacle")
         yaw = compute_yaw(path[0], path[-1])
-        self.robot = init_robot(self.p, self.client_id, self.robot_name, self.physical_step_duration, self.robot_config,
+        self.robot = init_robot(self.p, self.client_id, self.robot_name, RobotRoles.NPC, self.physical_step_duration,
+                                self.robot_config,
                                 self.sensor_config, path[0], yaw)
 
         self.path_manager.register_path(path)

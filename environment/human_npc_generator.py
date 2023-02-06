@@ -13,12 +13,8 @@ def generate_human_npc(dynamic_obs_sampler, env_config: Dict, occ_map: np.array,
     # n_radius, n_from_start, n_to_end [unit: pixel]
     grid_res = env_config["grid_res"]
     # the number of human npc
-    num_human_npc = int(env_config["num_human_npc"])
+    num_human_npc = int(env_config["num_npc"])
 
-    n_radius = int(env_config["unobstructed_radius"] / grid_res)
-    n_from_start = int(env_config["distance_from_start"] / grid_res)
-    n_to_end = int(env_config["distance_to_end"] / grid_res)
-    # n_static_obstacle_num = env_config["pedestrian_static_num"]
 
     n_kept_distance = int(env_config["kept_distance"] / grid_res)
     n_kept_distance_to_start = int(env_config["kept_distance_to_start"] / grid_res)

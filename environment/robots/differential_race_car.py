@@ -6,6 +6,7 @@ import numpy as np
 from numpy import pi
 from pybullet_utils.bullet_client import BulletClient
 
+from environment.robots.robot_roles import RobotRoles
 from environment.sensors.lidar_sensor import LidarSensor
 from environment.robots.base_differential_robot import BaseDifferentialRobot
 from environment.sensors.vision_sensor import VisionSensor
@@ -16,13 +17,15 @@ np.set_printoptions(precision=3, suppress=True)
 
 
 class DifferentialRaceCar(BaseDifferentialRobot):
-    def __init__(self, p: BulletClient, client_id: int, step_duration: float, robot_config: Dict, sensor_config: Dict,
+    def __init__(self, p: BulletClient, client_id: int, robot_role: str, step_duration: float, robot_config: Dict,
+                 sensor_config: Dict,
                  start_position, start_yaw):
         super().__init__(p, client_id)
         self.lidar_joint_id = None
         self.robot_config = robot_config
         self.sensor_config = sensor_config
         self.wheel_base = 0.23
+        self.robot_role = robot_role
         self.v_ctrl_factor: float = self.robot_config["v_ctrl_factor"]
         self.w_ctrl_factor: float = self.robot_config["w_ctrl_factor"]
 
@@ -89,7 +92,12 @@ class DifferentialRaceCar(BaseDifferentialRobot):
             if "joint_top" in str(self.p.getJointInfo(race_car, j)[1]):
                 top_joint = j
 
-        color = list(np.random.random(size=3)) + [1]
+        if self.robot_role == RobotRoles.AGENT:
+            # agent color : red
+            color = [1, 0, 0, 1]
+        else:
+            color = list(np.random.random(size=3)) + [1]
+
         self.p.changeVisualShape(race_car, top_joint, rgbaColor=color)
 
         self.robot_id, self.left_wheel_id, self.right_wheel_id = race_car, left_joint, right_joint
