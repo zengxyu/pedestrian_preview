@@ -79,11 +79,17 @@ class DifferentialRaceCar(BaseDifferentialRobot):
         )
 
         left_joint, right_joint = -1, -1
+        top_joint = -1
         # Find relevant joints
         for j in range(self.p.getNumJoints(race_car)):
             if "joint_left_wheel" in str(self.p.getJointInfo(race_car, j)[1]):
                 left_joint = j
             if "joint_right_wheel" in str(self.p.getJointInfo(race_car, j)[1]):
                 right_joint = j
+            if "joint_top" in str(self.p.getJointInfo(race_car, j)[1]):
+                top_joint = j
+
+        color = list(np.random.random(size=3)) + [1]
+        self.p.changeVisualShape(race_car, top_joint, rgbaColor=color)
 
         self.robot_id, self.left_wheel_id, self.right_wheel_id = race_car, left_joint, right_joint

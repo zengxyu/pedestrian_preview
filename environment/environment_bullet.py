@@ -267,10 +267,10 @@ class EnvironmentBullet(PybulletBaseEnv):
                 reach_goal = compute_distance(robot.get_position(), self.bu_goals[i]) < 0.5
                 if reach_goal:
                     robot.small_step(0, 0)
-                    # print("robot {} reached goal".format(i))
+                    print("robot {} reached goal".format(i))
                 else:
                     robot.small_step(planned_v, planned_w)
-                    # print("robot {} not reached goal".format(i))
+                    print("robot {} not reached goal".format(i))
 
             self.obstacle_collections.step()
             self.p_step_simulation()
