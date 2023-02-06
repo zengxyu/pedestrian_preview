@@ -28,7 +28,7 @@ sys.path.append(
     os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), "traditional_planner", "a_star"))
 print(sys.path)
 import numpy as np
-from agents.action_space.high_level_action_space import AbstractHighLevelActionSpace
+from agents.action_space.action_space import AbstractActionSpace
 from environment.base_pybullet_env import PybulletBaseEnv
 from environment.nav_utilities.check_helper import check_collision, CollisionType
 from environment.nav_utilities.counter import Counter
@@ -57,7 +57,7 @@ class EnvironmentBullet(PybulletBaseEnv):
 
         self.max_step = self.running_config["max_steps"]
         self.inference_every_duration = self.running_config["inference_per_duration"]
-        self.action_space: AbstractHighLevelActionSpace = action_space
+        self.action_space: AbstractActionSpace = action_space
 
         self.path_manager = PathManager(self.args)
 
@@ -169,7 +169,7 @@ class EnvironmentBullet(PybulletBaseEnv):
         # done = reach_goal or over_max_step
         step_info = reward_info
         # store information
-        episode_info = {"collision": collision, "a_success": reach_goal,
+        episode_info = {"collision": collision == CollisionType.CollisionWithWall, "a_success": reach_goal,
                         "over_max_step": over_max_step, "step_count": self.step_count.value}
 
         if done:
@@ -275,8 +275,6 @@ class EnvironmentBullet(PybulletBaseEnv):
                     "goal_reached_thresh"]
                 if reach_goal:
                     robot.small_step(0, 0)
-                    if not self.args.train:
-                        print("robot {} reached goal".format(i))
                 else:
                     robot.small_step(planned_v, planned_w)
                     if not self.args.train:

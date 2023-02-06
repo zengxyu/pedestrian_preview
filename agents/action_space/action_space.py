@@ -16,7 +16,7 @@ import numpy as np
 from gym.spaces import Box
 
 
-class AbstractHighLevelActionSpace(metaclass=ABCMeta):
+class AbstractActionSpace(metaclass=ABCMeta):
     def __init__(self):
         pass
 
@@ -24,7 +24,7 @@ class AbstractHighLevelActionSpace(metaclass=ABCMeta):
         pass
 
 
-class AbstractDiscreteHighLevelActionSpace(AbstractHighLevelActionSpace):
+class AbstractDiscreteActionSpace(AbstractActionSpace):
     def __init__(self):
         super().__init__()
         self.n = None
@@ -33,7 +33,7 @@ class AbstractDiscreteHighLevelActionSpace(AbstractHighLevelActionSpace):
         pass
 
 
-class AbstractContinuousHighLevelActionSpace(Box, AbstractHighLevelActionSpace):
+class AbstractContinuousActionSpace(Box, AbstractActionSpace):
     def __init__(self, low: Union[SupportsFloat, np.ndarray], high: Union[SupportsFloat, np.ndarray]):
         super().__init__(low, high)
 
@@ -41,7 +41,7 @@ class AbstractContinuousHighLevelActionSpace(Box, AbstractHighLevelActionSpace):
         pass
 
 
-class ContinuousVWActionSpace(AbstractContinuousHighLevelActionSpace):
+class ContinuousVWActionSpace(AbstractContinuousActionSpace):
     def __init__(self, **kwargs):
         self.v_range = kwargs["v"]
         self.w_range = kwargs["w"]

@@ -30,6 +30,7 @@ class ObjectRobot(BaseRobot):
         self.radius = np.random.random() * (self.radius_range[1] - self.radius_range[0]) + self.radius_range[0]
         self.height = np.random.random() * (self.height_range[1] - self.height_range[0]) + self.height_range[0]
 
+        self.with_collision = self.robot_config["with_collision"]
         self.load_object(start_position[0], start_position[1], start_yaw)
         self.cur_yaw = start_yaw
         self.cur_v = 0
@@ -79,4 +80,5 @@ class ObjectRobot(BaseRobot):
     def load_object(self, cur_x, cur_y, cur_yaw=0):
         self.cur_yaw = cur_yaw
         start_position = np.array([cur_x, cur_y])
-        self.robot_id = create_cylinder(self.p, start_position, height=self.height, radius=self.radius)
+        self.robot_id = create_cylinder(self.p, start_position, with_collision=self.with_collision, height=self.height,
+                                        radius=self.radius)

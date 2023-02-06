@@ -9,7 +9,7 @@
         
 ===========================================
 """
-from agents.action_space.high_level_action_space import ContinuousVWActionSpace
+from agents.action_space.action_space import ContinuousVWActionSpace
 from utils.config_utility import read_yaml
 
 motion_action_map = {"ContinuousVWActionSpace": ContinuousVWActionSpace}

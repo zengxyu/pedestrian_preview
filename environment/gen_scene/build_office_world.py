@@ -108,16 +108,29 @@ def clear_world(_bullet_client, obstacles, base_id, goal_id=None):
     return [], None  # obstacle_ids, goal_id
 
 
-def create_cylinder(_bullet_client, pose, goal_id=None, height=None, radius=None):
+def create_cylinder(_bullet_client, pose, with_collision, goal_id=None, height=None, radius=None):
     x, y = pose
     if goal_id:
         _bullet_client.removeBody(goal_id)
-    return _bullet_client.createMultiBody(
-        0,
-        _bullet_client.createCollisionShape(
-            _bullet_client.GEOM_CYLINDER,
-            radius=radius,
-            height=height,
-        ),
-        basePosition=[x, y, 0.5],
-    )
+
+    if with_collision:
+
+        return _bullet_client.createMultiBody(
+            baseVisualShapeIndex=-1,
+            baseCollisionShapeIndex=_bullet_client.createCollisionShape(
+                _bullet_client.GEOM_CYLINDER,
+                radius=radius,
+                height=height,
+            ),
+            basePosition=[x, y, 0.5],
+        )
+    else:
+        return _bullet_client.createMultiBody(
+            baseVisualShapeIndex=_bullet_client.createVisualShape(
+                _bullet_client.GEOM_CYLINDER,
+                radius=radius,
+                length=height,
+            ),
+            baseCollisionShapeIndex=-1,
+            basePosition=[x, y, 0.5],
+        )
