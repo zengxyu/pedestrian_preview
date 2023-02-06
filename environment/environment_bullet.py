@@ -18,6 +18,7 @@ from collections import deque
 
 import cv2
 
+from environment.gen_scene.scene_loader import load_scene
 from environment.human_npc_generator import generate_human_npc
 from environment.robots.npc import DynamicObstacleGroup
 from environment.robots.robot_roles import RobotRoles
@@ -110,9 +111,16 @@ class EnvironmentBullet(PybulletBaseEnv):
         self.reset_simulation()
         self.clear_variables()
 
-        # randomize environment
-        self.randomize_env()
-        self.randomize_human_npc()
+        if self.args.load_map_from is not None and self.args.load_map_from != "":
+            self.load_env()
+        else:
+            # randomize environment
+            self.randomize_env()
+            self.randomize_human_npc()
+
+        # # randomize environment
+        # self.randomize_env()
+        # self.randomize_human_npc()
         state = self.get_state()
         if not self.args.train:
             self.visualize_ground_destination()
@@ -315,6 +323,20 @@ class EnvironmentBullet(PybulletBaseEnv):
         self.obstacle_collections.add(dynamic_obstacle_group, dynamic=True)
         self.pedestrian_obstacle_ids = self.obstacle_collections.get_obstacle_ids()
 
+    def load_env(self):
+        """
+        read env from path
+        Returns:
+        """
+        map_path = self.args.load_map_from
+        coordinates_from = self.args.load_coordinates_from
+
+        obstacle_ids = load_scene(self.p, self.env_config, self.worlds_config, map_path, coordinates_from)
+
+        self.wall_obstacle_ids = obstacle_ids
+        logging.debug("Create the environment, Done...")
+        self.robots = self.init_robots()
+
     def randomize_env(self):
         """
         create office
@@ -345,7 +367,6 @@ class EnvironmentBullet(PybulletBaseEnv):
         self.bu_goals = [bu_goals[0] for i in range(self.num_agents)]
         # initialize robot
         logging.debug("Create the environment, Done...")
-
         self.robots = self.init_robots()
 
     def init_robots(self):
