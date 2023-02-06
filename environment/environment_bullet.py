@@ -66,7 +66,7 @@ class EnvironmentBullet(PybulletBaseEnv):
         self.door_occ_map = None
 
         self.bu_starts, self.bu_goals = [None] * 2
-
+        self.npc_goals = []
         self.obstacle_collections: ObstacleCollections = ObstacleCollections(args)
 
         self.wall_obstacle_ids = []
@@ -122,16 +122,19 @@ class EnvironmentBullet(PybulletBaseEnv):
         # self.randomize_env()
         # self.randomize_human_npc()
         state = self.get_state()
+
         if not self.args.train:
-            self.visualize_ground_destination()
+            self.visualize_goals(self.bu_goals, self.robots)
+            # self.visualize_goals(self.npc_goals, self.obstacle_collections.get_obstacle_ids())
         return state
 
-    def visualize_ground_destination(self):
+    def visualize_goals(self, bu_goals, robots):
         thetas = np.linspace(0, np.pi * 2, 50)
         radius = 0.2
-        for i in range(1):
-            points_x = np.cos(thetas) * radius + self.bu_goals[i][0]
-            points_y = np.sin(thetas) * radius + self.bu_goals[i][1]
+        for i in range(len(bu_goals)):
+            robot = robots[i]
+            points_x = np.cos(thetas) * radius + bu_goals[i][0]
+            points_y = np.sin(thetas) * radius + bu_goals[i][1]
             z = np.zeros_like(thetas)
             points = np.array([points_x, points_y, z]).T
             points_next = np.roll(points, -1, axis=0)
@@ -141,7 +144,7 @@ class EnvironmentBullet(PybulletBaseEnv):
                 self.p.addUserDebugLine(
                     lineFromXYZ=f,
                     lineToXYZ=t,
-                    lineColorRGB=[0, 1, 0],
+                    lineColorRGB=robot.color,
                     lineWidth=2
                 )
 
@@ -268,7 +271,8 @@ class EnvironmentBullet(PybulletBaseEnv):
         while iterate_count < n_step and not all_reach_goal and not collision:
             for i, robot in enumerate(self.robots):
                 planned_v, planned_w = self.action_space.to_force(action=actions[i])
-                reach_goal = compute_distance(robot.get_position(), self.bu_goals[i]) < 1
+                reach_goal = compute_distance(robot.get_position(), self.bu_goals[i]) < self.env_config[
+                    "goal_reached_thresh"]
                 if reach_goal:
                     robot.small_step(0, 0)
                     print("robot {} reached goal".format(i))
@@ -282,7 +286,8 @@ class EnvironmentBullet(PybulletBaseEnv):
             collision = self._check_collision()
 
             for i, robot in enumerate(self.robots):
-                reach_goal = compute_distance(robot.get_position(), self.bu_goals[i]) < 1
+                reach_goal = compute_distance(robot.get_position(), self.bu_goals[i]) < self.env_config[
+                    "goal_reached_thresh"]
                 reach_goals.append(reach_goal)
 
             iterate_count += 1
@@ -312,7 +317,7 @@ class EnvironmentBullet(PybulletBaseEnv):
                                                                       occ_map=self.occ_map,
                                                                       robot_start=self.bu_starts[0],
                                                                       robot_end=self.bu_goals[0])
-
+        self.npc_goals = obs_bu_ends
         # create n dynamic obstacles, put them into the environment
         dynamic_obstacle_group = DynamicObstacleGroup(p=self.p,
                                                       client_id=self.client_id,

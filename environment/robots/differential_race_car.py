@@ -26,6 +26,7 @@ class DifferentialRaceCar(BaseDifferentialRobot):
         self.sensor_config = sensor_config
         self.wheel_base = 0.23
         self.robot_role = robot_role
+        self.color = None
         self.v_ctrl_factor: float = self.robot_config["v_ctrl_factor"]
         self.w_ctrl_factor: float = self.robot_config["w_ctrl_factor"]
 
@@ -95,9 +96,10 @@ class DifferentialRaceCar(BaseDifferentialRobot):
         if self.robot_role == RobotRoles.AGENT:
             # agent color : red
             color = [1, 0, 0, 1]
+            self.color = color
         else:
             color = list(np.random.random(size=3)) + [1]
-
+            self.color = color
         self.p.changeVisualShape(race_car, top_joint, rgbaColor=color)
 
         self.robot_id, self.left_wheel_id, self.right_wheel_id = race_car, left_joint, right_joint

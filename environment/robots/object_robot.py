@@ -22,6 +22,7 @@ class ObjectRobot(BaseRobot):
         self.physical_step_duration = step_duration
 
         self.robot_id = None
+        self.color = None
         self.shape = self.robot_config["shape"]
         self.radius_range = self.robot_config["radius_range"]
         self.height_range = self.robot_config["height_range"]
