@@ -275,10 +275,12 @@ class EnvironmentBullet(PybulletBaseEnv):
                     "goal_reached_thresh"]
                 if reach_goal:
                     robot.small_step(0, 0)
-                    print("robot {} reached goal".format(i))
+                    if not self.args.train:
+                        print("robot {} reached goal".format(i))
                 else:
                     robot.small_step(planned_v, planned_w)
-                    print("robot {} not reached goal".format(i))
+                    if not self.args.train:
+                        print("robot {} not reached goal".format(i))
 
             self.obstacle_collections.step()
             self.p_step_simulation()
