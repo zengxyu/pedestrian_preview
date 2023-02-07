@@ -128,16 +128,18 @@ class PFLearner:
         done = False
         infos_for_sum = []
         infos_for_last = []
-        i_step = 0
         with self.agent.eval_mode():
             while not done:
-                actions = self.agent.batch_act(state)
-                state, reward, done, info_for_sum, info_for_last = self.env.step(actions)
-                self.agent.observe(obs=state, reward=reward, done=done, reset=False)
-                self.global_i_step += 1
-                i_step += 1
-                infos_for_sum.append(info_for_sum)
-                infos_for_last.append(info_for_last)
+                try:
+                    actions = self.agent.batch_act(state)
+                    state, reward, done, info_for_sum, info_for_last = self.env.step(actions)
+                    self.agent.observe(obs=state, reward=reward, done=done, reset=False)
+                    self.global_i_step += 1
+                    infos_for_sum.append(info_for_sum)
+                    infos_for_last.append(info_for_last)
+                except:
+                    print("state:{}".format(state))
+                    done = True
         add_statistics_to_collector(infos_episode_for_sum=infos_for_sum,
                                     infos_episode_for_last=infos_for_last,
                                     agent_statistics=self.agent.get_statistics(),
