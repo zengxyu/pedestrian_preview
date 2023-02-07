@@ -195,7 +195,7 @@ class EnvironmentBullet(PybulletBaseEnv):
         """================delta distance reward=================="""
         # compute distance from current to goal
         distance = compute_distance(self.bu_goals[0], self.robots[0].get_position())
-        delta_distance_reward = (self.last_distance - distance) * 30
+        delta_distance_reward = (self.last_distance - distance) * 50
         self.last_distance = distance
         reward += delta_distance_reward
 
