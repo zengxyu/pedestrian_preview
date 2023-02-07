@@ -69,11 +69,11 @@ def load_environment_scene(p: BulletClient, env_config: Dict, worlds_config: Dic
         #                                               margin=env_config["dilation_size"])
 
         [start, end], sample_success = distant_start_end_sampler(occupancy_map=dilated_occ_map,
-                                                               margin=env_config["dilation_size"])
+                                                                 margin=env_config["dilation_size"])
 
         # check the connectivity between the start and end position
         if not sample_success or not check_connectivity(dilated_occ_map, start, end):
-            load_environment_scene(p, env_config, worlds_config)
+            return load_environment_scene(p, env_config, worlds_config)
 
         bu_start = cvt_to_bu(start, env_config["grid_res"])
         bu_end = cvt_to_bu(end, env_config["grid_res"])
@@ -85,7 +85,7 @@ def load_environment_scene(p: BulletClient, env_config: Dict, worlds_config: Dic
 
     # create office entity in py bullet simulation environment
     obstacle_ids = drop_walls(p, occupancy_map.copy(), env_config["grid_res"], component_configs)
-
+    print("bu_starts:{}, bu_ends:{}".format(bu_starts, bu_ends))
     return maps, samplers, obstacle_ids, bu_starts, bu_ends
 
 

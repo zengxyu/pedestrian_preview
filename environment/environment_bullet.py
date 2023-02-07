@@ -263,12 +263,11 @@ class EnvironmentBullet(PybulletBaseEnv):
     def iterate_steps(self, actions):
         iterate_count = 0
         reach_goals = []
-        collision = False
         all_reach_goal = False
         # 0.4/0.05 = 8
         n_step = np.round(self.inference_every_duration / self.physical_step_duration)
 
-        while iterate_count < n_step and not all_reach_goal and not collision:
+        while iterate_count < n_step and not all_reach_goal:
             for i, robot in enumerate(self.robots):
                 planned_v, planned_w = self.action_space.to_force(action=actions[i])
                 reach_goal = compute_distance(robot.get_position(), self.bu_goals[i]) < self.env_config[
@@ -283,8 +282,6 @@ class EnvironmentBullet(PybulletBaseEnv):
             self.obstacle_collections.step()
             self.p_step_simulation()
 
-            collision = self._check_collision()
-
             for i, robot in enumerate(self.robots):
                 reach_goal = compute_distance(robot.get_position(), self.bu_goals[i]) < self.env_config[
                     "goal_reached_thresh"]
@@ -292,6 +289,8 @@ class EnvironmentBullet(PybulletBaseEnv):
 
             iterate_count += 1
             all_reach_goal = all(reach_goals)
+
+        collision = self._check_collision()
         return all_reach_goal, collision
 
     def add_episode_end_prompt(self, info):
@@ -336,9 +335,18 @@ class EnvironmentBullet(PybulletBaseEnv):
         map_path = self.args.load_map_from
         coordinates_from = self.args.load_coordinates_from
 
-        obstacle_ids = load_scene(self.p, self.env_config, self.worlds_config, map_path, coordinates_from)
+        maps, samplers, obstacle_ids, bu_starts, bu_goals = load_scene(self.p, self.env_config, self.worlds_config,
+                                                                       map_path, coordinates_from)
 
         self.wall_obstacle_ids = obstacle_ids
+        self.occ_map = maps["occ_map"]
+        self.dilated_occ_map = maps["dilated_occ_map"]
+        self.door_occ_map = maps["door_map"]
+        self.start_goal_sampler, self.static_obs_sampler, self.dynamic_obs_sampler = samplers
+
+        self.bu_starts = bu_starts
+        self.bu_goals = [bu_goals[0] for i in range(self.num_agents)]
+
         logging.debug("Create the environment, Done...")
         self.robots = self.init_robots()
 

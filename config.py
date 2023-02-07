@@ -27,7 +27,8 @@ def process_args():
     parser.add_argument("--max_steps", type=int, help='')
     parser.add_argument("--load_coordinates_from", type=str)
     parser.add_argument("--load_map_from", type=str)
-    
+    parser.add_argument("--goal_reached_thresh", type=float)
+
     # motion/motion_speed_control_0.1/model/model_epi_1000
     parser_args = parser.parse_args()
     parser_args.out_folder = os.path.join(get_project_path(), "output", parser_args.out_folder)
@@ -86,6 +87,9 @@ def process_args():
 
         if parser_args.static_num is not None:
             parser_args.env_config["pedestrian_static_num"] = parser_args.static_num
+
+        if parser_args.goal_reached_thresh is not None:
+            parser_args.env_config["goal_reached_thresh"] = parser_args.goal_reached_thresh
 
     print("\nYaml env_config config:", parser_args.env_config)
     print("\nYaml training config:", parser_args.running_config)

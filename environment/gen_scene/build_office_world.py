@@ -122,7 +122,7 @@ def create_cylinder(_bullet_client, pose, with_collision, goal_id=None, height=N
                 radius=radius,
                 height=height,
             ),
-            basePosition=[x, y, 0.5],
+            basePosition=[x, y, height / 2],
         )
     else:
         return _bullet_client.createMultiBody(
@@ -132,5 +132,5 @@ def create_cylinder(_bullet_client, pose, with_collision, goal_id=None, height=N
                 length=height,
             ),
             baseCollisionShapeIndex=-1,
-            basePosition=[x, y, 0.5],
+            basePosition=[x, y, height / 2],
         )

@@ -175,9 +175,12 @@ def distant_start_end_sampler(**kwargs):
     distance = 0.4 * min(occupancy_map.shape[0], occupancy_map.shape[1])
 
     x_end, y_end = point_sampler(occupancy_map)
-    while np.sqrt(np.square(x_end - x_start) + np.square(y_end - y_start)) < distance:
+    counter = 0
+    while np.sqrt(np.square(x_end - x_start) + np.square(y_end - y_start)) < distance and counter < 100:
         x_end, y_end = point_sampler(occupancy_map)
-    return [[x_start, y_start], [x_end, y_end]], True
+        counter += 1
+    sample_success = np.sqrt(np.square(x_end - x_start) + np.square(y_end - y_start)) > distance
+    return [[x_start, y_start], [x_end, y_end]], sample_success
 
 
 def distant_two_points_sampler(**kwargs):
@@ -251,35 +254,3 @@ def sample_waypoint_from_path(door_map, robot_om_path, start_index, end_index, s
                                 robot_om_path[min(point_index + 1, len(robot_om_path) - 1)])
         return [point, point_yaw], True
     return [None, None], False
-
-
-def sample_waypoints_from_path(door_map, robot_om_path, start_index, end_index, sur_radius):
-    logging.debug(
-        "Path length:{}; from_start:{}; to_end;{};surr_radius:{} ".format(len(robot_om_path), start_index, end_index,
-                                                                          sur_radius))
-    if start_index > end_index:
-        logging.error("start_index > len(path) - end_index : {} > {}!".format(start_index, end_index))
-        return None
-
-    # choose candidates that not close to door
-    waypoint_indexes = np.arange(start_index, end_index, 2).tolist()
-    candidate_points = []
-    candidate_yaws = []
-    random.shuffle(waypoint_indexes)
-    for waypoint_ind in waypoint_indexes:
-        waypoint_ind = int(waypoint_ind)
-        point = robot_om_path[waypoint_ind]
-        if not is_door_neighbor(door_map, point, sur_radius):
-            # point
-            point = robot_om_path[waypoint_ind]
-            point = np.array([int(point[0]), int(point[1])])
-
-            # compute yaw
-            prev_index = max(waypoint_ind - 1, 0)
-            next_index = min(waypoint_ind + 1, len(robot_om_path) - 1)
-            point_yaw = compute_yaw(robot_om_path[prev_index], robot_om_path[next_index])
-
-            candidate_points.append(point)
-            candidate_yaws.append(point_yaw)
-
-    return candidate_points, candidate_yaws
