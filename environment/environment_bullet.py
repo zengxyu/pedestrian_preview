@@ -268,21 +268,21 @@ class EnvironmentBullet(PybulletBaseEnv):
         # 0.4/0.05 = 8
         n_step = np.round(self.inference_every_duration / self.physical_step_duration)
 
-        while iterate_count < n_step and not all_reach_goal and not collision:
+        while iterate_count < n_step and not all_reach_goal:
             for i, robot in enumerate(self.robots):
                 planned_v, planned_w = self.action_space.to_force(action=actions[i])
                 reach_goal = compute_distance(robot.get_position(), self.bu_goals[i]) < 1
                 if reach_goal:
                     robot.small_step(0, 0)
-                    print("robot {} reached goal".format(i))
+                    if not self.args.train:
+                        print("robot {} reached goal".format(i))
                 else:
                     robot.small_step(planned_v, planned_w)
-                    print("robot {} not reached goal".format(i))
+                    if not self.args.train:
+                        print("robot {} not reached goal".format(i))
 
             self.obstacle_collections.step()
             self.p_step_simulation()
-
-            collision = self._check_collision()
 
             for i, robot in enumerate(self.robots):
                 reach_goal = compute_distance(robot.get_position(), self.bu_goals[i]) < 1
@@ -290,6 +290,8 @@ class EnvironmentBullet(PybulletBaseEnv):
 
             iterate_count += 1
             all_reach_goal = all(reach_goals)
+
+        collision = self._check_collision()
         return all_reach_goal, collision
 
     def add_episode_end_prompt(self, info):

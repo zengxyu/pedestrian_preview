@@ -2,7 +2,7 @@ import torch
 
 from agents.network.network_base import *
 from agents.network.network_head import *
-
+from ncps.wirings import AutoNCP
 model_params = {
     'cnn': [32, 64, 32],
     'kernel_sizes': [3, 3, 3],
@@ -34,7 +34,8 @@ class SimpleCnnNcpActor(BaseModel):
 
         self.head = build_head(agent_type, action_space)
         self.cnn = build_cnns_2d(1, self.cnn_dims, self.kernel_sizes, self.strides)
-        self.rnn = build_ncpcfc(1283, 64, 4)
+        self.wirings = AutoNCP(48, 4)
+        self.rnn = build_ncpltc(1283, wirings=self.wirings)
     def forward(self, x, hx=None):
         depth_image = x[0].float()
         relative_position = x[1].float()

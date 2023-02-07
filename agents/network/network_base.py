@@ -21,10 +21,10 @@ from typing import Dict, List
 from torch.nn.functional import softmax
 
 from utils.fo_utility import get_project_path
-from ncps.torch import CfC
+from ncps.torch import LTC
 
-def build_ncpcfc(input_size, units, n_actions):
-    return CfC(input_size, units, batch_first=True, proj_size=n_actions)
+def build_ncpltc(input_size, wirings):
+    return LTC(input_size, wirings)
 
 def build_mlp(
         input_dim: int,
