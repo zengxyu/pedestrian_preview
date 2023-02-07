@@ -1,7 +1,7 @@
 input_cnn:
   # sector_processing: 0; tagd_processing: 1;
-  seq_len: 3
+  seq_len: 4
   # choose from network configs GlobalCnn, CNN, MLP
-  network: CNN
+  network: NCP
 
 

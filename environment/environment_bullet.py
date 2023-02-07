@@ -196,6 +196,9 @@ class EnvironmentBullet(PybulletBaseEnv):
         self.last_distance = distance
         reward += delta_distance_reward
 
+        """================step punish reward=================="""
+        reward -= np.log(self.step_count.value) * 0.1
+
         """================reach goal reward=================="""
 
         if reach_goal:
