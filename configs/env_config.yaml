@@ -13,7 +13,7 @@ kept_distance: 3
 waypoints_distance: 0.05
 
 #  pedestrian speed
-npc_speed_range: [ 1.19, 1.2 ]
+npc_speed_range: [ 0.6, 1.4 ]
 num_npc: 10
 
 num_agents: 1
