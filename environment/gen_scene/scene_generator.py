@@ -85,6 +85,8 @@ def load_environment_scene(p: BulletClient, env_config: Dict, worlds_config: Dic
 
     # create office entity in py bullet simulation environment
     obstacle_ids = drop_walls(p, occupancy_map.copy(), env_config["grid_res"], component_configs)
+    bu_starts = np.array(bu_starts)
+    bu_ends = np.array(bu_ends)
     print("bu_starts:{}, bu_ends:{}".format(bu_starts, bu_ends))
     return maps, samplers, obstacle_ids, bu_starts, bu_ends
 

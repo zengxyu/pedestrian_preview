@@ -41,7 +41,6 @@ class PFLearner:
             print("Start training")
             for i in range(self.args.num_episodes):
                 print("\nEpisode:{}".format(i))
-                self.scheduler.print()
                 self.train_once()
 
                 if (i + 1) % self.running_config["evaluate_every_n_training"] == 0:
@@ -49,6 +48,7 @@ class PFLearner:
                     self.evaluate_n_times(self.running_config["evaluate_n_times"])
                     self.agent.save("{}/model_epi_{}".format(self.args.out_model, self.test_i_episode))
                     self.scheduler.lr_schedule(self.test_collector.get_smooth_success_rate())
+                    self.scheduler.print()
 
 
         else:
