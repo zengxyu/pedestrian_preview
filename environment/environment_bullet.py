@@ -229,6 +229,7 @@ class EnvironmentBullet(PybulletBaseEnv):
 
             depth_image = cv2.resize(depth_image, (int(depth_image.shape[1] / 2), int(depth_image.shape[0] / 2)))
 
+            depth_image = (depth_image - 0.8) / 0.2
             if len(self.ma_depth_images_deque[i]) == 0:
                 for j in range(self.max_len - 1):
                     temp = np.zeros_like(depth_image)
