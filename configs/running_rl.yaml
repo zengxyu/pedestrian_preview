@@ -1,10 +1,10 @@
 # train
 save_result_n: 1000
-max_steps: 150
-inference_per_duration: 0.2 # [s]
+max_steps: 75
+inference_per_duration: 0.4 # [s]
 
 evaluate_every_n_training: 1000
-evaluate_n_times: 200
+evaluate_n_times: 100
 
 reward_config_name: reward_config1
 # choose from  input_spacial,input_temporal,input_cnn, input_st_attention_processing
