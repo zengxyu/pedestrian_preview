@@ -73,7 +73,7 @@ def load_environment_scene(p: BulletClient, env_config: Dict, worlds_config: Dic
 
         # check the connectivity between the start and end position
         if not sample_success or not check_connectivity(dilated_occ_map, start, end):
-            load_environment_scene(p, env_config, worlds_config)
+            return load_environment_scene(p, env_config, worlds_config)
 
         bu_start = cvt_to_bu(start, env_config["grid_res"])
         bu_end = cvt_to_bu(end, env_config["grid_res"])
