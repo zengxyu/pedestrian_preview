@@ -202,7 +202,7 @@ class EnvironmentBullet(PybulletBaseEnv):
         """================reach goal reward=================="""
 
         if reach_goal:
-            reach_goal_reward = 200
+            reach_goal_reward = 400
             reward += reach_goal_reward
 
         reward_info = {"reward/reward_collision": collision_reward,
