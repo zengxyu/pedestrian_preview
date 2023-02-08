@@ -147,8 +147,6 @@ class PFLearner:
 
         logging.info('Complete evaluation episode {}'.format(self.test_i_episode))
 
-        return info_for_last
-
     def evaluate_n_times(self, n_times):
         phase = "ZEvaluation"
         for i in range(n_times):
