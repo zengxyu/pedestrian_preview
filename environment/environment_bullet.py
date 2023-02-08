@@ -223,6 +223,7 @@ class EnvironmentBullet(PybulletBaseEnv):
         res = []
         for i, rt in enumerate(self.robots):
             width, height, rgb_image, depth_image, seg_image = rt.sensor.get_obs()
+            depth_image = (depth_image - 0.8) / 0.2
             relative_position = self.bu_goals[i] - rt.get_position()
             relative_yaw = compute_yaw(self.bu_goals[i], rt.get_position()) - rt.get_yaw()
             relative_pose = np.array([relative_position[0], relative_position[1], relative_yaw])
@@ -274,12 +275,12 @@ class EnvironmentBullet(PybulletBaseEnv):
                 reach_goal = compute_distance(robot.get_position(), self.bu_goals[i]) < 1
                 if reach_goal:
                     robot.small_step(0, 0)
-                    if not self.args.train:
-                        print("robot {} reached goal".format(i))
+                    # if not self.args.train:
+                        # print("robot {} reached goal".format(i))
                 else:
                     robot.small_step(planned_v, planned_w)
-                    if not self.args.train:
-                        print("robot {} not reached goal".format(i))
+                    # if not self.args.train:
+                        # print("robot {} not reached goal".format(i))
 
             self.obstacle_collections.step()
             self.p_step_simulation()
