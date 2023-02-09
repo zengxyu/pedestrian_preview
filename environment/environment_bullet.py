@@ -82,7 +82,8 @@ class EnvironmentBullet(PybulletBaseEnv):
 
         self.last_distance = None
 
-        self.max_len = self.args.inputs_config[self.running_config['input_config_name']]["seq_len"]
+        self.image_seq_len = self.args.inputs_config[self.running_config['input_config_name']]["image_seq_len"]
+        self.pose_seq_len = self.args.inputs_config[self.running_config['input_config_name']]["pose_seq_len"]
 
         self.robots = None
         self.num_agents = self.args.env_config["num_agents"]
@@ -220,9 +221,11 @@ class EnvironmentBullet(PybulletBaseEnv):
 
     def get_state3(self):
         # compute depth image
-        ma_depth_images = []
+        ma_images = []
         ma_relative_poses = []
         res = []
+        w = 0
+        h = 0
         for i, rt in enumerate(self.robots):
             width, height, rgbd_image, depth_image, seg_image = rt.sensor.get_obs()
             relative_position = self.bu_goals[i] - rt.get_position()
@@ -235,24 +238,25 @@ class EnvironmentBullet(PybulletBaseEnv):
                 image = cv2.resize(depth_image, (w, h))
             elif self.input_config["image_mode"] == ImageMode.RGBD:
                 image = cv2.resize(rgbd_image, (w, h))
+                image = np.transpose(image, (2, 0, 1))
             else:
                 raise NotImplementedError
             # depth_image = (depth_image - 0.8) / 0.2
             if len(self.ma_images_deque[i]) == 0:
-                for j in range(self.max_len - 1):
+                for j in range(self.image_seq_len - 1):
                     temp = np.zeros_like(image)
                     self.ma_images_deque[i].append(temp)
                     temp2 = np.zeros_like(relative_pose)
                     self.ma_relative_poses_deque[i].append(temp2)
 
             self.ma_images_deque[i].append(image)
-            ma_depth_images.append(np.array(self.ma_images_deque[i]))
+            ma_images.append(np.array(self.ma_images_deque[i]))
 
             self.ma_relative_poses_deque[i].append(relative_pose)
             ma_relative_poses.append(np.array([self.ma_relative_poses_deque[i]]).flatten())
 
         for i in range(len(self.robots)):
-            res.append([ma_depth_images[i], ma_relative_poses[i]])
+            res.append([ma_images[i].reshape((-1, w, h)), ma_relative_poses[i]])
         return res
 
     def p_step_simulation(self):
@@ -412,8 +416,8 @@ class EnvironmentBullet(PybulletBaseEnv):
         self.last_distance = None
         self.wall_obstacle_ids = []
 
-        self.ma_images_deque = [deque(maxlen=self.max_len) for i in range(self.num_agents)]
-        self.ma_relative_poses_deque = [deque(maxlen=self.max_len) for i in range(self.num_agents)]
+        self.ma_images_deque = [deque(maxlen=self.image_seq_len) for i in range(self.num_agents)]
+        self.ma_relative_poses_deque = [deque(maxlen=self.pose_seq_len) for i in range(self.num_agents)]
         self.robots = None
         self.robot_ids = []
 
