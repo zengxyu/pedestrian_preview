@@ -19,7 +19,6 @@ class BaseModel(nn.Module):
         self.kernel_sizes = model_params["kernel_sizes"]
         self.strides = model_params["strides"]
         self.seq_len = kwargs["seq_len"]
-        self.position_len = 2
         self.cnn = build_cnns_2d(self.seq_len, self.cnn_dims, self.kernel_sizes, self.strides)
         # self.mlp_relative_position = build_mlp(3, self.mlp_dims, activate_last_layer=False)
 
@@ -37,7 +36,7 @@ class SimpleCnnActor(BaseModel):
 
         self.head = build_head(agent_type, action_space)
 
-        self.mlp_action = build_mlp(1280 + 3 * self.seq_len,
+        self.mlp_action = build_mlp(384 + 3,
                                     mlp_values_dims + [self.n_actions * 2],
                                     activate_last_layer=False,
                                     )
@@ -67,7 +66,7 @@ class SimpleCnnCritic(BaseModel):
         self.n_actions = len(action_space.low)
         mlp_values_dims = model_params["mlp_values"]
 
-        self.mlp_value = build_mlp(1280 + 3 * self.seq_len + self.n_actions,
+        self.mlp_value = build_mlp(384 + 3 + self.n_actions,
                                    mlp_values_dims + [1],
                                    activate_last_layer=False,
                                    )

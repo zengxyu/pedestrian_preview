@@ -3,7 +3,7 @@ step_duration: 0.1
 
 #  """ the resolution of bullet to occupancy map, one cell in occ map = 0.1 meter in bullet"""
 dilation_size: 4
-goal_reached_thresh: 0.5
+goal_reached_thresh: 0.3
 
 # obstacles generation [m]
 kept_distance_to_start: 1.0

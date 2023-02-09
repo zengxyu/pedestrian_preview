@@ -122,6 +122,7 @@ class EnvironmentBullet(PybulletBaseEnv):
         # self.randomize_env()
         # self.randomize_human_npc()
         state = self.get_state()
+        # self.visualize_goals(self.bu_goals, self.robots)
 
         if not self.args.train:
             self.visualize_goals(self.bu_goals, self.robots)
@@ -202,7 +203,7 @@ class EnvironmentBullet(PybulletBaseEnv):
         """================reach goal reward=================="""
 
         if reach_goal:
-            reach_goal_reward = 400
+            reach_goal_reward = 200
             reward += reach_goal_reward
 
         reward_info = {"reward/reward_collision": collision_reward,
@@ -227,9 +228,9 @@ class EnvironmentBullet(PybulletBaseEnv):
             relative_yaw = compute_yaw(self.bu_goals[i], rt.get_position()) - rt.get_yaw()
             relative_pose = np.array([relative_position[0], relative_position[1], relative_yaw])
 
-            depth_image = cv2.resize(depth_image, (int(depth_image.shape[1] / 2), int(depth_image.shape[0] / 2)))
+            depth_image = cv2.resize(depth_image, (int(depth_image.shape[1] / 4), int(depth_image.shape[0] / 4)))
 
-            depth_image = (depth_image - 0.8) / 0.2
+            # depth_image = (depth_image - 0.8) / 0.2
             if len(self.ma_depth_images_deque[i]) == 0:
                 for j in range(self.max_len - 1):
                     temp = np.zeros_like(depth_image)
@@ -405,7 +406,7 @@ class EnvironmentBullet(PybulletBaseEnv):
         self.wall_obstacle_ids = []
 
         self.ma_depth_images_deque = [deque(maxlen=self.max_len) for i in range(self.num_agents)]
-        self.ma_relative_poses_deque = [deque(maxlen=self.max_len) for i in range(self.num_agents)]
+        self.ma_relative_poses_deque = [deque(maxlen=1) for i in range(self.num_agents)]
         self.robots = None
         self.robot_ids = []
 

@@ -171,7 +171,7 @@ def distant_point_sampler(occupancy_map, from_point=None, distance=100):
 
 def distant_start_end_sampler(**kwargs):
     occupancy_map = kwargs["occupancy_map"]
-    distance = 0.7 * min(occupancy_map.shape[0], occupancy_map.shape[1])
+    distance = 0.75 * min(occupancy_map.shape[0], occupancy_map.shape[1])
     x_start, y_start = point_sampler(occupancy_map)
     x_end, y_end = point_sampler(occupancy_map)
     counter = 0
