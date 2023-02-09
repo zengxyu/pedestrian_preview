@@ -90,7 +90,7 @@ class EnvironmentBullet(PybulletBaseEnv):
         self.ma_relative_poses_deque = []
         self.ma_images_deque = None
         self.robot_ids = []
-
+        self.state = args.state
         """
         initialize environment
         initialize dynamic human npc

@@ -30,6 +30,9 @@ def process_args():
     parser.add_argument("--load_map_from", type=str)
     parser.add_argument("--goal_reached_thresh", type=float)
 
+
+    parser.add_argument("--state", type=str)
+
     # motion/motion_speed_control_0.1/model/model_epi_1000
     parser_args = parser.parse_args()
     parser_args.out_folder = os.path.join(get_project_path(), "output", parser_args.out_folder)
