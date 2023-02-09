@@ -122,8 +122,8 @@ class EnvironmentBullet(PybulletBaseEnv):
         # self.randomize_env()
         # self.randomize_human_npc()
         state = self.get_state()
-        # if not self.args.train:
-        self.visualize_ground_destination()
+        if not self.args.train:
+            self.visualize_ground_destination()
         return state
 
     def visualize_ground_destination(self):
