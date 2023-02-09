@@ -232,12 +232,16 @@ class EnvironmentBullet(PybulletBaseEnv):
             relative_yaw = compute_yaw(self.bu_goals[i], rt.get_position()) - rt.get_yaw()
             relative_pose = np.array([relative_position[0], relative_position[1], relative_yaw])
 
-            w = int(depth_image.shape[1] / 4)
-            h = int(depth_image.shape[0] / 4)
+            w = int(depth_image.shape[1] / 2)
+            h = int(depth_image.shape[0] / 2)
             if self.input_config["image_mode"] == ImageMode.DEPTH:
                 image = cv2.resize(depth_image, (w, h))
+            elif self.input_config["image_mode"] == ImageMode.RGB:
+                image = cv2.resize(rgbd_image[:, :, :3], (w, h))
+                image = np.transpose(image, (2, 0, 1))
             elif self.input_config["image_mode"] == ImageMode.RGBD:
-                image = cv2.resize(rgbd_image, (w, h))
+                image = np.append(rgbd_image[:, :, :3], depth_image)
+                image = cv2.resize(image, (w, h))
                 image = np.transpose(image, (2, 0, 1))
             else:
                 raise NotImplementedError

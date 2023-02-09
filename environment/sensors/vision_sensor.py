@@ -5,6 +5,7 @@ import pybullet as p
 
 class ImageMode:
     DEPTH = "depth"
+    RGB = "rgb"
     RGBD = "rgbd"
 
 
