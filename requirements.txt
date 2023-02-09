@@ -16,3 +16,4 @@ scikit-learn
 scikit-image
 rospkg
 filelock
+ncps
