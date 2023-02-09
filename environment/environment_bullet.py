@@ -88,7 +88,7 @@ class EnvironmentBullet(PybulletBaseEnv):
         self.ma_relative_poses_deque = []
         self.ma_depth_images_deque = None
         self.robot_ids = []
-
+        self.state = args.state
         """
         initialize environment
         initialize dynamic human npc
@@ -224,20 +224,31 @@ class EnvironmentBullet(PybulletBaseEnv):
         for i, rt in enumerate(self.robots):
             width, height, rgb_image, depth_image, seg_image = rt.sensor.get_obs()
             depth_image = (depth_image - 0.8) / 0.2
+            depth_image = cv2.resize(depth_image, (int(depth_image.shape[1] / 2), int(depth_image.shape[0] / 2)))
+
+            rgb_image = cv2.resize(rgb_image, (int(rgb_image.shape[1] / 2), int(rgb_image.shape[0] / 2)))
+            rgb_image = (rgb_image / 255)[:, :, :3]
+
+            if self.state == "depth_image":
+                image = depth_image
+            elif self.state == "rgb_image":
+                image = rgb_image
+            elif self.state == "rgbd_image":
+                depth_image = depth_image.reshape(depth_image.shape[0], depth_image.shape[1], 1)
+                image = np.append(rgb_image, depth_image, axis=2)
+
             relative_position = self.bu_goals[i] - rt.get_position()
             relative_yaw = compute_yaw(self.bu_goals[i], rt.get_position()) - rt.get_yaw()
             relative_pose = np.array([relative_position[0], relative_position[1], relative_yaw])
 
-            depth_image = cv2.resize(depth_image, (int(depth_image.shape[1] / 2), int(depth_image.shape[0] / 2)))
-
             if len(self.ma_depth_images_deque[i]) == 0:
                 for j in range(self.max_len - 1):
-                    temp = np.zeros_like(depth_image)
+                    temp = np.zeros_like(image)
                     self.ma_depth_images_deque[i].append(temp)
                     temp2 = np.zeros_like(relative_pose)
                     self.ma_relative_poses_deque[i].append(temp2)
 
-            self.ma_depth_images_deque[i].append(depth_image)
+            self.ma_depth_images_deque[i].append(image)
             ma_depth_images.append(np.array(self.ma_depth_images_deque[i]))
 
             self.ma_relative_poses_deque[i].append(relative_pose)

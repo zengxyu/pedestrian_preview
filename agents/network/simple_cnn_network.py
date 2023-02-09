@@ -30,23 +30,22 @@ class SimpleCnnNcpActor(BaseModel):
         super().__init__(**kwargs)
         self.n_actions = len(action_space.low)
 
-        mlp_values_dims = model_params["mlp_values"]
-
         self.head = build_head(agent_type, action_space)
         self.cnn = build_cnns_2d(1, self.cnn_dims, self.kernel_sizes, self.strides)
         self.wirings = AutoNCP(48, 4)
         self.rnn = build_ncpltc(1283, wirings=self.wirings)
+
     def forward(self, x, hx=None):
-        depth_image = x[0].float()
+        image = x[0].float()
         relative_position = x[1].float()
 
-        batch_size = depth_image.size(0)
-        seq_len = depth_image.size(1)
+        batch_size = image.size(0)
+        seq_len = image.size(1)
 
         relative_position = relative_position.view(batch_size, seq_len, -1)
 
-        depth_image = depth_image.view(batch_size * seq_len, 1, *depth_image.shape[2:])
-        out1 = self.cnn(depth_image)
+        image = image.view(batch_size * seq_len, 1, *image.shape[2:])
+        out1 = self.cnn(image)
         out1 = out1.view(batch_size, seq_len, *out1.shape[1:])
         out1 = out1.reshape(batch_size, seq_len, -1)
         out = torch.cat((out1, relative_position), dim=2)
@@ -55,6 +54,7 @@ class SimpleCnnNcpActor(BaseModel):
         out = out.mean(dim=1)
         out = self.head(out)
         return out
+
 class SimpleCnnActor(BaseModel):
     """
     Apply attention mechanism on lidar measurements

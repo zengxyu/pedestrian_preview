@@ -27,6 +27,8 @@ def process_args():
     parser.add_argument("--max_steps", type=int, help='')
     parser.add_argument("--load_coordinates_from", type=str)
     parser.add_argument("--load_map_from", type=str)
+
+    parser.add_argument("--state", type=str)
     
     # motion/motion_speed_control_0.1/model/model_epi_1000
     parser_args = parser.parse_args()
