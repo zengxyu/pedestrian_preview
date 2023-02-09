@@ -232,10 +232,11 @@ class EnvironmentBullet(PybulletBaseEnv):
             if self.state == "depth_image":
                 image = depth_image
             elif self.state == "rgb_image":
-                image = rgb_image
+                image = np.transpose(rgb_image, (2, 0, 1))
             elif self.state == "rgbd_image":
                 depth_image = depth_image.reshape(depth_image.shape[0], depth_image.shape[1], 1)
                 image = np.append(rgb_image, depth_image, axis=2)
+                image = np.transpose(image, (2, 0, 1))
 
             relative_position = self.bu_goals[i] - rt.get_position()
             relative_yaw = compute_yaw(self.bu_goals[i], rt.get_position()) - rt.get_yaw()
