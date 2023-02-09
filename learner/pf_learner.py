@@ -118,6 +118,8 @@ class PFLearner:
                 infos_for_last.append(info_for_last)
             except Exception as e:
                 logging.error("Exception:{}".format(e))
+                logging.error("State:{}".format(state))
+
                 done = True
                 if self.args.debug:
                     sys.exit(0)
