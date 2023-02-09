@@ -4,7 +4,7 @@ input_cnn:
   pose_seq_len: 4
   # choose from network configs GlobalCnn, CNN, MLP
   network: CNN
-  # choose from {depth, rgbd}
+  # choose from {depth, rgbd, rgb}
   image_mode: rgbd
 
 
