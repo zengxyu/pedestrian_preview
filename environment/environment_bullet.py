@@ -88,7 +88,6 @@ class EnvironmentBullet(PybulletBaseEnv):
         self.num_agents = self.args.env_config["num_agents"]
         self.ma_relative_poses_deque = []
         self.ma_images_deque = None
-        self.ma_rgb_images_deque = None
         self.robot_ids = []
 
         """
@@ -414,9 +413,7 @@ class EnvironmentBullet(PybulletBaseEnv):
         self.wall_obstacle_ids = []
 
         self.ma_images_deque = [deque(maxlen=self.max_len) for i in range(self.num_agents)]
-        self.ma_rgb_images_deque = [deque(maxlen=self.max_len) for i in range(self.num_agents)]
-
-        self.ma_relative_poses_deque = [deque(maxlen=1) for i in range(self.num_agents)]
+        self.ma_relative_poses_deque = [deque(maxlen=self.max_len) for i in range(self.num_agents)]
         self.robots = None
         self.robot_ids = []
 
