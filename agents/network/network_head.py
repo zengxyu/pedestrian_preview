@@ -7,6 +7,7 @@ from pfrl.nn.lmbda import Lambda
 def squashed_diagonal_gaussian_head(x):
     mean, log_scale = torch.chunk(x, 2, dim=1)
     log_scale = torch.clamp(log_scale, -20.0, 2.0)
+
     var = torch.exp(log_scale * 2)
     base_distribution = distributions.Independent(
         distributions.Normal(loc=mean, scale=torch.sqrt(var)), 1
