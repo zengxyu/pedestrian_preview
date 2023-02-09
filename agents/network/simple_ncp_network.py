@@ -19,7 +19,7 @@ class BaseModel(nn.Module):
         self.cnn_dims = model_params["cnn"]
         self.kernel_sizes = model_params["kernel_sizes"]
         self.strides = model_params["strides"]
-        self.seq_len = kwargs["seq_len"]
+        self.seq_len = kwargs["image_seq_len"]
         self.image_depth = kwargs["image_depth"]
         self.position_len = 2
         self.cnn = build_cnns_2d(self.image_depth, self.cnn_dims, self.kernel_sizes, self.strides)

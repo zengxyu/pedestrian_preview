@@ -240,7 +240,7 @@ class EnvironmentBullet(PybulletBaseEnv):
                 image = cv2.resize(rgbd_image[:, :, :3], (w, h))
                 image = np.transpose(image, (2, 0, 1))
             elif self.input_config["image_mode"] == ImageMode.RGBD:
-                image = np.append(rgbd_image[:, :, :3], depth_image)
+                image = np.append(rgbd_image[:, :, :3], depth_image[:, :, np.newaxis], axis=-1)
                 image = cv2.resize(image, (w, h))
                 image = np.transpose(image, (2, 0, 1))
             else:
