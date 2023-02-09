@@ -65,7 +65,7 @@ def read_occupancy_map(map_path: str, ratio: float):
     # local occupancy resolution 0.2m/cell, convert to 0.1m/cell
     new_map = cv2.resize(new_map, (int(new_map.shape[1] * ratio), int(new_map.shape[0] * ratio)))
     new_map = np.where(new_map >= 0.7, 1, 0)
-
+    new_map = np.transpose(new_map, (1, 0))
     return new_map
 
 

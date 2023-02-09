@@ -6,7 +6,7 @@ import numpy as np
 from numpy import pi
 from pybullet_utils.bullet_client import BulletClient
 
-from environment.robots.robot_roles import RobotRoles
+from environment.robots.robot_roles import RobotRoles, get_role_color
 from environment.sensors.lidar_sensor import LidarSensor
 from environment.robots.base_differential_robot import BaseDifferentialRobot
 from environment.sensors.vision_sensor import VisionSensor
@@ -93,13 +93,7 @@ class DifferentialRaceCar(BaseDifferentialRobot):
             if "joint_top" in str(self.p.getJointInfo(race_car, j)[1]):
                 top_joint = j
 
-        if self.robot_role == RobotRoles.AGENT:
-            # agent color : red
-            color = [1, 0, 0, 1]
-            self.color = color
-        else:
-            color = list(np.random.random(size=3)) + [1]
-            self.color = color
-        self.p.changeVisualShape(race_car, top_joint, rgbaColor=color)
+        self.color = get_role_color(self.robot_role)
+        self.p.changeVisualShape(race_car, top_joint, rgbaColor=self.color)
 
         self.robot_id, self.left_wheel_id, self.right_wheel_id = race_car, left_joint, right_joint

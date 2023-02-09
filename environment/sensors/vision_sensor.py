@@ -3,6 +3,11 @@ import math
 import pybullet as p
 
 
+class ImageMode:
+    DEPTH = "depth"
+    RGBD = "rgbd"
+
+
 class VisionSensor:
     def __init__(self, robot_id, sensor_config):
         self.robot_id = robot_id

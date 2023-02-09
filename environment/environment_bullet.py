@@ -23,6 +23,7 @@ from environment.human_npc_generator import generate_human_npc
 from environment.robots.npc import DynamicObstacleGroup
 from environment.robots.robot_roles import RobotRoles
 from environment.robots.robot_types import RobotTypes, init_robot
+from environment.sensors.vision_sensor import ImageMode
 
 sys.path.append(
     os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), "traditional_planner", "a_star"))
@@ -48,7 +49,7 @@ class EnvironmentBullet(PybulletBaseEnv):
         self.worlds_config = args.worlds_config
         self.robot_config = args.robots_config[self.running_config["robot_name"]]
         self.sensor_config = args.sensors_config[self.running_config["sensor_name"]]
-
+        self.input_config = args.inputs_config[args.running_config["input_config_name"]]
         self.robot_name = self.running_config["robot_name"]
 
         self.render = args.render
@@ -86,7 +87,8 @@ class EnvironmentBullet(PybulletBaseEnv):
         self.robots = None
         self.num_agents = self.args.env_config["num_agents"]
         self.ma_relative_poses_deque = []
-        self.ma_depth_images_deque = None
+        self.ma_images_deque = None
+        self.ma_rgb_images_deque = None
         self.robot_ids = []
 
         """
@@ -223,23 +225,29 @@ class EnvironmentBullet(PybulletBaseEnv):
         ma_relative_poses = []
         res = []
         for i, rt in enumerate(self.robots):
-            width, height, rgb_image, depth_image, seg_image = rt.sensor.get_obs()
+            width, height, rgbd_image, depth_image, seg_image = rt.sensor.get_obs()
             relative_position = self.bu_goals[i] - rt.get_position()
             relative_yaw = compute_yaw(self.bu_goals[i], rt.get_position()) - rt.get_yaw()
             relative_pose = np.array([relative_position[0], relative_position[1], relative_yaw])
 
-            depth_image = cv2.resize(depth_image, (int(depth_image.shape[1] / 4), int(depth_image.shape[0] / 4)))
-
+            w = int(depth_image.shape[1] / 4)
+            h = int(depth_image.shape[0] / 4)
+            if self.input_config["image_mode"] == ImageMode.DEPTH:
+                image = cv2.resize(depth_image, (w, h))
+            elif self.input_config["image_mode"] == ImageMode.RGBD:
+                image = cv2.resize(rgbd_image, (w, h))
+            else:
+                raise NotImplementedError
             # depth_image = (depth_image - 0.8) / 0.2
-            if len(self.ma_depth_images_deque[i]) == 0:
+            if len(self.ma_images_deque[i]) == 0:
                 for j in range(self.max_len - 1):
-                    temp = np.zeros_like(depth_image)
-                    self.ma_depth_images_deque[i].append(temp)
+                    temp = np.zeros_like(image)
+                    self.ma_images_deque[i].append(temp)
                     temp2 = np.zeros_like(relative_pose)
                     self.ma_relative_poses_deque[i].append(temp2)
 
-            self.ma_depth_images_deque[i].append(depth_image)
-            ma_depth_images.append(np.array(self.ma_depth_images_deque[i]))
+            self.ma_images_deque[i].append(image)
+            ma_depth_images.append(np.array(self.ma_images_deque[i]))
 
             self.ma_relative_poses_deque[i].append(relative_pose)
             ma_relative_poses.append(np.array([self.ma_relative_poses_deque[i]]).flatten())
@@ -405,7 +413,9 @@ class EnvironmentBullet(PybulletBaseEnv):
         self.last_distance = None
         self.wall_obstacle_ids = []
 
-        self.ma_depth_images_deque = [deque(maxlen=self.max_len) for i in range(self.num_agents)]
+        self.ma_images_deque = [deque(maxlen=self.max_len) for i in range(self.num_agents)]
+        self.ma_rgb_images_deque = [deque(maxlen=self.max_len) for i in range(self.num_agents)]
+
         self.ma_relative_poses_deque = [deque(maxlen=1) for i in range(self.num_agents)]
         self.robots = None
         self.robot_ids = []

@@ -1,5 +1,6 @@
 from agents.network.network_base import *
 from agents.network.network_head import *
+from environment.sensors.vision_sensor import ImageMode
 
 model_params = {
     'cnn': [32, 64, 32],
@@ -19,7 +20,14 @@ class BaseModel(nn.Module):
         self.kernel_sizes = model_params["kernel_sizes"]
         self.strides = model_params["strides"]
         self.seq_len = kwargs["seq_len"]
-        self.cnn = build_cnns_2d(self.seq_len, self.cnn_dims, self.kernel_sizes, self.strides)
+        self.image_mode = kwargs["image_mode"]
+        if self.image_mode == ImageMode.DEPTH:
+            input_channel = self.seq_len
+        elif self.image_mode == ImageMode.RGBD:
+            input_channel = 4 * self.seq_len
+        else:
+            raise NotImplementedError
+        self.cnn = build_cnns_2d(input_channel, self.cnn_dims, self.kernel_sizes, self.strides)
         # self.mlp_relative_position = build_mlp(3, self.mlp_dims, activate_last_layer=False)
 
 

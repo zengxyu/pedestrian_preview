@@ -6,6 +6,7 @@ from pybullet_utils.bullet_client import BulletClient
 from environment.gen_scene.build_office_world import create_cylinder
 from environment.nav_utilities.pybullet_helper import place_object
 from environment.robots.base_robot import BaseRobot
+from environment.robots.robot_roles import get_role_color
 
 
 class ObjectRobot(BaseRobot):
@@ -80,5 +81,6 @@ class ObjectRobot(BaseRobot):
     def load_object(self, cur_x, cur_y, cur_yaw=0):
         self.cur_yaw = cur_yaw
         start_position = np.array([cur_x, cur_y])
+        self.color = get_role_color(self.robot_role)
         self.robot_id = create_cylinder(self.p, start_position, with_collision=self.with_collision, height=self.height,
-                                        radius=self.radius)
+                                        radius=self.radius, color=self.color)
