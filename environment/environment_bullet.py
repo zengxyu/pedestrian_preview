@@ -122,8 +122,8 @@ class EnvironmentBullet(PybulletBaseEnv):
         # self.randomize_env()
         # self.randomize_human_npc()
         state = self.get_state()
-        if not self.args.train:
-            self.visualize_ground_destination()
+        # if not self.args.train:
+        self.visualize_ground_destination()
         return state
 
     def visualize_ground_destination(self):
@@ -337,9 +337,18 @@ class EnvironmentBullet(PybulletBaseEnv):
         map_path = self.args.load_map_from
         coordinates_from = self.args.load_coordinates_from
 
-        obstacle_ids = load_scene(self.p, self.env_config, self.worlds_config, map_path, coordinates_from)
+        maps, samplers, obstacle_ids, bu_starts, bu_goals = load_scene(self.p, self.env_config, self.worlds_config,
+                                                                       map_path, coordinates_from)
 
         self.wall_obstacle_ids = obstacle_ids
+        self.occ_map = maps["occ_map"]
+        self.dilated_occ_map = maps["dilated_occ_map"]
+        self.door_occ_map = maps["door_map"]
+        self.start_goal_sampler, self.static_obs_sampler, self.dynamic_obs_sampler = samplers
+
+        self.bu_starts = bu_starts
+        self.bu_goals = [bu_goals[0] for i in range(self.num_agents)]
+
         logging.debug("Create the environment, Done...")
         self.robots = self.init_robots()
 
