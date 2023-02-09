@@ -256,7 +256,7 @@ class EnvironmentBullet(PybulletBaseEnv):
             ma_relative_poses.append(np.array([self.ma_relative_poses_deque[i]]).flatten())
 
         for i in range(len(self.robots)):
-            res.append([ma_images[i].reshape((-1, w, h)), ma_relative_poses[i]])
+            res.append([ma_images[i].reshape((-1, h, w)), ma_relative_poses[i]])
         return res
 
     def p_step_simulation(self):
