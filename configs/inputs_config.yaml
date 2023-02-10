@@ -5,6 +5,6 @@ input_cnn:
   # choose from network configs GlobalCnn, CNN, MLP
   network: CNN
   # choose from {depth, rgbd, rgb}
-  image_mode: rgb
+  image_mode: depth
 
 

@@ -12,7 +12,7 @@ model_params = {
     'strides': [2, 2, 2],
     'mlp_waypoints': [64, 40, 30],
     'mlp_values': [256, 128, 64],
-
+    'mlp_relative_position': [48, 64]
 }
 
 
@@ -26,6 +26,7 @@ class BaseModel(nn.Module):
         self.image_seq_len = kwargs["image_seq_len"]
         self.pose_seq_len = kwargs["pose_seq_len"]
         self.image_mode = kwargs["image_mode"]
+        self.dim_relative_position = model_params["mlp_relative_position"]
         if self.image_mode == ImageMode.DEPTH:
             input_channel = self.image_seq_len
         elif self.image_mode == ImageMode.RGBD:
@@ -35,7 +36,8 @@ class BaseModel(nn.Module):
         else:
             raise NotImplementedError
         self.cnn = build_cnns_2d(input_channel, self.cnn_dims, self.kernel_sizes, self.strides)
-        # self.mlp_relative_position = build_mlp(3, self.mlp_dims, activate_last_layer=False)
+        self.mlp_relative_position = build_mlp(3 * self.pose_seq_len, self.dim_relative_position,
+                                               activate_last_layer=False)
 
 
 class SimpleCnnNcpActor(BaseModel):
@@ -84,7 +86,7 @@ class SimpleCnnActor(BaseModel):
 
         self.head = build_head(agent_type, action_space)
 
-        self.mlp_action = build_mlp(1280 + 3 * self.pose_seq_len,
+        self.mlp_action = build_mlp(1280 + self.dim_relative_position[-1],
                                     mlp_values_dims + [self.n_actions * 2],
                                     activate_last_layer=False,
                                     )
@@ -96,8 +98,8 @@ class SimpleCnnActor(BaseModel):
         batch_size = depth_image.size(0)
         out1 = self.cnn(depth_image)
         out1 = out1.reshape((batch_size, -1))
-        # out2 = self.mlp_relative_position(relative_position)
-        out = torch.cat((out1, relative_position), dim=1)
+        out2 = self.mlp_relative_position(relative_position)
+        out = torch.cat((out1, out2), dim=1)
 
         out = self.mlp_action(out)
         out = self.head(out)
@@ -114,7 +116,7 @@ class SimpleCnnCritic(BaseModel):
         self.n_actions = len(action_space.low)
         mlp_values_dims = model_params["mlp_values"]
 
-        self.mlp_value = build_mlp(1280 + 3 * self.pose_seq_len + self.n_actions,
+        self.mlp_value = build_mlp(1280 + self.dim_relative_position[-1] + self.n_actions,
                                    mlp_values_dims + [1],
                                    activate_last_layer=False,
                                    )
@@ -127,7 +129,7 @@ class SimpleCnnCritic(BaseModel):
         batch_size = depth_image.size(0)
         out1 = self.cnn(depth_image)
         out1 = out1.reshape((batch_size, -1))
-        # out =
-        out = torch.cat((out1, relative_position, action), dim=1)
+        out2 = self.mlp_relative_position(relative_position)
+        out = torch.cat((out1, out2, action), dim=1)
 
         return self.mlp_value(out)
