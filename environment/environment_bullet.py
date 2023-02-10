@@ -192,20 +192,20 @@ class EnvironmentBullet(PybulletBaseEnv):
         reach_goal_reward = 0
         """================collision reward=================="""
         if collision == CollisionType.CollisionWithWall:
-            collision_reward = -200
+            collision_reward = -100
             reward += collision_reward
 
         """================delta distance reward=================="""
         # compute distance from current to goal
         distance = compute_distance(self.bu_goals[0], self.robots[0].get_position())
-        delta_distance_reward = (self.last_distance - distance) * 30
+        delta_distance_reward = (self.last_distance - distance) * 50
         self.last_distance = distance
         reward += delta_distance_reward
 
         """================reach goal reward=================="""
 
         if reach_goal:
-            reach_goal_reward = 200
+            reach_goal_reward = 100
             reward += reach_goal_reward
 
         reward_info = {"reward/reward_collision": collision_reward,
@@ -229,7 +229,7 @@ class EnvironmentBullet(PybulletBaseEnv):
         for i, rt in enumerate(self.robots):
             width, height, rgba_image, depth_image, seg_image = rt.sensor.get_obs()
             rgba_image = rgba_image / 255
-            depth_image = (depth_image - 0.8) / 0.2
+            # depth_image = (depth_image - 0.8) / 0.2
             relative_position = self.bu_goals[i] - rt.get_position()
             relative_yaw = compute_yaw(self.bu_goals[i], rt.get_position()) - rt.get_yaw()
             relative_pose = np.array([relative_position[0], relative_position[1], relative_yaw])
@@ -247,7 +247,6 @@ class EnvironmentBullet(PybulletBaseEnv):
                 image = np.transpose(image, (2, 0, 1))
             else:
                 raise NotImplementedError
-            # depth_image = (depth_image - 0.8) / 0.2
             if len(self.ma_images_deque[i]) == 0:
                 for j in range(self.image_seq_len - 1):
                     temp = np.zeros_like(image)

@@ -18,5 +18,5 @@ vision:
   fov: 90
   aspect: 1.5
   near_val: 0.02
-  far_val: 3.5
+  far_val: 10
   shadow: True
