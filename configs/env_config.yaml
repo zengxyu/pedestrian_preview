@@ -1,5 +1,5 @@
 grid_res: 0.1
-step_duration: 0.1
+step_duration: 0.05
 
 #  """ the resolution of bullet to occupancy map, one cell in occ map = 0.1 meter in bullet"""
 dilation_size: 4

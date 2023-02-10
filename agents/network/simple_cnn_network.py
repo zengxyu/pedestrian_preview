@@ -30,6 +30,8 @@ class BaseModel(nn.Module):
             input_channel = self.image_seq_len
         elif self.image_mode == ImageMode.RGBD:
             input_channel = 4 * self.image_seq_len
+        elif self.image_mode == ImageMode.RGB:
+            input_channel = 3 * self.image_seq_len
         else:
             raise NotImplementedError
         self.cnn = build_cnns_2d(input_channel, self.cnn_dims, self.kernel_sizes, self.strides)

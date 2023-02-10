@@ -227,7 +227,9 @@ class EnvironmentBullet(PybulletBaseEnv):
         w = 0
         h = 0
         for i, rt in enumerate(self.robots):
-            width, height, rgbd_image, depth_image, seg_image = rt.sensor.get_obs()
+            width, height, rgba_image, depth_image, seg_image = rt.sensor.get_obs()
+            rgba_image = rgba_image / 255
+            depth_image = (depth_image - 0.8) / 0.2
             relative_position = self.bu_goals[i] - rt.get_position()
             relative_yaw = compute_yaw(self.bu_goals[i], rt.get_position()) - rt.get_yaw()
             relative_pose = np.array([relative_position[0], relative_position[1], relative_yaw])
@@ -237,10 +239,10 @@ class EnvironmentBullet(PybulletBaseEnv):
             if self.input_config["image_mode"] == ImageMode.DEPTH:
                 image = cv2.resize(depth_image, (w, h))
             elif self.input_config["image_mode"] == ImageMode.RGB:
-                image = cv2.resize(rgbd_image[:, :, :3], (w, h))
+                image = cv2.resize(rgba_image[:, :, :3], (w, h))
                 image = np.transpose(image, (2, 0, 1))
             elif self.input_config["image_mode"] == ImageMode.RGBD:
-                image = np.append(rgbd_image[:, :, :3], depth_image[:, :, np.newaxis], axis=-1)
+                image = np.append(rgba_image[:, :, :3], depth_image[:, :, np.newaxis], axis=-1)
                 image = cv2.resize(image, (w, h))
                 image = np.transpose(image, (2, 0, 1))
             else:
