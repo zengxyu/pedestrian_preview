@@ -1,4 +1,5 @@
 import logging
+from typing import List
 
 import numpy as np
 import logging as logger
@@ -6,8 +7,6 @@ import logging as logger
 from pybullet_utils.bullet_client import BulletClient
 
 from environment.nav_utilities.counter import Counter
-from environment.robots.base_obstacle import BaseObstacleGroup
-
 from environment.path_manager import PathManager
 from environment.robots.base_robot import BaseRobot
 from environment.robots.robot_roles import RobotRoles
@@ -21,18 +20,17 @@ class Npc:
         self.p = p
         self.client_id = client_id
         self.args = args
-        self.env_config = args.env_config
         self.running_config = args.running_config
-        self.grid_res = args.env_config["grid_res"]
+        self.grid_res = args.running_config["grid_res"]
         self.physical_step_duration = step_duration
 
-        self.robot_name = self.running_config["npc_name"]
-        self.robot_config = args.robots_config[self.running_config["npc_name"]]
+        self.npc_robot_name = self.running_config["npc_robot_name"]
+        self.npc_robot_config = args.robots_config[self.running_config["npc_robot_name"]]
         self.sensor_config = args.sensors_config[self.running_config["sensor_name"]]
 
-        self.inference_every_duration = self.running_config["inference_per_duration"]
+        self.inference_every_duration = self.running_config["inference_duration"]
 
-        self.speed_range = self.args.env_config["npc_speed_range"]
+        self.speed_range = self.args.running_config["npc_speed_range"]
         self.lfd = 0.4
         self.speed = np.random.random() * (self.speed_range[1] - self.speed_range[0]) + self.speed_range[0]
         self.step_count = Counter()
@@ -49,8 +47,8 @@ class Npc:
     def create(self, path):
         logger.debug("create a dynamic obstacle")
         yaw = compute_yaw(path[0], path[-1])
-        self.robot = init_robot(self.p, self.client_id, self.robot_name, RobotRoles.NPC, self.physical_step_duration,
-                                self.robot_config,
+        self.robot = init_robot(self.p, self.client_id, self.npc_robot_name, RobotRoles.NPC, self.physical_step_duration,
+                                self.npc_robot_config,
                                 self.sensor_config, path[0], yaw)
 
         self.path_manager.register_path(path)
@@ -84,13 +82,16 @@ class Npc:
         return self.robot.small_step(planned_v, planned_w)
 
 
-class DynamicObstacleGroup(BaseObstacleGroup):
+class NpcGroup:
     def __init__(self, p, client_id, args, step_duration, paths):
         super().__init__()
         self.p = p
         self.client_id = client_id
         self.args = args
         self.step_duration = step_duration
+        self.npc_robots: List[Npc] = []
+        self.npc_robot_ids: List[int] = []
+
         self.create(paths)
 
     def create(self, paths):
@@ -99,11 +100,15 @@ class DynamicObstacleGroup(BaseObstacleGroup):
         for path in paths:
             i += 1
             npc_robot = Npc(self.p, self.client_id, self.args, self.step_duration, path)
-            self.obstacles.append(npc_robot)
-            self.obstacle_ids.append(npc_robot.robot.robot_id)
+            self.npc_robots.append(npc_robot)
+            self.npc_robot_ids.append(npc_robot.robot.robot_id)
             logger.debug("The {}-th obstacle with obstacle id : {} created!".format(i, npc_robot.robot.robot_id))
         return self
 
     def step(self):
-        for obstacle in self.obstacles:
-            obstacle.step()
+        for npc in self.npc_robots:
+            npc.small_step()
+
+    def clear(self):
+        self.npc_robots: List[Npc] = []
+        self.npc_robot_ids: List[int] = []

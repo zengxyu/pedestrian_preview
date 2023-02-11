@@ -1,10 +1,15 @@
 input_cnn:
-  # sector_processing: 0; tagd_processing: 1;
   image_seq_len: 4
   pose_seq_len: 4
-  # choose from network configs GlobalCnn, CNN, MLP
+  # choose from network configs CNN, MLP
   network: CNN
-  # choose from {depth, rgbd, rgb}
+  # choose from {row, depth, rgbd, rgb}
   image_mode: depth
 
-
+input_row_mlp:
+  image_seq_len: 4
+  pose_seq_len: 4
+  # choose from network configs CNN, MLP
+  network: MLP
+  # choose from {row, depth, rgbd, rgb}
+  image_mode: row

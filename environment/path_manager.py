@@ -16,10 +16,9 @@ class PathManager:
         :param path:
         """
         self.args = args
-        self.env_config = args.env_config
-
+        self.running_config = self.args.running_config
         # distance between waypoints [m]
-        self.waypoints_distance = self.env_config["waypoints_distance"]
+        self.waypoints_distance = 0.05
 
         self.original_path = None
         self.nearest_ind = 0
@@ -63,7 +62,7 @@ class PathManager:
             return waypoints[index]
 
     def check_reach_goal(self, robot_position):
-        reach_goal = compute_distance(robot_position, self.original_path[-1]) < self.env_config["goal_reached_thresh"]
+        reach_goal = compute_distance(robot_position, self.original_path[-1]) < self.running_config["goal_reached_thresh"]
         return reach_goal
 
     def reverse(self):

@@ -6,18 +6,16 @@ import cv2
 import numpy as np
 
 from environment.gen_scene.build_office_world import drop_walls
-from environment.gen_scene.scene_generator import compute_door_map
 from environment.nav_utilities.coordinates_converter import cvt_to_bu
-from utils.image_utility import dilate_image
 
 import json
 
 
-def load_scene(p, env_config, world_config, map_path, coordinates_path):
+def load_scene(p, running_config, world_config, map_path, coordinates_path):
     """
     load scene from map path and trajectory path
     """
-    ratio = 0.25 / env_config["grid_res"]
+    ratio = 0.25 / running_config["grid_res"]
     # read occupancy map from map_path
     occupancy_map = read_occupancy_map(map_path, ratio=ratio)
 
@@ -28,15 +26,11 @@ def load_scene(p, env_config, world_config, map_path, coordinates_path):
     # [start, end], sample_success = start_goal_sampler(occupancy_map=dilated_occ_map, margin=env_config["dilation_size"])
     #
     config = world_config["configs_all"]
-    obstacle_ids = drop_walls(p, occupancy_map.copy(), env_config["grid_res"], config)
-    bu_starts = cvt_to_bu(start_coordinates, env_config["grid_res"])
-    bu_ends = cvt_to_bu(goals, env_config["grid_res"])
-    # maps, samplers, obstacle_ids, bu_starts, bu_goals
-    dilated_occ_map = dilate_image(occupancy_map, env_config["dilation_size"])
-    door_occ_map = compute_door_map(dilated_occ_map)
-    maps = {"occ_map": occupancy_map, "dilated_occ_map": dilated_occ_map, "door_map": door_occ_map}
-
-    return maps, [None, None, None], obstacle_ids, bu_starts, bu_ends
+    agent_ids = drop_walls(p, occupancy_map.copy(), running_config["grid_res"], config)
+    agent_starts = cvt_to_bu(start_coordinates, running_config["grid_res"])
+    agent_goals = cvt_to_bu(goals, running_config["grid_res"])
+    # maps, obstacle_ids, bu_starts, bu_goals
+    return occupancy_map, agent_ids, agent_starts, agent_goals
 
 
 def read_occupancy_map(map_path: str, ratio: float):

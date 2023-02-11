@@ -30,10 +30,6 @@ def process_args():
     parser.add_argument("--load_map_from", type=str)
     parser.add_argument("--goal_reached_thresh", type=float)
 
-
-    parser.add_argument("--state", type=str)
-
-    # motion/motion_speed_control_0.1/model/model_epi_1000
     parser_args = parser.parse_args()
     parser_args.out_folder = os.path.join(get_project_path(), "output", parser_args.out_folder)
 
@@ -69,33 +65,25 @@ def process_args():
     parser_args.robots_config = read_yaml(parser_args.configs_folder, "robots_config.yaml")
     parser_args.worlds_config = read_yaml(parser_args.configs_folder, "worlds_config.yaml")
     parser_args.sensors_config = read_yaml(parser_args.configs_folder, "sensors_config.yaml")
-    parser_args.env_config = read_yaml(parser_args.configs_folder, "env_config.yaml")
-    parser_args.running_config = read_yaml(parser_args.configs_folder, "running_rl.yaml")
+    parser_args.samplers_config = read_yaml(parser_args.configs_folder, "samplers_config.yaml")
+    parser_args.rewards_config = read_yaml(parser_args.configs_folder, "rewards_config.yaml")
+    parser_args.running_config = read_yaml(parser_args.configs_folder, "running_config.yaml")
 
     # evaluation时动态配置的环境参数，
     if not parser_args.train or parser_args.resume:
         if parser_args.scene_name is not None:
-            if parser_args.env_config["scene_name"] == "random":
+            if parser_args.running_config["scene_name"] == "random":
                 scene_name = np.random.choice(a=["office", "corridor", "cross"])
             else:
                 scene_name = parser_args.scene_name
-            parser_args.env_config["scene_name"] = scene_name
+            parser_args.running_config["scene_name"] = scene_name
+
         if parser_args.max_steps is not None:
             parser_args.running_config["max_steps"] = parser_args.max_steps
-        if parser_args.max_speed is not None:
-            parser_args.env_config["pedestrian_speed_range"] = [parser_args.max_speed - 0.01,
-                                                                parser_args.max_speed]
-
-        if parser_args.dynamic_num is not None:
-            parser_args.env_config["pedestrian_dynamic_num"] = parser_args.dynamic_num
-
-        if parser_args.static_num is not None:
-            parser_args.env_config["pedestrian_static_num"] = parser_args.static_num
 
         if parser_args.goal_reached_thresh is not None:
-            parser_args.env_config["goal_reached_thresh"] = parser_args.goal_reached_thresh
+            parser_args.running_config["goal_reached_thresh"] = parser_args.goal_reached_thresh
 
-    print("\nYaml env_config config:", parser_args.env_config)
     print("\nYaml training config:", parser_args.running_config)
     print("\n==============================================================================================\n")
     return parser_args

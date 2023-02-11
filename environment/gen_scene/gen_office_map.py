@@ -133,6 +133,4 @@ def create_office_map(configs):
     corridor_map = get_corridor_map(occupancy_map, door_list, configs)
     occupancy_map = door_map.copy()
     make_exit_door(occupancy_map, configs, grid_resolution)
-    return occupancy_map, [start_goal_sampler2, static_obs_sampler, dynamic_obs_sampler]
-
-
+    return occupancy_map

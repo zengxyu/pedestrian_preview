@@ -23,7 +23,7 @@ class PybulletBaseEnv(gym.Env, ABC):
 
         self.robot_direction_id = None
 
-        self.physical_step_duration = args.env_config["step_duration"]
+        self.physical_step_duration = args.running_config["physical_step_duration"]
         self.episode_count = Counter()
         self.step_count = Counter()
         self.occ_map = None

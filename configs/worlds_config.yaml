@@ -2,11 +2,18 @@ configs_all:
   height: 2.5
   thickness: 0.05
 
-empty:
-  corridor_width: [ 6.0, 8.0 ]
-  corridor_height: [ 6.0, 8.0 ]
+open:
+  width_range: [ 6.0, 8.0 ]
+  height_range: [ 6.0, 8.0 ]
   distance: 0.5
   offset: 0.5
+
+inclosure:
+  width_range: [ 6.0, 8.0 ]
+  height_range: [ 6.0, 8.0 ]
+  distance: 0.5
+  offset: 0.5
+
 
 office:
   outer_limit: [ [ 7,7 ] ]
@@ -22,16 +29,16 @@ office:
 
 corridor:
   # tunnel limit: [[width low width high] [height low height high]]
-  corridor_width: [ 2.0, 2.5 ]
-  corridor_height: [ 8.0, 10.0 ]
+  corridor_width_range: [ 2.0, 2.5 ]
+  corridor_height_range: [ 8.0, 10.0 ]
   distance: 0.5
   offset: 0.5
 
 cross:
   # cross
   # if margin=5 limit.low > 2.2
-  hallway_width: [ 2.0, 2.5 ]
-  short_L: [ 3.0, 4.0 ]
-  long_L: [ 4.0, 5.0 ]
+  hallway_width_range: [ 2.0, 2.5 ]
+  short_L_range: [ 3.0, 4.0 ]
+  long_L_range: [ 4.0, 5.0 ]
   distance: 0.5
   

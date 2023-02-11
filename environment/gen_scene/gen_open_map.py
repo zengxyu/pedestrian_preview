@@ -13,20 +13,16 @@
 from environment.gen_scene.common_sampler import *
 
 
-def create_simple_environment(configs):
+def create_open_map(configs):
     grid_resolution = 2.0 * configs["thickness"]
 
-    width = np.array(configs["corridor_width"][0]
-                     + np.random.random_sample() * (configs["corridor_width"][1] - configs["corridor_width"][0])
+    width = np.array(configs["width_range"][0]
+                     + np.random.random_sample() * (configs["width_range"][1] - configs["width_range"][0])
                      ) + 2.0 * configs["thickness"]
-    length = np.array(configs["corridor_height"][0]
-                      + np.random.random_sample() * (configs["corridor_height"][1] - configs["corridor_height"][0])
+    length = np.array(configs["height_range"][0]
+                      + np.random.random_sample() * (configs["height_range"][1] - configs["height_range"][0])
                       ) + 2.0 * configs["thickness"]
 
     occupancy_map = np.zeros((int(width / grid_resolution), int(length / grid_resolution)), dtype=bool)
 
-    # outer wall
-    occupancy_map[:, [0, -1]] = True
-    occupancy_map[[0, -1], :] = True
-
-    return occupancy_map, [start_goal_sampler, static_obs_sampler, dynamic_obs_sampler]
+    return occupancy_map

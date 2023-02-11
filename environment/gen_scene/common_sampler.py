@@ -17,62 +17,10 @@ import numpy as np
 from environment.gen_scene.gen_map_util import is_door_neighbor, convolve_map
 from utils.math_helper import compute_distance, compute_yaw, swap_value
 
-
-def static_obs_sampler(**kwargs):
-    door_map = kwargs["door_map"]
-    robot_om_path = kwargs["robot_om_path"]
-    start_index = kwargs["start_index"]
-    end_index = kwargs["end_index"]
-    radius = kwargs["radius"]
-    sample_from_path = kwargs["sample_from_path"]
-    occupancy_map = kwargs["occupancy_map"]
-
-    logging.debug("Sample static obstacles;")
-    logging.debug("length of robot om path:{};".format(len(robot_om_path)))
-
-    if sample_from_path:
-        # if the surrounding is occupied
-        [pivot_om_point, _], sample_success = sample_waypoint_from_path(door_map=door_map,
-                                                                        robot_om_path=robot_om_path,
-                                                                        start_index=start_index,
-                                                                        end_index=end_index,
-                                                                        sur_radius=radius
-                                                                        )
-    else:
-        pivot_om_point = sample_waypoint_out_path(occupancy_map=occupancy_map, robot_om_path=robot_om_path)
-        sample_success = True
-    return pivot_om_point, sample_success
-
-
-def sample_waypoint_out_path(occupancy_map, robot_om_path):
-    path_map = np.zeros_like(occupancy_map)
-    for p in robot_om_path:
-        path_map[p[0], p[1]] = True
-
-    path_map = convolve_map(path_map, window=5)
-    occupancy_map_copy = np.logical_or(path_map, occupancy_map)
-    indx, indy = np.where(np.invert(occupancy_map_copy))
-    ind = np.random.choice(range(len(indx)))
-    indx, indy = indx[ind], indy[ind]
-    return indx, indy
-
-
-def start_goal_sampler(**kwargs):
-    occupancy_map = kwargs["occupancy_map"]
-    indx, indy = np.where(np.invert(occupancy_map))
-    # 0,1,2,3
-    length = len(indx)
-    start_index = np.random.randint(0, 5)
-    end_index = np.random.randint(length - 5, length - 1)
-    start = indx[start_index], indy[start_index]
-    end = indx[end_index], indy[end_index]
-    return [np.array(start), np.array(end)], True
-
-
 corner_pairs = [[0, 2], [2, 0], [1, 3], [3, 1]]
 
 
-def start_goal_sampler2(**kwargs):
+def sg_corner_sampler(**kwargs):
     # 0 1
     # 3 2
     occupancy_map = kwargs["occupancy_map"]
@@ -133,26 +81,6 @@ def point_sampler(occupancy_map):
     return [indx, indy]
 
 
-def dynamic_obs_sampler(**kwargs):
-    """
-
-    :param occupancy_map:
-    :param om_path:
-    :param kwargs:
-    :return:
-    """
-    # 动态障碍物(起点，终点)
-    # 有两种采样方法，一种是对角采样， 一种是保持距离采样
-    # 用哪个函数如何决定
-
-    logging.debug("sampling dynamic obstacles;")
-    # logging.info("kwargs:{}".format(kwargs))
-
-    [start_position, end_position], sample_success = distant_two_points_sampler(**kwargs)
-    # [start_position, end_position], sample_success = opposite_two_points_sampler(**kwargs)
-    return [start_position, end_position], sample_success
-
-
 def distant_point_sampler(occupancy_map, from_point=None, distance=100):
     """
     sample a point which keep distance from from_point with distance more than 100
@@ -169,9 +97,13 @@ def distant_point_sampler(occupancy_map, from_point=None, distance=100):
     return [x, y]
 
 
-def distant_start_end_sampler(**kwargs):
+def sg_in_distance_sampler(**kwargs):
+    """
+    sample start and goal in distance
+    """
     occupancy_map = kwargs["occupancy_map"]
-    distance = 0.75 * min(occupancy_map.shape[0], occupancy_map.shape[1])
+    distance_ratio = kwargs["distance_ratio"]
+    distance = distance_ratio * min(occupancy_map.shape[0], occupancy_map.shape[1])
     x_start, y_start = point_sampler(occupancy_map)
     x_end, y_end = point_sampler(occupancy_map)
     counter = 0
@@ -181,37 +113,6 @@ def distant_start_end_sampler(**kwargs):
         counter += 1
     sample_success = np.sqrt(np.square(x_end - x_start) + np.square(y_end - y_start)) > distance
     return [[x_start, y_start], [x_end, y_end]], sample_success
-
-
-def distant_two_points_sampler(**kwargs):
-    """
-    sample two distant points which keep distance = given distance_thresh
-    :param kwargs:
-    :return: [start_position, end_position],
-            distance_less_than_thresh: no point sampled available
-    """
-    occupancy_map, robot_start, robot_end = kwargs["occupancy_map"], kwargs["robot_om_start"], kwargs["robot_om_end"]
-    kept_distance = kwargs["kept_distance"]
-    kept_distance_to_start = kwargs["kept_distance_to_start"]
-    count_outer = 0
-    logging.debug("Sample two distant points...")
-    start_position, end_position = None, None
-
-    distance_less_than_thresh = True
-    while distance_less_than_thresh and count_outer < 50:
-        logging.debug("Sample start point...")
-        start_position = point_sampler(occupancy_map)
-        end_position = point_sampler(occupancy_map)
-        distance_less_than_thresh = compute_distance(start_position, end_position) < kept_distance
-
-        distance_to_start_less_than_thresh = compute_distance(start_position, robot_start) < kept_distance_to_start
-        distance_to_end_less_than_thresh = compute_distance(end_position, robot_end) < kept_distance_to_start
-
-        distance_less_than_thresh = distance_less_than_thresh or distance_to_start_less_than_thresh or distance_to_end_less_than_thresh
-        count_outer += 1
-        logging.debug("No available end point, resample start point...")
-    sample_success = not distance_less_than_thresh
-    return [start_position, end_position], sample_success
 
 
 def in_line_left(om_center, theta, point):
@@ -226,31 +127,3 @@ def in_line_right(om_center, theta, point):
     y = point[1]
     line_left = np.tan(theta) * (x - om_center[0] - 5) + om_center[1] - y > 0
     return line_left
-
-
-def sample_waypoint_from_path(door_map, robot_om_path, start_index, end_index, sur_radius):
-    logging.debug(
-        "Path length:{}; from_start:{}; to_end;{};surr_radius:{} ".format(len(robot_om_path), start_index, end_index,
-                                                                          sur_radius))
-    if start_index > end_index:
-        logging.error("start_index > len(path) - end_index : {} > {}!".format(start_index, end_index))
-        return [None, None], False
-
-    # choose candidates that not close to door
-    waypoint_indexes = np.arange(start_index, end_index, 1)
-    candidate_indexes = []
-    for waypoint_ind in waypoint_indexes:
-        waypoint_ind = int(waypoint_ind)
-        point = robot_om_path[waypoint_ind]
-        if not is_door_neighbor(door_map, point, sur_radius):
-            candidate_indexes.append(waypoint_ind)
-
-    if len(candidate_indexes) != 0:
-        point_index = np.random.choice(candidate_indexes)
-        point = robot_om_path[point_index]
-        point = np.array([int(point[0]), int(point[1])])
-        # compute the path direction at this path point
-        point_yaw = compute_yaw(robot_om_path[point_index - 1],
-                                robot_om_path[min(point_index + 1, len(robot_om_path) - 1)])
-        return [point, point_yaw], True
-    return [None, None], False

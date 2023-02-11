@@ -54,15 +54,15 @@ class ObjectRobot(BaseRobot):
         place_object(self.p, self.robot_id, *next_position)
 
         self.update_yaw(next_yaw)
-        self.update_v_w(planned_v, planned_w)
+        self.update_v_w(planned_v, planned_w, cur_position, next_position)
 
         return planned_v, planned_w
 
     def update_yaw(self, yaw):
         self.cur_yaw = yaw
 
-    def update_v_w(self, v, w):
-        self.cur_v = v
+    def update_v_w(self, v, w, cur_position, next_position):
+        self.cur_v = np.linalg.norm(cur_position - next_position) / self.physical_step_duration
         self.cur_w = w
 
     def get_position(self):

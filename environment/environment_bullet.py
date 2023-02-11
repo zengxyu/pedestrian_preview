@@ -18,9 +18,9 @@ from collections import deque
 
 import cv2
 
-from environment.gen_scene.scene_loader import load_scene
+from environment.gen_scene.world_loader import load_scene
 from environment.human_npc_generator import generate_human_npc
-from environment.robots.npc import DynamicObstacleGroup
+from environment.robots.npc import NpcGroup
 from environment.robots.robot_roles import RobotRoles
 from environment.robots.robot_types import RobotTypes, init_robot
 from environment.sensors.vision_sensor import ImageMode
@@ -33,10 +33,8 @@ from agents.action_space.action_space import AbstractActionSpace
 from environment.base_pybullet_env import PybulletBaseEnv
 from environment.nav_utilities.check_helper import check_collision, CollisionType
 from environment.nav_utilities.counter import Counter
-from environment.robots.obstacle_collections import ObstacleCollections
 from utils.math_helper import compute_yaw, compute_distance, compute_manhattan_distance
-from environment.gen_scene.scene_generator import load_environment_scene
-from environment.path_manager import PathManager
+from environment.gen_scene.world_generator import load_environment_scene
 from traditional_planner.a_star.astar import AStar
 
 
@@ -45,52 +43,48 @@ class EnvironmentBullet(PybulletBaseEnv):
         PybulletBaseEnv.__init__(self, args)
         self.args = args
         self.running_config = args.running_config
-        self.env_config = args.env_config
         self.worlds_config = args.worlds_config
-        self.robot_config = args.robots_config[self.running_config["robot_name"]]
+        self.agent_robot_config = args.robots_config[self.running_config["agent_robot_name"]]
         self.sensor_config = args.sensors_config[self.running_config["sensor_name"]]
         self.input_config = args.inputs_config[args.running_config["input_config_name"]]
-        self.robot_name = self.running_config["robot_name"]
+        self.agent_sg_sampler_config = args.samplers_config[args.running_config["agent_sg_sampler"]]
+        self.npc_sg_sampler_config = args.samplers_config[args.running_config["npc_sg_sampler"]]
+        self.reward_config = args.rewards_config[self.running_config["reward_config_name"]]
+        self.agent_robot_name = self.running_config["agent_robot_name"]
 
         self.render = args.render
 
-        self.grid_res = self.env_config["grid_res"]
+        self.grid_res = self.running_config["grid_res"]
 
         self.max_step = self.running_config["max_steps"]
-        self.inference_every_duration = self.running_config["inference_per_duration"]
+        self.inference_duration = self.running_config["inference_duration"]
         self.action_space: AbstractActionSpace = action_space
 
-        self.path_manager = PathManager(self.args)
-
         self.occ_map = None
-        self.dilated_occ_map = None
-        self.door_occ_map = None
 
-        self.bu_starts, self.bu_goals = [None] * 2
+        self.agent_starts, self.agent_goals = [None] * 2
+        self.agent_robots = None
+        self.agent_robot_ids = []
+
+        self.num_agents = self.args.running_config["num_agents"]
+
         self.npc_goals = []
-        self.obstacle_collections: ObstacleCollections = ObstacleCollections(args)
+        self.wall_ids = []
+        self.npc_ids = []
+        self.npc_group: NpcGroup = None
 
-        self.wall_obstacle_ids = []
-        self.pedestrian_obstacle_ids = []
-        # n_radius, n_from_start, n_to_end [unit: pixel]
         # generate human agent, and other human npc
         self.start_goal_sampler, self.static_obs_sampler, self.dynamic_obs_sampler = None, None, None
-        self.action_space_keys = None
+        self.action_space_keys = self.get_action_space_keys()
         self.physical_steps = Counter()
-
-        self.get_action_space_keys()
 
         self.last_distance = None
 
         self.image_seq_len = self.args.inputs_config[self.running_config['input_config_name']]["image_seq_len"]
         self.pose_seq_len = self.args.inputs_config[self.running_config['input_config_name']]["pose_seq_len"]
 
-        self.robots = None
-        self.num_agents = self.args.env_config["num_agents"]
         self.ma_relative_poses_deque = []
         self.ma_images_deque = None
-        self.robot_ids = []
-        self.state = args.state
         """
         initialize environment
         initialize dynamic human npc
@@ -127,7 +121,7 @@ class EnvironmentBullet(PybulletBaseEnv):
         # self.visualize_goals(self.bu_goals, self.robots)
 
         if not self.args.train:
-            self.visualize_goals(self.bu_goals, self.robots)
+            self.visualize_goals(self.agent_goals, self.agent_robots)
             # self.visualize_goals(self.npc_goals, self.obstacle_collections.get_obstacle_ids())
         return state
 
@@ -153,7 +147,8 @@ class EnvironmentBullet(PybulletBaseEnv):
 
     def get_action_space_keys(self):
         action_class = self.action_space.__class__.__name__
-        self.action_space_keys = list(self.args.action_spaces_config[action_class].keys())
+        action_space_keys = list(self.args.action_spaces_config[action_class].keys())
+        return action_space_keys
 
     def step(self, actions):
         self.step_count += 1
@@ -186,27 +181,25 @@ class EnvironmentBullet(PybulletBaseEnv):
 
     def get_reward(self, reach_goal, collision):
         if self.last_distance is None:
-            self.last_distance = compute_distance(self.bu_goals[0], self.bu_starts)
+            self.last_distance = compute_distance(self.agent_goals[0], self.agent_starts)
         reward = 0
         collision_reward = 0
         reach_goal_reward = 0
         """================collision reward=================="""
         if collision == CollisionType.CollisionWithWall:
-            collision_reward = -100
-            reward += collision_reward
+            reward += self.reward_config["collision"]
 
         """================delta distance reward=================="""
         # compute distance from current to goal
-        distance = compute_distance(self.bu_goals[0], self.robots[0].get_position())
-        delta_distance_reward = (self.last_distance - distance) * 50
+        distance = compute_distance(self.agent_goals[0], self.agent_robots[0].get_position())
+        delta_distance_reward = (self.last_distance - distance) * self.reward_config["delta_distance"]
         self.last_distance = distance
         reward += delta_distance_reward
 
         """================reach goal reward=================="""
 
         if reach_goal:
-            reach_goal_reward = 100
-            reward += reach_goal_reward
+            reward += self.reward_config["reach_goal"]
 
         reward_info = {"reward/reward_collision": collision_reward,
                        "reward/reward_delta_distance": delta_distance_reward,
@@ -217,26 +210,30 @@ class EnvironmentBullet(PybulletBaseEnv):
         return reward, reward_info
 
     def get_state(self):
-        return self.get_state3()
+        return self.get_state1()
 
-    def get_state3(self):
+    def get_state1(self):
         # compute depth image
         ma_images = []
         ma_relative_poses = []
         res = []
         w = 0
         h = 0
-        for i, rt in enumerate(self.robots):
+        for i, rt in enumerate(self.agent_robots):
             width, height, rgba_image, depth_image, seg_image = rt.sensor.get_obs()
             rgba_image = rgba_image / 255
             # depth_image = (depth_image - 0.8) / 0.2
-            relative_position = self.bu_goals[i] - rt.get_position()
-            relative_yaw = compute_yaw(self.bu_goals[i], rt.get_position()) - rt.get_yaw()
+            relative_position = self.agent_goals[i] - rt.get_position()
+            relative_yaw = compute_yaw(self.agent_goals[i], rt.get_position()) - rt.get_yaw()
             relative_pose = np.array([relative_position[0], relative_position[1], relative_yaw])
 
             w = int(depth_image.shape[1] / 2)
             h = int(depth_image.shape[0] / 2)
-            if self.input_config["image_mode"] == ImageMode.DEPTH:
+            if self.input_config["image_mode"] == ImageMode.ROW:
+                image = depth_image[25]
+                h = 1
+                w = int(depth_image.shape[1])
+            elif self.input_config["image_mode"] == ImageMode.DEPTH:
                 image = cv2.resize(depth_image, (w, h))
             elif self.input_config["image_mode"] == ImageMode.RGB:
                 image = cv2.resize(rgba_image[:, :, :3], (w, h))
@@ -260,7 +257,7 @@ class EnvironmentBullet(PybulletBaseEnv):
             self.ma_relative_poses_deque[i].append(relative_pose)
             ma_relative_poses.append(np.array([self.ma_relative_poses_deque[i]]).flatten())
 
-        for i in range(len(self.robots)):
+        for i in range(len(self.agent_robots)):
             res.append([ma_images[i].reshape((-1, h, w)), ma_relative_poses[i]])
         return res
 
@@ -269,11 +266,11 @@ class EnvironmentBullet(PybulletBaseEnv):
         self.physical_steps += 1
 
     def _check_collision(self):
-        if check_collision(self.p, self.robot_ids, self.wall_obstacle_ids):
+        if check_collision(self.p, self.agent_robot_ids, self.wall_ids):
             return CollisionType.CollisionWithWall
-        elif check_collision(self.p, self.robot_ids, self.pedestrian_obstacle_ids):
+        elif check_collision(self.p, self.agent_robot_ids, self.npc_ids):
             return CollisionType.CollisionWithPedestrian
-        elif check_collision(self.p, self.robot_ids, self.robot_ids):
+        elif check_collision(self.p, self.agent_robot_ids, self.agent_robot_ids):
             return CollisionType.CollisionWithAgent
         else:
             return False
@@ -283,12 +280,12 @@ class EnvironmentBullet(PybulletBaseEnv):
         reach_goals = []
         all_reach_goal = False
         # 0.4/0.05 = 8
-        n_step = np.round(self.inference_every_duration / self.physical_step_duration)
+        n_step = np.round(self.inference_duration / self.physical_step_duration)
 
         while iterate_count < n_step and not all_reach_goal:
-            for i, robot in enumerate(self.robots):
+            for i, robot in enumerate(self.agent_robots):
                 planned_v, planned_w = self.action_space.to_force(action=actions[i])
-                reach_goal = compute_distance(robot.get_position(), self.bu_goals[i]) < self.env_config[
+                reach_goal = compute_distance(robot.get_position(), self.agent_goals[i]) < self.running_config[
                     "goal_reached_thresh"]
                 if reach_goal:
                     robot.small_step(0, 0)
@@ -297,11 +294,11 @@ class EnvironmentBullet(PybulletBaseEnv):
                     if not self.args.train:
                         print("robot {} not reached goal".format(i))
 
-            self.obstacle_collections.step()
+            self.npc_group.step()
             self.p_step_simulation()
 
-            for i, robot in enumerate(self.robots):
-                reach_goal = compute_distance(robot.get_position(), self.bu_goals[i]) < self.env_config[
+            for i, robot in enumerate(self.agent_robots):
+                reach_goal = compute_distance(robot.get_position(), self.agent_goals[i]) < self.running_config[
                     "goal_reached_thresh"]
                 reach_goals.append(reach_goal)
 
@@ -309,7 +306,14 @@ class EnvironmentBullet(PybulletBaseEnv):
             all_reach_goal = all(reach_goals)
 
         collision = self._check_collision()
+        self.print_v()
         return all_reach_goal, collision
+
+    def print_v(self):
+        for i, robot in enumerate(self.agent_robots):
+            print("robot id : {}; v:{}".format(robot.robot_id, robot.get_v()))
+        for i, npc in enumerate(self.npc_group.npc_robots):
+            print("npc id : {}; v:{}".format(npc.robot.robot_id, npc.robot.get_v()))
 
     def add_episode_end_prompt(self, info):
         display_duration = 0.5
@@ -329,21 +333,17 @@ class EnvironmentBullet(PybulletBaseEnv):
         add human npc
         """
         # randomize the start and end position for occupancy map
-        obs_bu_starts, obs_bu_ends, obs_bu_paths = generate_human_npc(dynamic_obs_sampler=self.dynamic_obs_sampler,
-                                                                      env_config=self.env_config,
-                                                                      occ_map=self.occ_map,
-                                                                      robot_start=self.bu_starts[0],
-                                                                      robot_end=self.bu_goals[0])
-        self.npc_goals = obs_bu_ends
+        npc_starts, npc_goals, npc_paths = generate_human_npc(running_config=self.running_config,
+                                                              occ_map=self.occ_map,
+                                                              npc_sg_sampler_config=self.npc_sg_sampler_config)
+        self.npc_goals = npc_goals
         # create n dynamic obstacles, put them into the environment
-        dynamic_obstacle_group = DynamicObstacleGroup(p=self.p,
-                                                      client_id=self.client_id,
-                                                      args=self.args,
-                                                      step_duration=self.physical_step_duration,
-                                                      paths=obs_bu_paths)
-
-        self.obstacle_collections.add(dynamic_obstacle_group, dynamic=True)
-        self.pedestrian_obstacle_ids = self.obstacle_collections.get_obstacle_ids()
+        self.npc_group = NpcGroup(p=self.p,
+                                  client_id=self.client_id,
+                                  args=self.args,
+                                  step_duration=self.physical_step_duration,
+                                  paths=npc_paths)
+        self.npc_ids = self.npc_group.npc_robot_ids
 
     def load_env(self):
         """
@@ -353,20 +353,17 @@ class EnvironmentBullet(PybulletBaseEnv):
         map_path = self.args.load_map_from
         coordinates_from = self.args.load_coordinates_from
 
-        maps, samplers, obstacle_ids, bu_starts, bu_goals = load_scene(self.p, self.env_config, self.worlds_config,
-                                                                       map_path, coordinates_from)
+        occ_map, wall_ids, agent_starts, agent_goals = load_scene(self.p, self.running_config, self.worlds_config,
+                                                                  map_path, coordinates_from)
 
-        self.wall_obstacle_ids = obstacle_ids
-        self.occ_map = maps["occ_map"]
-        self.dilated_occ_map = maps["dilated_occ_map"]
-        self.door_occ_map = maps["door_map"]
-        self.start_goal_sampler, self.static_obs_sampler, self.dynamic_obs_sampler = samplers
+        self.wall_ids = wall_ids
+        self.occ_map = occ_map
 
-        self.bu_starts = bu_starts
-        self.bu_goals = [bu_goals[0] for i in range(self.num_agents)]
+        self.agent_starts = agent_starts
+        self.agent_goals = [agent_goals[0] for i in range(self.num_agents)]
 
         logging.debug("Create the environment, Done...")
-        self.robots = self.init_robots()
+        self.agent_robots = self.init_robots()
 
     def randomize_env(self):
         """
@@ -382,49 +379,45 @@ class EnvironmentBullet(PybulletBaseEnv):
                 self.om_path, self.bu_path
         """
         # randomize building
-        maps, samplers, obstacle_ids, bu_starts, bu_goals = load_environment_scene(p=self.p,
-                                                                                   env_config=self.env_config,
-                                                                                   worlds_config=self.worlds_config)
+        occ_map, obstacle_ids, agent_starts, agent_goals = load_environment_scene(p=self.p,
+                                                                                  running_config=self.running_config,
+                                                                                  worlds_config=self.worlds_config,
+                                                                                  agent_sg_sampler_config=self.agent_sg_sampler_config)
 
         # sample start pose and goal pose
-        self.wall_obstacle_ids = obstacle_ids
-        self.occ_map = maps["occ_map"]
-        self.dilated_occ_map = maps["dilated_occ_map"]
-        self.door_occ_map = maps["door_map"]
-        # extract samplers
-        self.start_goal_sampler, self.static_obs_sampler, self.dynamic_obs_sampler = samplers
-
-        self.bu_starts = bu_starts
-        self.bu_goals = [bu_goals[0] for i in range(self.num_agents)]
+        self.wall_ids = obstacle_ids
+        self.occ_map = occ_map
+        self.agent_starts = agent_starts
+        # 如果有多个agent，去往同一个目标
+        self.agent_goals = [agent_goals[0] for i in range(self.num_agents)]
         # initialize robot
         logging.debug("Create the environment, Done...")
-        self.robots = self.init_robots()
+        self.agent_robots = self.init_robots()
 
     def init_robots(self):
         agents = []
         for i in range(self.num_agents):
-            robot = init_robot(self.p, self.client_id, self.robot_name, RobotRoles.AGENT, self.physical_step_duration,
-                               self.robot_config, self.sensor_config, self.bu_starts[i],
-                               compute_yaw(self.bu_starts[i], self.bu_goals[i]))
-            self.robot_ids.append(robot.robot_id)
+            robot = init_robot(self.p, self.client_id, self.agent_robot_name, RobotRoles.AGENT, self.physical_step_duration,
+                               self.agent_robot_config, self.sensor_config, self.agent_starts[i],
+                               compute_yaw(self.agent_starts[i], self.agent_goals[i]))
+            self.agent_robot_ids.append(robot.robot_id)
             agents.append(robot)
         return agents
 
     def clear_variables(self):
         self.step_count = Counter()
         self.occ_map = None
-        self.dilated_occ_map = None
-        self.door_occ_map = None
-        self.bu_starts, self.bu_goals = [None] * 2
-
-        self.obstacle_collections.clear()
+        if self.npc_group is not None:
+            self.npc_group.clear()
+            self.npc_group = None
         self.last_distance = None
-        self.wall_obstacle_ids = []
+        self.wall_ids = []
 
         self.ma_images_deque = [deque(maxlen=self.image_seq_len) for i in range(self.num_agents)]
         self.ma_relative_poses_deque = [deque(maxlen=self.pose_seq_len) for i in range(self.num_agents)]
-        self.robots = None
-        self.robot_ids = []
+        self.agent_robots = None
+        self.agent_robot_ids = []
+        self.agent_starts, self.agent_goals = [None] * 2
 
     def logging_action(self, action):
         logging_str = ""

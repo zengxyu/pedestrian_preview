@@ -12,7 +12,7 @@
 from agents.mapping import get_agent_name, get_network_config
 from agents.network.simple_cnn_network import SimpleCnnCritic, SimpleCnnActor
 from agents.network.simple_ncp_network import SimpleCnnNcpActor, SimpleCnnNcpCritic
-from agents.network.simple_mlp import SimpleMlpActor, SimpleMlpCritic
+from agents.network.simple_mlp_network import SimpleMlpActor, SimpleMlpCritic
 
 actor_critic_model_mapping = {
     'MLP': (SimpleMlpActor, SimpleMlpCritic),
