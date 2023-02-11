@@ -1,7 +1,7 @@
 agent_sg_sampler1:
   sampler_name: sg_in_distance_sampler
   sampler_params:
-    distance_ratio: 0.75
+    distance_ratio: 0.7
 
 agent_sg_corner_sampler1:
   sampler_name: sg_corner_sampler

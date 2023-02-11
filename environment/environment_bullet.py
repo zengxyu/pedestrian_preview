@@ -221,7 +221,7 @@ class EnvironmentBullet(PybulletBaseEnv):
         for i, rt in enumerate(self.agent_robots):
             width, height, rgba_image, depth_image, seg_image = rt.sensor.get_obs()
             rgba_image = rgba_image / 255
-            # depth_image = (depth_image - 0.8) / 0.2
+            depth_image = (depth_image - 0.5) / 0.5
             relative_position = self.agent_goals[i] - rt.get_position()
             relative_yaw = compute_yaw(self.agent_goals[i], rt.get_position()) - rt.get_yaw()
             relative_pose = np.array([relative_position[0], relative_position[1], relative_yaw])
