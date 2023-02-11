@@ -41,9 +41,10 @@ class SimpleMlpActor(BaseModel):
                                     )
 
     def forward(self, x):
-        depth_image = x[0].float().squeeze(1)
+        depth_image = x[0].float()
         relative_position = x[1].float()
-
+        bs = depth_image.shape[0]
+        depth_image = depth_image.reshape((bs, -1))
         out1 = self.mlp_row(depth_image)
         out2 = self.mlp_relative_position(relative_position)
         out = torch.cat((out1, out2), dim=1)
@@ -69,7 +70,9 @@ class SimpleMlpCritic(BaseModel):
 
     def forward(self, x):
         x, action = x
-        depth_image = x[0].float().squeeze(1)
+        depth_image = x[0].float()
+        bs = depth_image.shape[0]
+        depth_image = depth_image.reshape((bs, -1))
         relative_position = x[1].float()
         out1 = self.mlp_row(depth_image)
         out2 = self.mlp_relative_position(relative_position)
