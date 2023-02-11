@@ -15,10 +15,11 @@ evaluate_every_n_training: 1000
 evaluate_n_times: 100
 
 reward_config_name: reward_config1
-# choose from  input_spacial,input_temporal,input_cnn, input_st_attention_processing
-input_config_name: input_row_mlp
 
-# choose from "corridor","cross","office","empty"
+# choose from  inputs_config.yaml
+input_config_name: input_depth_seq_1_cnn
+
+# choose from worlds_config.yaml: "corridor","cross","office","empty"
 world_name: office
 
 # choose from ddqn, ddqn_recurrent, ddpg, ddpg_recurrent, td3, td3_recurrent, sac
@@ -35,9 +36,9 @@ num_agents: 1
 npc_robot_name: object_robot
 #  pedestrian speed
 npc_speed_range: [ 0.8, 1.2 ]
-num_npc: 5
+num_npc: 0
 
-
+# choose from agent_sg_sampler1, agent_sg_corner_sampler1
 agent_sg_sampler: agent_sg_sampler1
 npc_sg_sampler: npc_sg_sampler1
 

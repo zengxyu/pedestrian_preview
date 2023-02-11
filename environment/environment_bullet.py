@@ -118,9 +118,8 @@ class EnvironmentBullet(PybulletBaseEnv):
         # self.randomize_env()
         # self.randomize_human_npc()
         state = self.get_state()
-        # self.visualize_goals(self.bu_goals, self.robots)
 
-        if not self.args.train:
+        if self.args.render:
             self.visualize_goals(self.agent_goals, self.agent_robots)
             # self.visualize_goals(self.npc_goals, self.obstacle_collections.get_obstacle_ids())
         return state
@@ -397,7 +396,8 @@ class EnvironmentBullet(PybulletBaseEnv):
     def init_robots(self):
         agents = []
         for i in range(self.num_agents):
-            robot = init_robot(self.p, self.client_id, self.agent_robot_name, RobotRoles.AGENT, self.physical_step_duration,
+            robot = init_robot(self.p, self.client_id, self.agent_robot_name, RobotRoles.AGENT,
+                               self.physical_step_duration,
                                self.agent_robot_config, self.sensor_config, self.agent_starts[i],
                                compute_yaw(self.agent_starts[i], self.agent_goals[i]))
             self.agent_robot_ids.append(robot.robot_id)
