@@ -306,7 +306,7 @@ class EnvironmentBullet(PybulletBaseEnv):
             all_reach_goal = all(reach_goals)
 
         collision = self._check_collision()
-        self.print_v()
+        # self.print_v()
         return all_reach_goal, collision
 
     def print_v(self):
