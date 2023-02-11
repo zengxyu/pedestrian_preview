@@ -17,7 +17,7 @@ evaluate_n_times: 100
 reward_config_name: reward_config1
 
 # choose from  inputs_config.yaml
-input_config_name: input_multi_row_cnn
+input_config_name: input_cnn
 
 # choose from worlds_config.yaml: "corridor","cross","office","empty"
 world_name: office
