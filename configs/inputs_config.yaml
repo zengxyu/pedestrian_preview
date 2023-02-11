@@ -1,5 +1,7 @@
 input_cnn:
   image_seq_len: 4
+  image_h: 40
+  image_w: 60
   pose_seq_len: 4
   # choose from network configs CNN, MLP
   network: CNN
@@ -8,14 +10,28 @@ input_cnn:
 
 input_depth_seq_1_cnn:
   image_seq_len: 1
+  image_h: 40
+  image_w: 60
   pose_seq_len: 1
   # choose from network configs CNN, MLP
   network: CNN
   # choose from {row, depth, rgbd, rgb}
   image_mode: depth
 
+input_multi_row_cnn:
+  image_seq_len: 1
+  image_h: 16
+  image_w: 60
+  pose_seq_len: 1
+  # choose from network configs CNN, MLP
+  network: CNN
+  # choose from {row, depth, rgbd, rgb}
+  image_mode: multi_row
+
 input_row_mlp:
   image_seq_len: 4
+  image_h: 40
+  image_w: 60
   pose_seq_len: 4
   # choose from network configs CNN, MLP
   network: MLP

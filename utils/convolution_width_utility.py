@@ -1,4 +1,4 @@
-def compute_conv_out_width(i, k, s, p):
+def compute_conv_out_width(i, k, s, p, iter=1):
     """
     计算卷积输出层的宽度
     compute the width of convolution output
@@ -8,7 +8,9 @@ def compute_conv_out_width(i, k, s, p):
     :param p: 边界扩充 padding
     :return: 输出的feature map的宽 the width of convolution output
     """
-    o = (i - k + 2 * p) / s + 1
+    for _ in range(iter):
+        i = (i - k + 2 * p) / s + 1
+    o = int(i)
     return int(o)
 
 
@@ -38,5 +40,8 @@ def compute_conv_out_node_num(d, w, h):
 
 
 if __name__ == '__main__':
-    a = compute_conv_out_width(i=25, k=3, s=2, p=1)
+    a = compute_conv_out_width(i=20, k=3, s=2, p=1)
+    a = compute_conv_out_width(i=a, k=3, s=2, p=1)
+    a = compute_conv_out_width(i=a, k=3, s=2, p=1)
+
     print(a)

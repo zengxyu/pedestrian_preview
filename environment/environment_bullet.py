@@ -17,6 +17,7 @@ import time
 from collections import deque
 
 import cv2
+from matplotlib import pyplot as plt
 
 from environment.gen_scene.world_loader import load_scene
 from environment.human_npc_generator import generate_human_npc
@@ -95,9 +96,11 @@ class EnvironmentBullet(PybulletBaseEnv):
         """
 
     def render(self, mode="human"):
-        # width, height, rgb_image, depth_image, seg_image = self.robot.sensor.get_obs()
-        # return width, height, rgb_image, depth_image, seg_image
-        return
+        width, height, rgb_image, depth_image, seg_image = self.agent_robots[0].sensor.get_obs()
+        image = cv2.resize(depth_image, (40, 60))
+        image = image[:16, :]
+        h = 16
+        return width, height, rgb_image, image, seg_image
 
     def reset(self):
         self.episode_count += 1
@@ -186,7 +189,8 @@ class EnvironmentBullet(PybulletBaseEnv):
         reach_goal_reward = 0
         """================collision reward=================="""
         if collision == CollisionType.CollisionWithWall:
-            reward += self.reward_config["collision"]
+            collision_reward = self.reward_config["collision"]
+            reward += collision_reward
 
         """================delta distance reward=================="""
         # compute distance from current to goal
@@ -198,7 +202,8 @@ class EnvironmentBullet(PybulletBaseEnv):
         """================reach goal reward=================="""
 
         if reach_goal:
-            reward += self.reward_config["reach_goal"]
+            reach_goal_reward = self.reward_config["reach_goal"]
+            reward += reach_goal_reward
 
         reward_info = {"reward/reward_collision": collision_reward,
                        "reward/reward_delta_distance": delta_distance_reward,
@@ -226,12 +231,15 @@ class EnvironmentBullet(PybulletBaseEnv):
             relative_yaw = compute_yaw(self.agent_goals[i], rt.get_position()) - rt.get_yaw()
             relative_pose = np.array([relative_position[0], relative_position[1], relative_yaw])
 
-            w = int(depth_image.shape[1] / 2)
-            h = int(depth_image.shape[0] / 2)
+            w = self.input_config["image_w"]
+            h = self.input_config["image_h"]
             if self.input_config["image_mode"] == ImageMode.ROW:
                 image = depth_image[25]
                 h = 1
                 w = int(depth_image.shape[1])
+            elif self.input_config["image_mode"] == ImageMode.MULTI_ROW:
+                image = cv2.resize(depth_image, (int(depth_image.shape[1] / 2), int(depth_image.shape[0] / 2)))
+                image = image[:h, :]
             elif self.input_config["image_mode"] == ImageMode.DEPTH:
                 image = cv2.resize(depth_image, (w, h))
             elif self.input_config["image_mode"] == ImageMode.RGB:

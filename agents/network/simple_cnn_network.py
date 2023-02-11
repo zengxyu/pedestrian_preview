@@ -6,6 +6,8 @@ from environment.sensors.vision_sensor import ImageMode
 
 from ncps.wirings import AutoNCP
 
+from utils.convolution_width_utility import compute_conv_out_width
+
 model_params = {
     'cnn': [32, 64, 32],
     'kernel_sizes': [3, 3, 3],
@@ -26,7 +28,13 @@ class BaseModel(nn.Module):
         self.pose_seq_len = kwargs["pose_seq_len"]
         self.image_mode = kwargs["image_mode"]
         self.dim_relative_position = model_params["mlp_relative_position"]
-        if self.image_mode == ImageMode.DEPTH:
+        h_out = compute_conv_out_width(kwargs["image_h"], k=3, s=2, p=1, iter=len(self.cnn_dims))
+        w_out = compute_conv_out_width(kwargs["image_w"], k=3, s=2, p=1, iter=len(self.cnn_dims))
+        self.dim_cnn_out_flatten = h_out * w_out * self.cnn_dims[-1]
+
+        if self.image_mode == ImageMode.MULTI_ROW:
+            input_channel = self.image_seq_len
+        elif self.image_mode == ImageMode.DEPTH:
             input_channel = self.image_seq_len
         elif self.image_mode == ImageMode.RGBD:
             input_channel = 4 * self.image_seq_len
@@ -85,7 +93,7 @@ class SimpleCnnActor(BaseModel):
 
         self.head = build_head(agent_type, action_space)
 
-        self.mlp_action = build_mlp(1280 + 3 * self.pose_seq_len,
+        self.mlp_action = build_mlp(self.dim_cnn_out_flatten + 3 * self.pose_seq_len,
                                     mlp_values_dims + [self.n_actions * 2],
                                     activate_last_layer=False,
                                     )
@@ -115,7 +123,7 @@ class SimpleCnnCritic(BaseModel):
         self.n_actions = len(action_space.low)
         mlp_values_dims = model_params["mlp_values"]
 
-        self.mlp_value = build_mlp(1280 + 3 * self.pose_seq_len + self.n_actions,
+        self.mlp_value = build_mlp(self.dim_cnn_out_flatten + 3 * self.pose_seq_len + self.n_actions,
                                    mlp_values_dims + [1],
                                    activate_last_layer=False,
                                    )

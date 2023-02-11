@@ -8,6 +8,7 @@ class ImageMode:
     RGB = "rgb"
     RGBD = "rgbd"
     ROW = "row"
+    MULTI_ROW = "multi_row"
 
 
 class VisionSensor:
