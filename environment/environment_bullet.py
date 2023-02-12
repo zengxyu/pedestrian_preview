@@ -302,8 +302,8 @@ class EnvironmentBullet(PybulletBaseEnv):
                     robot.small_step(planned_v, planned_w)
                     if not self.args.train:
                         print("robot {} not reached goal".format(i))
-
-            self.npc_group.step()
+            if self.npc_group is not None:
+                self.npc_group.step()
             self.p_step_simulation()
 
             for i, robot in enumerate(self.agent_robots):
@@ -388,13 +388,13 @@ class EnvironmentBullet(PybulletBaseEnv):
                 self.om_path, self.bu_path
         """
         # randomize building
-        occ_map, obstacle_ids, agent_starts, agent_goals = load_environment_scene(p=self.p,
-                                                                                  running_config=self.running_config,
-                                                                                  worlds_config=self.worlds_config,
-                                                                                  agent_sg_sampler_config=self.agent_sg_sampler_config)
+        occ_map, wall_ids, agent_starts, agent_goals = load_environment_scene(p=self.p,
+                                                                              running_config=self.running_config,
+                                                                              worlds_config=self.worlds_config,
+                                                                              agent_sg_sampler_config=self.agent_sg_sampler_config)
 
         # sample start pose and goal pose
-        self.wall_ids = obstacle_ids
+        self.wall_ids = wall_ids
         self.occ_map = occ_map
         self.agent_starts = agent_starts
         # 如果有多个agent，去往同一个目标
