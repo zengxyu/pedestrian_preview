@@ -240,6 +240,8 @@ class EnvironmentBullet(PybulletBaseEnv):
             elif self.input_config["image_mode"] == ImageMode.MULTI_ROW:
                 image = cv2.resize(depth_image, (int(depth_image.shape[1] / 2), int(depth_image.shape[0] / 2)))
                 image = image[:h, :]
+                # plt.imshow(image)
+                # plt.show()
             elif self.input_config["image_mode"] == ImageMode.DEPTH:
                 image = cv2.resize(depth_image, (w, h))
             elif self.input_config["image_mode"] == ImageMode.RGB:

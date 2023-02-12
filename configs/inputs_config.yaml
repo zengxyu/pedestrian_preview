@@ -19,10 +19,10 @@ input_depth_seq_1_cnn:
   image_mode: depth
 
 input_multi_row_cnn:
-  image_seq_len: 1
-  image_h: 16
+  image_seq_len: 4
+  image_h: 20
   image_w: 60
-  pose_seq_len: 1
+  pose_seq_len: 4
   # choose from network configs CNN, MLP
   network: CNN
   # choose from {row, depth, rgbd, rgb}
