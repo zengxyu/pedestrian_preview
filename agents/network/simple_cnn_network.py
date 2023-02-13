@@ -31,8 +31,9 @@ class BaseModel(nn.Module):
         h_out = compute_conv_out_width(kwargs["image_h"], k=3, s=2, p=1, iter=len(self.cnn_dims))
         w_out = compute_conv_out_width(kwargs["image_w"], k=3, s=2, p=1, iter=len(self.cnn_dims))
         self.dim_cnn_out_flatten = h_out * w_out * self.cnn_dims[-1]
-
-        if self.image_mode == ImageMode.MULTI_ROW:
+        if self.image_mode == ImageMode.MULTI_ROW_MULTI_SENSOR:
+            input_channel = self.image_seq_len * 4
+        elif self.image_mode == ImageMode.MULTI_ROW:
             input_channel = self.image_seq_len
         elif self.image_mode == ImageMode.DEPTH:
             input_channel = self.image_seq_len

@@ -24,6 +24,7 @@ from environment.human_npc_generator import generate_human_npc
 from environment.robots.npc import NpcGroup
 from environment.robots.robot_roles import RobotRoles
 from environment.robots.robot_types import RobotTypes, init_robot
+from environment.sensors.sensor_types import SensorTypes
 from environment.sensors.vision_sensor import ImageMode
 
 sys.path.append(
@@ -52,7 +53,7 @@ class EnvironmentBullet(PybulletBaseEnv):
         self.npc_sg_sampler_config = args.samplers_config[args.running_config["npc_sg_sampler"]]
         self.reward_config = args.rewards_config[self.running_config["reward_config_name"]]
         self.agent_robot_name = self.running_config["agent_robot_name"]
-
+        self.sensor_name = self.running_config["sensor_name"]
         self.render = args.render
 
         self.grid_res = self.running_config["grid_res"]
@@ -233,7 +234,14 @@ class EnvironmentBullet(PybulletBaseEnv):
 
             w = self.input_config["image_w"]
             h = self.input_config["image_h"]
-            if self.input_config["image_mode"] == ImageMode.ROW:
+            if self.input_config["image_mode"] == ImageMode.MULTI_ROW_MULTI_SENSOR:
+                _w = int(depth_image.shape[2] / 2)
+                _h = int(depth_image.shape[1] / 2)
+                image = np.transpose(depth_image, (1, 2, 0))
+                image = cv2.resize(image, (_w, _h))
+                image = image[:h, :]
+                image = np.transpose(image, (2, 0, 1))
+            elif self.input_config["image_mode"] == ImageMode.ROW:
                 image = depth_image[25]
                 h = 1
                 w = int(depth_image.shape[1])
@@ -409,7 +417,7 @@ class EnvironmentBullet(PybulletBaseEnv):
         for i in range(self.num_agents):
             robot = init_robot(self.p, self.client_id, self.agent_robot_name, RobotRoles.AGENT,
                                self.physical_step_duration,
-                               self.agent_robot_config, self.sensor_config, self.agent_starts[i],
+                               self.agent_robot_config, self.sensor_name, self.sensor_config, self.agent_starts[i],
                                compute_yaw(self.agent_starts[i], self.agent_goals[i]))
             self.agent_robot_ids.append(robot.robot_id)
             agents.append(robot)
