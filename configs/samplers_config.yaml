@@ -8,6 +8,11 @@ agent_sg_corner_sampler1:
   sampler_params:
     margin: 5
 
+agent_sg_u_sampler1:
+  sampler_name: sg_u_sampler
+  sampler_params:
+    distance_ratio: 0.7
+
 npc_sg_sampler1:
   sampler_name: sg_in_distance_sampler
   sampler_params:
