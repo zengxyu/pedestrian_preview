@@ -10,6 +10,7 @@
 ===========================================
 """
 from agents.mapping import get_agent_name, get_network_config
+from agents.network.multi_branch_cnn_network import MultiBranchCnnActor, MultiBranchCnnCritic
 from agents.network.simple_cnn_network import SimpleCnnCritic, SimpleCnnActor
 from agents.network.simple_ncp_network import SimpleCnnNcpActor, SimpleCnnNcpCritic
 from agents.network.simple_mlp_network import SimpleMlpActor, SimpleMlpCritic
@@ -18,7 +19,7 @@ actor_critic_model_mapping = {
     'MLP': (SimpleMlpActor, SimpleMlpCritic),
     'CNN': (SimpleCnnActor, SimpleCnnCritic),
     'NCP': (SimpleCnnNcpActor, SimpleCnnNcpCritic),
-
+    "MultiBranchCnn": (MultiBranchCnnActor, MultiBranchCnnCritic),
 }
 
 
