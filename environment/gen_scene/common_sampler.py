@@ -13,6 +13,7 @@ import logging
 import random
 
 import numpy as np
+import shapely
 
 from environment.gen_scene.gen_map_util import is_door_neighbor, convolve_map
 from utils.math_helper import compute_distance, compute_yaw, swap_value
@@ -20,23 +21,65 @@ from utils.math_helper import compute_distance, compute_yaw, swap_value
 corner_pairs = [[0, 2], [2, 0], [1, 3], [3, 1]]
 
 
+def check_line_collision(start, goal, walls):
+    line = shapely.geometry.LineString([start, goal])
+    collision = False
+    for wall_start, wall_end in walls:
+        wall = shapely.geometry.LineString([wall_start, wall_end])
+        if line.intersection(wall):
+            collision = True
+    return collision
+
+
+def get_walls(occ_map):
+    walls = []
+
+    MAXX = occ_map.shape[0]
+    MAXY = occ_map.shape[1]
+
+    while np.any(occ_map):
+        indsx, indsy = np.where(occ_map)
+        minx = maxx = indsx[0]
+        miny = maxy = indsy[0]
+
+        while np.logical_and.reduce(occ_map[maxx + 1: maxx + 1 + 1, miny: maxy + 1]) and maxx + 1 < MAXX:
+            maxx += 1
+
+        while np.logical_and.reduce(occ_map[minx - 1: minx, miny: maxy + 1]) and minx - 1 >= 0:
+            minx -= 1
+
+        while np.logical_and.reduce(occ_map[minx: maxx + 1, maxy + 1: maxy + 1 + 1]) and maxy + 1 < MAXY:
+            maxy += 1
+
+        while np.logical_and.reduce(occ_map[minx: maxx + 1, miny - 1: miny]) and miny - 1 >= 0:
+            miny -= 1
+
+        walls.append([[minx, miny], [maxx, maxy]])
+        occ_map[minx: maxx + 1, miny: maxy + 1] = False
+
+    return walls
+
+
 def sg_opposite_baffle_sampler(**kwargs):
     """
     generate start and goal on the opposite of the baffle
     """
     occupancy_map = kwargs["occupancy_map"]
+    walls = get_walls(occupancy_map)
     distance_ratio = kwargs["distance_ratio"]
     distance = distance_ratio * min(occupancy_map.shape[0], occupancy_map.shape[1])
     x_start, y_start = point_sampler(occupancy_map)
     x_end, y_end = point_sampler(occupancy_map)
     larger_than_distance = np.sqrt(np.square(x_end - x_start) + np.square(y_end - y_start)) < distance
-    line_through_baffle = ...
+    line_through_baffle = check_line_collision([x_start, y_start], [x_end, y_end], walls)
     counter = 0
-    while np.sqrt(np.square(x_end - x_start) + np.square(y_end - y_start)) < distance and counter < 100:
+    while (not larger_than_distance or not line_through_baffle) and counter < 100:
         x_start, y_start = point_sampler(occupancy_map)
         x_end, y_end = point_sampler(occupancy_map)
+        larger_than_distance = np.sqrt(np.square(x_end - x_start) + np.square(y_end - y_start)) < distance
+        line_through_baffle = check_line_collision([x_start, y_start], [x_end, y_end], walls)
         counter += 1
-    sample_success = np.sqrt(np.square(x_end - x_start) + np.square(y_end - y_start)) > distance
+    sample_success = larger_than_distance and line_through_baffle
     return [[x_start, y_start], [x_end, y_end]], sample_success
 
 

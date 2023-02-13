@@ -1,9 +1,9 @@
-from environment.gen_scene.common_sampler import sg_in_distance_sampler, sg_corner_sampler, sg_u_sampler, point_sampler
+from environment.gen_scene.common_sampler import sg_in_distance_sampler, sg_corner_sampler, sg_opposite_baffle_sampler, point_sampler
 
 SamplerClassMapping = {
     "sg_in_distance_sampler": sg_in_distance_sampler,
     "sg_corner_sampler": sg_corner_sampler,
-    "sg_u_sampler": sg_u_sampler,
+    "sg_opposite_baffle_sampler": sg_opposite_baffle_sampler,
     "point_sampler": point_sampler
 }
 
