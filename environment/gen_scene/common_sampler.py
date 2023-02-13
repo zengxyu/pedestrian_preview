@@ -21,14 +21,13 @@ from utils.math_helper import compute_distance, compute_yaw, swap_value
 corner_pairs = [[0, 2], [2, 0], [1, 3], [3, 1]]
 
 
-def check_line_collision(start, goal, walls):
+def check_intersection_with_wall(start, goal, walls):
     line = shapely.geometry.LineString([start, goal])
-    collision = False
     for wall_start, wall_end in walls:
         wall = shapely.geometry.LineString([wall_start, wall_end])
         if line.intersection(wall):
-            collision = True
-    return collision
+            return True
+    return False
 
 
 def get_walls(occ_map):
@@ -65,19 +64,19 @@ def sg_opposite_baffle_sampler(**kwargs):
     generate start and goal on the opposite of the baffle
     """
     occupancy_map = kwargs["occupancy_map"]
-    walls = get_walls(occupancy_map)
+    walls = get_walls(occupancy_map.copy())
     distance_ratio = kwargs["distance_ratio"]
     distance = distance_ratio * min(occupancy_map.shape[0], occupancy_map.shape[1])
     x_start, y_start = point_sampler(occupancy_map)
     x_end, y_end = point_sampler(occupancy_map)
-    larger_than_distance = np.sqrt(np.square(x_end - x_start) + np.square(y_end - y_start)) < distance
-    line_through_baffle = check_line_collision([x_start, y_start], [x_end, y_end], walls)
+    larger_than_distance = np.sqrt(np.square(x_end - x_start) + np.square(y_end - y_start)) > distance
+    line_through_baffle = check_intersection_with_wall([x_start, y_start], [x_end, y_end], walls)
     counter = 0
     while (not larger_than_distance or not line_through_baffle) and counter < 100:
         x_start, y_start = point_sampler(occupancy_map)
         x_end, y_end = point_sampler(occupancy_map)
-        larger_than_distance = np.sqrt(np.square(x_end - x_start) + np.square(y_end - y_start)) < distance
-        line_through_baffle = check_line_collision([x_start, y_start], [x_end, y_end], walls)
+        larger_than_distance = np.sqrt(np.square(x_end - x_start) + np.square(y_end - y_start)) > distance
+        line_through_baffle = check_intersection_with_wall([x_start, y_start], [x_end, y_end], walls)
         counter += 1
     sample_success = larger_than_distance and line_through_baffle
     return [[x_start, y_start], [x_end, y_end]], sample_success

@@ -8,8 +8,8 @@ agent_sg_corner_sampler1:
   sampler_params:
     margin: 5
 
-agent_sg_u_sampler1:
-  sampler_name: sg_u_sampler
+agent_sg_opposite_baffle_sampler1:
+  sampler_name: sg_opposite_baffle_sampler
   sampler_params:
     distance_ratio: 0.7
 
