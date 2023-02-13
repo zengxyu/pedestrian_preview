@@ -63,7 +63,7 @@ class MultiBranchCnnActor(BaseModel):
         relative_position = x[1].float()
         depth_image = x[0].float()
         batch_size = depth_image.size(0)
-        depth_image = depth_image.view((batch_size, 4, 4, depth_image.shape[-2], depth_image.shape[-1]))
+        depth_image = depth_image.view((batch_size, self.image_seq_len, 4, depth_image.shape[-2], depth_image.shape[-1]))
         depth_image_forward = depth_image[:, :, 0, :, :]
         depth_image_right = depth_image[:, :, 1, :, :]
         depth_image_backward = depth_image[:, :, 2, :, :]
@@ -107,7 +107,7 @@ class MultiBranchCnnCritic(BaseModel):
         relative_position = x[1].float()
         batch_size = depth_image.size(0)
 
-        depth_image = depth_image.view((batch_size, 4, 4, depth_image.shape[-2], depth_image.shape[-1]))
+        depth_image = depth_image.view((batch_size, self.image_seq_len, 4, depth_image.shape[-2], depth_image.shape[-1]))
 
         depth_image_forward = depth_image[:, :, 0, :, :]
         depth_image_right = depth_image[:, :, 1, :, :]
