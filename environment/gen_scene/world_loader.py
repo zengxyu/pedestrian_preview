@@ -78,7 +78,7 @@ def read_start_coordinates(start_coordinates_path: str, ratio: float):
 
     # select one of the start coordinates groups
     selected_group_index = np.random.randint(0, num_groups)
-    selected_group: Dict = coordinates_groups[selected_group_index]
+    selected_group: Dict = coordinates_groups[0]
 
     start_coordinates = np.array(list(selected_group.values()))[0] * ratio
     goal = np.array([-1, -1])
