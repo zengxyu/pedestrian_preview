@@ -29,6 +29,8 @@ def process_args():
     parser.add_argument("--load_coordinates_from", type=str)
     parser.add_argument("--load_map_from", type=str)
     parser.add_argument("--goal_reached_thresh", type=float)
+    parser.add_argument("--num_npc", type=int)
+    parser.add_argument("--num_agents", type=int)
 
     parser_args = parser.parse_args()
     parser_args.out_folder = os.path.join(get_project_path(), "output", parser_args.out_folder)
@@ -83,6 +85,10 @@ def process_args():
 
         if parser_args.goal_reached_thresh is not None:
             parser_args.running_config["goal_reached_thresh"] = parser_args.goal_reached_thresh
+        if parser_args.num_npc is not None:
+            parser_args.running_config["num_npc"] = parser_args.num_npc
+        if parser_args.num_agents is not None:
+            parser_args.running_config["num_agents"] = parser_args.num_agents
 
     print("\nYaml training config:", parser_args.running_config)
     print("\n==============================================================================================\n")
