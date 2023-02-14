@@ -101,6 +101,7 @@ class EnvironmentBullet(PybulletBaseEnv):
         self.agent_sub_goals = None
         self.agent_sub_goals_indexes = None
         self.paths = None
+        self.temp_ids = []
 
     def render(self, mode="human"):
         width, height, rgb_image, depth_image, seg_image = self.agent_robots[0].sensor.get_obs()
@@ -130,15 +131,16 @@ class EnvironmentBullet(PybulletBaseEnv):
             self.update_agent_sub_goals()
         state = self.get_state()
         if self.args.render:
-            self.visualize_goals(self.agent_goals, self.agent_robots)
+            self.visualize_goals(self.agent_goals, [[1, 0, 0, 1] for rb in self.agent_robots])
             # self.visualize_goals(self.npc_goals, self.obstacle_collections.get_obstacle_ids())
         return state
 
-    def visualize_goals(self, bu_goals, robots):
-        thetas = np.linspace(0, np.pi * 2, 50)
-        radius = 0.2
+    def visualize_goals(self, bu_goals, colors):
+        thetas = np.linspace(0, np.pi * 2, 10)
+        radius = 0.2 * np.random.random()
+        ids = []
         for i in range(len(bu_goals)):
-            robot = robots[i]
+            color = colors[i]
             points_x = np.cos(thetas) * radius + bu_goals[i][0]
             points_y = np.sin(thetas) * radius + bu_goals[i][1]
             z = np.zeros_like(thetas)
@@ -147,12 +149,18 @@ class EnvironmentBullet(PybulletBaseEnv):
             # froms = [[1, 1, 0], [-1, 1, 0], [-1, 1, 3], [1, 1, 3]]
             # tos = [[-1, 1, 0], [-1, 1, 3], [1, 1, 3], [1, 1, 0]]
             for f, t in zip(points, points_next):
-                self.p.addUserDebugLine(
+                id = self.p.addUserDebugLine(
                     lineFromXYZ=f,
                     lineToXYZ=t,
-                    lineColorRGB=robot.color,
+                    lineColorRGB=color[:3],
                     lineWidth=2
                 )
+                ids.append(id)
+        return ids
+
+    def remove_debug_items(self, ids):
+        for id in ids:
+            self.p.removeUserDebugItem(id)
 
     def add_debug_line(self, robot, points):
         points_x = points[:, 0]
@@ -266,10 +274,13 @@ class EnvironmentBullet(PybulletBaseEnv):
             for i, rt in enumerate(self.agent_robots):
                 reach_sub_goal = compute_distance(rt.get_position(), self.agent_sub_goals[i]) < 0.5
                 if reach_sub_goal:
+                    self.temp_ids = self.visualize_goals([self.agent_sub_goals[i]], [self.agent_robots[i].color])
                     self.agent_sub_goals_indexes[i] = min(self.agent_sub_goals_indexes[i] + 1, len(self.paths[i]) - 1)
         print()
         for i, index in enumerate(self.agent_sub_goals_indexes):
             self.agent_sub_goals[i] = self.paths[i][index]
+        # self.remove_debug_items(self.temp_ids)
+        # self.temp_ids = self.visualize_goals(self.agent_sub_goals, self.agent_robots)
 
     def get_state1(self):
         # compute depth image
@@ -358,7 +369,7 @@ class EnvironmentBullet(PybulletBaseEnv):
         # 0.4/0.05 = 8
         n_step = np.round(self.inference_duration / self.physical_step_duration)
 
-        while iterate_count < n_step and not all_reach_goal:
+        while iterate_count < n_step:
             for i, robot in enumerate(self.agent_robots):
                 planned_v, planned_w = self.action_space.to_force(action=actions[i])
                 reach_goal = compute_distance(robot.get_position(), self.agent_goals[i]) < self.running_config[
@@ -373,15 +384,17 @@ class EnvironmentBullet(PybulletBaseEnv):
                 self.npc_group.step()
             self.p_step_simulation()
 
-            for i, robot in enumerate(self.agent_robots):
-                reach_goal = compute_distance(robot.get_position(), self.agent_goals[i]) < self.running_config[
-                    "goal_reached_thresh"]
-                reach_goals.append(reach_goal)
-
             iterate_count += 1
-            all_reach_goal = all(reach_goals)
 
         collision = self._check_collision()
+
+        # check if all reach goal
+        for i, robot in enumerate(self.agent_robots):
+            reach_goal = compute_distance(robot.get_position(), self.agent_goals[i]) < self.running_config[
+                "goal_reached_thresh"]
+            reach_goals.append(reach_goal)
+        all_reach_goal = all(reach_goals)
+
         if self.args.prm:
             self.update_agent_sub_goals()
         # self.print_v()

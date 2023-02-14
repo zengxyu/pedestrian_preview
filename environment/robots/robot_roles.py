@@ -14,7 +14,8 @@ def get_role_color(robot_role: str):
     """
     # agent color : red
     if robot_role == RobotRoles.AGENT:
-        color = [1, 0, 0, 1]
+        # color = [1, 0, 0, 1]
+        color = list(np.random.random(size=3)) + [1]
     elif robot_role == RobotRoles.NPC:
         color = list(np.random.random(size=3)) + [1]
     else:
