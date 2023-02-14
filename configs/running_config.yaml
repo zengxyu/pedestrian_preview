@@ -28,7 +28,7 @@ agent: sac
 action_space: ContinuousVWActionSpace
 
 # choose from lidar, vision, multi_vision
-sensor_name: multi_vision
+sensor_name: vision
 
 # choose from [race_car, turtlebot, object_robot]
 agent_robot_name: race_car

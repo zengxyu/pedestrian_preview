@@ -66,24 +66,38 @@ def sg_opposite_baffle_sampler(**kwargs):
     dilate_occupancy_map = kwargs["dilate_occupancy_map"]
     occupancy_map = kwargs["occupancy_map"]
     walls = get_walls(occupancy_map.copy())
-    min_distance_ratio = kwargs["min_distance_ratio"]
+    min_baffle_distance_ratio = kwargs["baffle_min_distance_ratio"]
+    max_baffle_distance_ratio = kwargs["baffle_max_distance_ratio"]
     max_distance_ratio = kwargs["max_distance_ratio"]
-    min_distance = min_distance_ratio * min(dilate_occupancy_map.shape[0], dilate_occupancy_map.shape[1])
+    min_baffle_distance = min_baffle_distance_ratio * min(dilate_occupancy_map.shape[0], dilate_occupancy_map.shape[1])
+    max_baffle_distance = max_baffle_distance_ratio * min(dilate_occupancy_map.shape[0], dilate_occupancy_map.shape[1])
     max_distance = max_distance_ratio * min(dilate_occupancy_map.shape[0], dilate_occupancy_map.shape[1])
+
     x_start, y_start = point_sampler(dilate_occupancy_map)
     x_end, y_end = point_sampler(dilate_occupancy_map)
     distance = np.sqrt(np.square(x_end - x_start) + np.square(y_end - y_start))
-    in_distance = distance > min_distance and distance < max_distance
+    random_number = random.random()
     line_through_baffle = check_intersection_with_wall([x_start, y_start], [x_end, y_end], walls)
+    if random_number < 0.5:
+        in_distance = distance > min_baffle_distance and distance < max_baffle_distance
+        no_meet_requirement = not in_distance
+    else:
+        no_meet_requirement = not distance > max_distance
+
     counter = 0
-    while (not in_distance or not line_through_baffle) and counter < 100:
+
+    while no_meet_requirement or not line_through_baffle and counter < 100:
         x_start, y_start = point_sampler(dilate_occupancy_map)
         x_end, y_end = point_sampler(dilate_occupancy_map)
         distance = np.sqrt(np.square(x_end - x_start) + np.square(y_end - y_start))
-        in_distance = distance > min_distance and distance < max_distance
+        if random_number < 0.5:
+            in_distance = distance > min_baffle_distance and distance < max_baffle_distance
+            no_meet_requirement = not in_distance
+        else:
+            no_meet_requirement = not distance > max_distance
         line_through_baffle = check_intersection_with_wall([x_start, y_start], [x_end, y_end], walls)
         counter += 1
-    sample_success = in_distance and line_through_baffle
+    sample_success = not no_meet_requirement and line_through_baffle
     return [[x_start, y_start], [x_end, y_end]], sample_success
 
 
