@@ -11,7 +11,8 @@ agent_sg_corner_sampler1:
 agent_sg_opposite_baffle_sampler1:
   sampler_name: sg_opposite_baffle_sampler
   sampler_params:
-    distance_ratio: 0.7
+    min_distance_ratio: 0.3
+    max_distance_ratio: 0.5
 
 npc_sg_sampler1:
   sampler_name: sg_in_distance_sampler

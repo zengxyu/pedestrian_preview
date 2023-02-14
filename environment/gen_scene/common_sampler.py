@@ -65,20 +65,24 @@ def sg_opposite_baffle_sampler(**kwargs):
     """
     occupancy_map = kwargs["occupancy_map"]
     walls = get_walls(occupancy_map.copy())
-    distance_ratio = kwargs["distance_ratio"]
-    distance = distance_ratio * min(occupancy_map.shape[0], occupancy_map.shape[1])
+    min_distance_ratio = kwargs["min_distance_ratio"]
+    max_distance_ratio = kwargs["max_distance_ratio"]
+    min_distance = min_distance_ratio * min(occupancy_map.shape[0], occupancy_map.shape[1])
+    max_distance = max_distance_ratio * min(occupancy_map.shape[0], occupancy_map.shape[1])
     x_start, y_start = point_sampler(occupancy_map)
     x_end, y_end = point_sampler(occupancy_map)
-    larger_than_distance = np.sqrt(np.square(x_end - x_start) + np.square(y_end - y_start)) > distance
+    distance = np.sqrt(np.square(x_end - x_start) + np.square(y_end - y_start))
+    in_distance = distance > min_distance and distance < max_distance
     line_through_baffle = check_intersection_with_wall([x_start, y_start], [x_end, y_end], walls)
     counter = 0
-    while (not larger_than_distance or not line_through_baffle) and counter < 100:
+    while (not in_distance or not line_through_baffle) and counter < 100:
         x_start, y_start = point_sampler(occupancy_map)
         x_end, y_end = point_sampler(occupancy_map)
-        larger_than_distance = np.sqrt(np.square(x_end - x_start) + np.square(y_end - y_start)) > distance
+        distance = np.sqrt(np.square(x_end - x_start) + np.square(y_end - y_start))
+        in_distance = distance > min_distance and distance < max_distance
         line_through_baffle = check_intersection_with_wall([x_start, y_start], [x_end, y_end], walls)
         counter += 1
-    sample_success = larger_than_distance and line_through_baffle
+    sample_success = in_distance and line_through_baffle
     return [[x_start, y_start], [x_end, y_end]], sample_success
 
 
