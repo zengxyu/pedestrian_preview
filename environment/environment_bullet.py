@@ -125,8 +125,9 @@ class EnvironmentBullet(PybulletBaseEnv):
             self.randomize_human_npc()
 
         # # randomize environment
-        self.paths = self.get_all_path()
-        self.update_agent_sub_goals()
+        if self.args.prm:
+            self.paths = self.get_all_path()
+            self.update_agent_sub_goals()
         state = self.get_state()
         if self.args.render:
             self.visualize_goals(self.agent_goals, self.agent_robots)
