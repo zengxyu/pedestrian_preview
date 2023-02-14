@@ -81,6 +81,6 @@ def read_start_coordinates(start_coordinates_path: str, ratio: float):
     selected_group: Dict = coordinates_groups[selected_group_index]
 
     start_coordinates = np.array(list(selected_group.values()))[0] * ratio
-    goal = np.array([-1, -1])
+    goal = np.array([0, -50])
 
     return start_coordinates, goal

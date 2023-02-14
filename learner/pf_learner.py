@@ -103,26 +103,26 @@ class PFLearner:
         infos_for_last = []
         done = False
         while not done:
-            # action = self.agent.act(state[0])
-            # state, reward, done, info_for_sum, info_for_last = self.env.step([action])
-            # self.agent.observe(obs=state[0], reward=reward, done=done, reset=False)
-            # self.global_i_step += 1
-            # infos_for_sum.append(info_for_sum)
-            # infos_for_last.append(info_for_last)
-            try:
-                action = self.agent.act(state[0])
-                state, reward, done, info_for_sum, info_for_last = self.env.step([action])
-                self.agent.observe(obs=state[0], reward=reward, done=done, reset=False)
-                self.global_i_step += 1
-                infos_for_sum.append(info_for_sum)
-                infos_for_last.append(info_for_last)
-            except Exception as e:
-                logging.error("Exception:{}".format(e))
-                logging.error("State:{}".format(state))
-
-                done = True
-                if self.args.debug:
-                    sys.exit(0)
+            action = self.agent.act(state[0])
+            state, reward, done, info_for_sum, info_for_last = self.env.step([action])
+            self.agent.observe(obs=state[0], reward=reward, done=done, reset=False)
+            self.global_i_step += 1
+            infos_for_sum.append(info_for_sum)
+            infos_for_last.append(info_for_last)
+            # try:
+            #     action = self.agent.act(state[0])
+            #     state, reward, done, info_for_sum, info_for_last = self.env.step([action])
+            #     self.agent.observe(obs=state[0], reward=reward, done=done, reset=False)
+            #     self.global_i_step += 1
+            #     infos_for_sum.append(info_for_sum)
+            #     infos_for_last.append(info_for_last)
+            # except Exception as e:
+            #     logging.error("Exception:{}".format(e))
+            #     logging.error("State:{}".format(state))
+            #
+            #     done = True
+            #     if self.args.debug:
+            #         sys.exit(0)
         add_statistics_to_collector(infos_episode_for_sum=infos_for_sum,
                                     infos_episode_for_last=infos_for_last,
                                     agent_statistics=self.agent.get_statistics(),
