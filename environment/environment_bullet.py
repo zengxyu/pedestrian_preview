@@ -21,10 +21,14 @@ from matplotlib import pyplot as plt
 
 from environment.gen_scene.world_loader import load_scene
 from environment.human_npc_generator import generate_human_npc
+from environment.nav_utilities.coordinates_converter import cvt_to_om, cvt_to_bu
 from environment.robots.npc import NpcGroup
 from environment.robots.robot_roles import RobotRoles
 from environment.robots.robot_types import RobotTypes, init_robot
+from environment.sensors.sensor_types import SensorTypes
 from environment.sensors.vision_sensor import ImageMode
+from global_planning.prm.prm_path_planning import prm_path_planning
+from utils.image_utility import dilate_image
 
 sys.path.append(
     os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), "traditional_planner", "a_star"))
@@ -52,7 +56,7 @@ class EnvironmentBullet(PybulletBaseEnv):
         self.npc_sg_sampler_config = args.samplers_config[args.running_config["npc_sg_sampler"]]
         self.reward_config = args.rewards_config[self.running_config["reward_config_name"]]
         self.agent_robot_name = self.running_config["agent_robot_name"]
-
+        self.sensor_name = self.running_config["sensor_name"]
         self.render = args.render
 
         self.grid_res = self.running_config["grid_res"]
@@ -94,6 +98,9 @@ class EnvironmentBullet(PybulletBaseEnv):
         
         
         """
+        self.agent_sub_goals = None
+        self.agent_sub_goals_indexes = None
+        self.paths = None
 
     def render(self, mode="human"):
         width, height, rgb_image, depth_image, seg_image = self.agent_robots[0].sensor.get_obs()
@@ -118,10 +125,10 @@ class EnvironmentBullet(PybulletBaseEnv):
             self.randomize_human_npc()
 
         # # randomize environment
-        # self.randomize_env()
-        # self.randomize_human_npc()
+        if self.args.prm:
+            self.paths = self.get_all_path()
+            self.update_agent_sub_goals()
         state = self.get_state()
-
         if self.args.render:
             self.visualize_goals(self.agent_goals, self.agent_robots)
             # self.visualize_goals(self.npc_goals, self.obstacle_collections.get_obstacle_ids())
@@ -146,6 +153,21 @@ class EnvironmentBullet(PybulletBaseEnv):
                     lineColorRGB=robot.color,
                     lineWidth=2
                 )
+
+    def add_debug_line(self, robot, points):
+        points_x = points[:, 0]
+        points_y = points[:, 1]
+        z = np.zeros_like(points_x)
+
+        points = np.array([points_x, points_y, z]).T
+        points_next = np.roll(points, -1, axis=0)
+        for f, t in zip(points[:-1], points_next[:-1]):
+            self.p.addUserDebugLine(
+                lineFromXYZ=f,
+                lineToXYZ=t,
+                lineColorRGB=robot.color,
+                lineWidth=2
+            )
 
     def get_action_space_keys(self):
         action_class = self.action_space.__class__.__name__
@@ -219,6 +241,39 @@ class EnvironmentBullet(PybulletBaseEnv):
     def get_state(self):
         return self.get_state1()
 
+    def get_all_path(self):
+        paths = []
+        prm = prm_path_planning(dilate_image(self.occ_map.copy(), 2), num_samples=200, end=self.agent_goals[0],
+                                grid_res=self.grid_res)
+        for i in range(len(self.agent_robots)):
+            start = self.agent_starts[i]
+            goal = self.agent_goals[i]
+            robot = self.agent_robots[i]
+            path = prm.get_shortest_path_from_start(cvt_to_om(start, self.grid_res))
+            prm.display_path(path)
+            path = cvt_to_bu(path, self.grid_res)
+            paths.append(path)
+            self.add_debug_line(robot, path)
+        plt.show()
+        return paths
+
+    def update_agent_sub_goals(self):
+        if self.agent_sub_goals is None:
+            self.agent_sub_goals = []
+            self.agent_sub_goals_indexes = []
+            for i, rt in enumerate(self.agent_robots):
+                self.agent_sub_goals_indexes.append(0)
+                self.agent_sub_goals.append(self.paths[i][0])
+
+        else:
+            for i, rt in enumerate(self.agent_robots):
+                reach_sub_goal = compute_distance(rt.get_position(), self.agent_sub_goals[i]) < 0.5
+                if reach_sub_goal:
+                    self.agent_sub_goals_indexes[i] = min(self.agent_sub_goals_indexes[i] + 1, len(self.paths[i]) - 1)
+        print()
+        for i, index in enumerate(self.agent_sub_goals_indexes):
+            self.agent_sub_goals[i] = self.paths[i][index]
+
     def get_state1(self):
         # compute depth image
         ma_images = []
@@ -229,14 +284,25 @@ class EnvironmentBullet(PybulletBaseEnv):
         for i, rt in enumerate(self.agent_robots):
             width, height, rgba_image, depth_image, seg_image = rt.sensor.get_obs()
             rgba_image = rgba_image / 255
-            depth_image = (depth_image - 0.79) / 0.21
-            relative_position = self.agent_goals[i] - rt.get_position()
-            relative_yaw = compute_yaw(self.agent_goals[i], rt.get_position()) - rt.get_yaw()
+            depth_image = (depth_image - 0.5) / 0.5
+            if self.args.prm:
+                relative_position = self.agent_sub_goals[i] - rt.get_position()
+                relative_yaw = compute_yaw(self.agent_sub_goals[i], rt.get_position()) - rt.get_yaw()
+            else:
+                relative_position = self.agent_goals[i] - rt.get_position()
+                relative_yaw = compute_yaw(self.agent_goals[i], rt.get_position()) - rt.get_yaw()
             relative_pose = np.array([relative_position[0], relative_position[1], relative_yaw])
 
             w = self.input_config["image_w"]
             h = self.input_config["image_h"]
-            if self.input_config["image_mode"] == ImageMode.ROW:
+            if self.input_config["image_mode"] == ImageMode.MULTI_ROW_MULTI_SENSOR:
+                _w = int(depth_image.shape[2] / 2)
+                _h = int(depth_image.shape[1] / 2)
+                image = np.transpose(depth_image, (1, 2, 0))
+                image = cv2.resize(image, (_w, _h))
+                image = image[:h, :]
+                image = np.transpose(image, (2, 0, 1))
+            elif self.input_config["image_mode"] == ImageMode.ROW:
                 image = depth_image[25]
                 h = 1
                 w = int(depth_image.shape[1])
@@ -319,6 +385,8 @@ class EnvironmentBullet(PybulletBaseEnv):
             all_reach_goal = all(reach_goals)
 
         collision = self._check_collision()
+        if self.args.prm:
+            self.update_agent_sub_goals()
         # self.print_v()
         return all_reach_goal, collision
 
@@ -412,7 +480,7 @@ class EnvironmentBullet(PybulletBaseEnv):
         for i in range(self.num_agents):
             robot = init_robot(self.p, self.client_id, self.agent_robot_name, RobotRoles.AGENT,
                                self.physical_step_duration,
-                               self.agent_robot_config, self.sensor_config, self.agent_starts[i],
+                               self.agent_robot_config, self.sensor_name, self.sensor_config, self.agent_starts[i],
                                compute_yaw(self.agent_starts[i], self.agent_goals[i]))
             self.agent_robot_ids.append(robot.robot_id)
             agents.append(robot)
@@ -432,6 +500,8 @@ class EnvironmentBullet(PybulletBaseEnv):
         self.agent_robots = None
         self.agent_robot_ids = []
         self.agent_starts, self.agent_goals = [None] * 2
+        self.agent_sub_goals = None
+        self.paths = None
 
     def logging_action(self, action):
         logging_str = ""

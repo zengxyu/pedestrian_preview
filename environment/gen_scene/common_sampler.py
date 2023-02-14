@@ -21,14 +21,13 @@ from utils.math_helper import compute_distance, compute_yaw, swap_value
 corner_pairs = [[0, 2], [2, 0], [1, 3], [3, 1]]
 
 
-def check_line_collision(start, goal, walls):
+def check_intersection_with_wall(start, goal, walls):
     line = shapely.geometry.LineString([start, goal])
-    collision = False
     for wall_start, wall_end in walls:
         wall = shapely.geometry.LineString([wall_start, wall_end])
         if line.intersection(wall):
-            collision = True
-    return collision
+            return True
+    return False
 
 
 def get_walls(occ_map):
@@ -64,22 +63,41 @@ def sg_opposite_baffle_sampler(**kwargs):
     """
     generate start and goal on the opposite of the baffle
     """
+    dilate_occupancy_map = kwargs["dilate_occupancy_map"]
     occupancy_map = kwargs["occupancy_map"]
-    walls = get_walls(occupancy_map)
-    distance_ratio = kwargs["distance_ratio"]
-    distance = distance_ratio * min(occupancy_map.shape[0], occupancy_map.shape[1])
-    x_start, y_start = point_sampler(occupancy_map)
-    x_end, y_end = point_sampler(occupancy_map)
-    larger_than_distance = np.sqrt(np.square(x_end - x_start) + np.square(y_end - y_start)) < distance
-    line_through_baffle = check_line_collision([x_start, y_start], [x_end, y_end], walls)
+    walls = get_walls(occupancy_map.copy())
+    min_baffle_distance_ratio = kwargs["baffle_min_distance_ratio"]
+    max_baffle_distance_ratio = kwargs["baffle_max_distance_ratio"]
+    max_distance_ratio = kwargs["max_distance_ratio"]
+    min_baffle_distance = min_baffle_distance_ratio * min(dilate_occupancy_map.shape[0], dilate_occupancy_map.shape[1])
+    max_baffle_distance = max_baffle_distance_ratio * min(dilate_occupancy_map.shape[0], dilate_occupancy_map.shape[1])
+    max_distance = max_distance_ratio * min(dilate_occupancy_map.shape[0], dilate_occupancy_map.shape[1])
+
+    x_start, y_start = point_sampler(dilate_occupancy_map)
+    x_end, y_end = point_sampler(dilate_occupancy_map)
+    distance = np.sqrt(np.square(x_end - x_start) + np.square(y_end - y_start))
+    random_number = random.random()
+    line_through_baffle = check_intersection_with_wall([x_start, y_start], [x_end, y_end], walls)
+    if random_number < 0.5:
+        in_distance = distance > min_baffle_distance and distance < max_baffle_distance
+        no_meet_requirement = not in_distance
+    else:
+        no_meet_requirement = not distance > max_distance
+
     counter = 0
-    while (not larger_than_distance or not line_through_baffle) and counter < 100:
-        x_start, y_start = point_sampler(occupancy_map)
-        x_end, y_end = point_sampler(occupancy_map)
-        larger_than_distance = np.sqrt(np.square(x_end - x_start) + np.square(y_end - y_start)) < distance
-        line_through_baffle = check_line_collision([x_start, y_start], [x_end, y_end], walls)
+
+    while no_meet_requirement or not line_through_baffle and counter < 100:
+        x_start, y_start = point_sampler(dilate_occupancy_map)
+        x_end, y_end = point_sampler(dilate_occupancy_map)
+        distance = np.sqrt(np.square(x_end - x_start) + np.square(y_end - y_start))
+        if random_number < 0.5:
+            in_distance = distance > min_baffle_distance and distance < max_baffle_distance
+            no_meet_requirement = not in_distance
+        else:
+            no_meet_requirement = not distance > max_distance
+        line_through_baffle = check_intersection_with_wall([x_start, y_start], [x_end, y_end], walls)
         counter += 1
-    sample_success = larger_than_distance and line_through_baffle
+    sample_success = not no_meet_requirement and line_through_baffle
     return [[x_start, y_start], [x_end, y_end]], sample_success
 
 

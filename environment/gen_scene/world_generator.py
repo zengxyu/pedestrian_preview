@@ -48,7 +48,8 @@ def load_environment_scene(p: BulletClient, running_config: Dict, worlds_config:
     bu_ends = []
     for i in range(running_config["num_agents"]):
         # sample start position and goal position
-        [start, end], sample_success = agent_sg_sampler_class(occupancy_map=dilated_occ_map,
+        [start, end], sample_success = agent_sg_sampler_class(dilate_occupancy_map=dilated_occ_map,
+                                                              occupancy_map=occupancy_map,
                                                               **agent_sg_sampler_params)
 
         # check the connectivity between the start and end position

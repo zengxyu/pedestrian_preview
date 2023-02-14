@@ -17,8 +17,7 @@ np.set_printoptions(precision=3, suppress=True)
 
 class TurtleBot(BaseDifferentialRobot):
     def __init__(self, p: BulletClient, client_id: int, robot_role: str, step_duration: float, robot_config: Dict,
-                 sensor_config: Dict,
-                 start_position, start_yaw):
+                 sensor_name: str, sensor_config: Dict, start_position, start_yaw):
         super().__init__(p, client_id)
         self.robot_config = robot_config
         self.sensor_config = sensor_config

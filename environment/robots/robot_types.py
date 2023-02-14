@@ -9,15 +9,16 @@ class RobotTypes:
     ObjectRobot = "object_robot"
 
 
-def init_robot(p, client_id, robot_name, robot_role, physical_step_duration, robot_config, sensor_config, start, yaw):
+def init_robot(p, client_id, robot_name, robot_role, physical_step_duration, robot_config, sensor_name, sensor_config,
+               start, yaw):
     if robot_name == RobotTypes.RaceCar:
-        robot = DifferentialRaceCar(p, client_id, robot_role, physical_step_duration, robot_config,
+        robot = DifferentialRaceCar(p, client_id, robot_role, physical_step_duration, robot_config, sensor_name,
                                     sensor_config, start, yaw)
     elif robot_name == RobotTypes.Turtlebot:
-        robot = TurtleBot(p, client_id, robot_role, physical_step_duration, robot_config,
+        robot = TurtleBot(p, client_id, robot_role, physical_step_duration, robot_config, sensor_name,
                           sensor_config, start, yaw)
     elif robot_name == RobotTypes.ObjectRobot:
-        robot = ObjectRobot(p, client_id, robot_role, physical_step_duration, robot_config,
+        robot = ObjectRobot(p, client_id, robot_role, physical_step_duration, robot_config, sensor_name,
                             sensor_config, start, yaw)
     else:
         raise NotImplementedError

@@ -11,7 +11,7 @@ from environment.robots.robot_roles import get_role_color
 
 class ObjectRobot(BaseRobot):
     def __init__(self, p: BulletClient, client_id: int, robot_role: str, step_duration: float, robot_config: Dict,
-                 sensor_config: Dict, start_position, start_yaw):
+                 sensor_name: str, sensor_config: Dict, start_position, start_yaw):
         super().__init__(p, client_id)
 
         self.p = p

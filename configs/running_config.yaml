@@ -4,19 +4,19 @@ physical_step_duration: 0.1
 
 #  """ the resolution of bullet to occupancy map, one cell in occ map = 0.1 meter in bullet"""
 dilation_size: 4
-goal_reached_thresh: 0.5
+goal_reached_thresh: 0.1
 
 # train
 save_result_n: 1000
 max_steps: 150
-inference_duration: 0.4 # [s]
+inference_duration: 0.2 # [s]
 
 evaluate_every_n_training: 1000
 evaluate_n_times: 100
 
 reward_config_name: reward_config1
 
-# choose from  inputs_config.yaml
+# choose from  inputs_config.yaml: input_multi_row_multi_sensor, input_multi_row_cnn
 input_config_name: input_rgbd_ncp
 
 # choose from worlds_config.yaml: "corridor","cross","office","empty"
@@ -27,6 +27,7 @@ agent: sac
 
 action_space: ContinuousVWActionSpace
 
+# choose from lidar, vision, multi_vision
 sensor_name: vision
 
 # choose from [race_car, turtlebot, object_robot]
@@ -39,7 +40,7 @@ npc_speed_range: [ 0.8, 1.5 ]
 num_npc: 10
 
 # choose from agent_sg_sampler1, agent_sg_corner_sampler1
-agent_sg_sampler: agent_sg_sampler1
+agent_sg_sampler: agent_sg_opposite_baffle_sampler1
 npc_sg_sampler: npc_sg_sampler1
 
 
