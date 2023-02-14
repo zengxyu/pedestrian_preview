@@ -25,6 +25,6 @@ class Utils:
                 currentAxis.add_patch(Rectangle(
                     (ob.bottomLeft[0], ob.bottomLeft[1]), ob.width, ob.height, alpha=0.4))
 
-        plt.scatter(curr[0], curr[1], s=200, c='red')
+        # plt.scatter(curr[0], curr[1], s=200, c='red')
         plt.scatter(dest[0], dest[1], s=200, c='green')
         fig.canvas.draw()

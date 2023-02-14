@@ -24,7 +24,9 @@ def cvt_to_om(bu_point, grid_resolution):
     :param grid_resolution:
     :return: position in occupancy map
     """
-    return np.array(bu_point) / grid_resolution
+    res = np.array(bu_point) / grid_resolution
+    res = res.astype(np.int)
+    return res
 
 
 def transfer_world_to_local(center_x, center_y):

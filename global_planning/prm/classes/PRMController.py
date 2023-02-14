@@ -14,11 +14,11 @@ from .Utils import Utils
 
 
 class PRMController:
-    def __init__(self, num_of_random_coordinates, obstacles, current, destination, max_map_size):
+    def __init__(self, num_of_random_coordinates, obstacles, destination, max_map_size):
         self.num_of_random_coordinates = num_of_random_coordinates
         self.coordinates_list = np.array([])
         self.obstacles = obstacles
-        self.current = np.array(current)
+        # self.current = np.array(current)
         self.destination = np.array(destination)
         self.max_map_size = max_map_size
         self.graph = Graph()
@@ -29,54 +29,56 @@ class PRMController:
     def run_prm(self, initial_random_seed, save_image=True):
         seed = initial_random_seed
         # Keep resampling if no solution found
-        while not self.solution_found:
-            print("Trying with random seed {}".format(seed))
-            np.random.seed(seed)
+        # while not self.solution_found:
+        print("Trying with random seed {}".format(seed))
+        np.random.seed(seed)
 
-            # Generate n random samples called milestones
-            self.gen_milestones(max_map_size=self.max_map_size)
+        # Generate n random samples called milestones
+        self.gen_milestones(max_map_size=self.max_map_size)
 
-            # Check if milestones are collision free
-            self.check_if_collision_free()
+        # Check if milestones are collision free
+        self.check_if_collision_free()
 
-            # Link each milestone to k nearest neighbours.
-            # Retain collision free links as local paths.
-            self.find_nearest_neighbour()
-            # Search for shortest path from start to end node - Using Dijksta's shortest path alg
-            path, dist, path_to_end = self.get_shortest_path()
-            # self.display_path(path, dist, path_to_end)
-            seed = np.random.randint(1, 100000)
-            self.coordinates_list = np.array([])
-            self.graph = Graph()
+        # Link each milestone to k nearest neighbours.
+        # Retain collision free links as local paths.
+        self.find_nearest_neighbour()
 
-        if save_image:
-            plt.savefig("{}_samples.png".format(self.num_of_random_coordinates))
-        plt.show()
-        return path
+        self.compute_dijkstra_from_destination()
+        # Search for shortest path from start to end node - Using Dijksta's shortest path alg
+        # path, dist, path_to_end = self.get_shortest_path()
+        # self.display_path(path, dist, path_to_end)
+        # seed = np.random.randint(1, 100000)
+        # self.coordinates_list = np.array([])
+        # self.graph = Graph()
 
-    def display_path(self, path_points, dist, points_to_end):
+        # if save_image:
+        #     plt.savefig("{}_samples.png".format(self.num_of_random_coordinates))
+        # plt.show()
+        # return path
+
+    def display_path(self, path_points):
         x = [int(item[0]) for item in path_points]
         y = [int(item[1]) for item in path_points]
         plt.plot(x, y, c="blue", linewidth=3.5, linestyle='--')
 
         print("****Output****")
 
-        print("The quickest path from {} to {} is: \n {} \n with a distance of {}".format(
-            self.current,
-            self.destination,
-            " \n ".join(points_to_end),
-            str(dist[self.end_node])
-        )
-        )
+        # print("The quickest path from {} to {} is: \n {} \n with a distance of {}".format(
+        #     start,
+        #     self.destination,
+        #     " \n ".join(points_to_end),
+        #     str(dist[self.end_node])
+        # )
+        # )
 
     def gen_milestones(self, max_map_size=100):
         self.coordinates_list = np.random.randint(
             max_map_size, size=(self.num_of_random_coordinates, 2))
         # Adding begin and end points
-        self.current = self.current.reshape(1, 2)
+        # self.current = self.current.reshape(1, 2)
         self.destination = self.destination.reshape(1, 2)
         self.coordinates_list = np.concatenate(
-            (self.coordinates_list, self.current, self.destination), axis=0)
+            (self.coordinates_list, self.destination), axis=0)
 
     def check_if_collision_free(self):
         for point in self.coordinates_list:
@@ -111,24 +113,34 @@ class PRMController:
                         plt.plot(x, y)
         # plt.show()
 
-    def get_shortest_path(self):
-        self.start_node = str(self.find_node_index(self.current))
-        self.end_node = str(self.find_node_index(self.destination))
+    def compute_dijkstra_from_destination(self):
+        self.destination_node = str(self.find_node_index(self.destination))
+        self.dist, self.prev = dijkstra(self.graph, self.destination_node)
 
-        dist, prev = dijkstra(self.graph, self.start_node)
+    def get_shortest_path_from_start(self, start):
+        self.start_node = str(self.find_nearest_node_index(start))
+        path_to_destination = to_array(self.prev, self.start_node)
+        shortest_path = [(self.find_points_from_node(path)) for path in path_to_destination]
+        return shortest_path
 
-        path_to_end = to_array(prev, self.end_node)
-
-        if len(path_to_end) > 1:
-            self.solution_found = True
-        else:
-            return
-
-        # Plotting shortest path
-        shortest_path = [(self.find_points_from_node(path)) for path in path_to_end]
-        # self.display_path(shortest_path, dist, path_to_end)
-        # plt.show()
-        return shortest_path, dist, path_to_end
+    # def get_shortest_path(self):
+    #     self.start_node = str(self.find_node_index(self.current))
+    #     self.end_node = str(self.find_node_index(self.destination))
+    #
+    #     dist, prev = dijkstra(self.graph, self.start_node)
+    #
+    #     path_to_end = to_array(prev, self.end_node)
+    #
+    #     if len(path_to_end) > 1:
+    #         self.solution_found = True
+    #     else:
+    #         return
+    #
+    #     # Plotting shortest path
+    #     shortest_path = [(self.find_points_from_node(path)) for path in path_to_end]
+    #     # self.display_path(shortest_path, dist, path_to_end)
+    #     # plt.show()
+    #     return shortest_path, dist, path_to_end
 
     def check_line_collision(self, start_line, end_line):
         collision = False
@@ -150,6 +162,10 @@ class PRMController:
 
     def find_node_index(self, p):
         return np.where((self.collision_free_points == p).all(axis=1))[0][0]
+
+    def find_nearest_node_index(self, p):
+        nearest_index = np.argmin(np.linalg.norm(self.collision_free_points - p, axis=1))
+        return nearest_index
 
     def find_points_from_node(self, n):
         return self.collision_free_points[int(n)]

@@ -84,5 +84,5 @@ def to_array(prev, from_node):
         temp = previous_node
         previous_node = prev[temp]
 
-    route.reverse()
+    # route.reverse()
     return route
