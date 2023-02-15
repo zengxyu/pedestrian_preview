@@ -25,7 +25,7 @@ office:
   doors: 1
   blocked_width: 2
   exit_door_width: 1.2
-  max_num_doors: 0
+  num_door_range: [ 1, 2 ]
 
 
 corridor:

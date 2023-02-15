@@ -9,5 +9,5 @@ race_car:
 object_robot:
   shape: cylinder
   radius_range: [ 0.24, 0.26 ]
-  height_range: [ 0.39, 0.4 ]
+  height_range: [ 1.69, 1.7 ]
   with_collision: False

@@ -5,7 +5,7 @@ from typing import Dict
 import cv2
 import numpy as np
 
-from environment.gen_scene.build_office_world import drop_walls
+from environment.gen_scene.build_office_world import drop_walls, drop_world_walls
 from environment.nav_utilities.coordinates_converter import cvt_to_bu
 
 import json
@@ -26,7 +26,7 @@ def load_scene(p, running_config, world_config, map_path, coordinates_path):
     # [start, end], sample_success = start_goal_sampler(occupancy_map=dilated_occ_map, margin=env_config["dilation_size"])
     #
     config = world_config["configs_all"]
-    agent_ids = drop_walls(p, occupancy_map.copy(), running_config["grid_res"], config)
+    agent_ids = drop_world_walls(p, occupancy_map.copy(), running_config["grid_res"], config)
     agent_starts = cvt_to_bu(start_coordinates, running_config["grid_res"])
     agent_goals = cvt_to_bu(goals, running_config["grid_res"])
     # maps, obstacle_ids, bu_starts, bu_goals

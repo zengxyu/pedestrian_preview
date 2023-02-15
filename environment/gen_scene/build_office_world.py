@@ -1,31 +1,35 @@
 import numpy as np
 
 
-def drop_outer_walls(_bullet_client, occ_map, resolution, configs):
-    obstacles = []
-    MINX = 0
-    MINY = 0
-    MAXX = occ_map.shape[0] - 1
-    MAXY = occ_map.shape[1] - 1
-    top_wall = [[MINX, MINY], [MINX, MAXY]]
-    bottom_wall = [[MAXX, MINY], [MAXX, MAXY]]
-    left_wall = [[MINX, MINY], [MAXX, MINY]]
-    right_wall = [[MINX, MAXY], [MAXX, MAXY]]
-    outer_walls = [top_wall, bottom_wall, left_wall, right_wall]
-    for outer_wall in outer_walls:
-        [minx, miny], [maxx, maxy] = outer_wall
-        obstacles.append(
-            place_wall_from_cells(
-                _bullet_client, [minx, miny], [maxx, maxy], resolution, configs["thickness"], configs["outer_height"]
-            )
-        )
-        occ_map[minx: maxx + 1, miny: maxy + 1] = False
+def separate_inner_outer_walls(occ_map):
+    outer_occ_map = np.zeros_like(occ_map)
+    h, w = occ_map.shape
+    outer_occ_map[0, :] = occ_map[0, :]
+    outer_occ_map[h - 1, :] = occ_map[h - 1, :]
+    outer_occ_map[:, 0] = occ_map[:, 0]
+    outer_occ_map[:, w - 1] = occ_map[:, w - 1]
+    inner_occ_map = np.zeros_like(occ_map)
+    inner_occ_map[1:h - 2, 1:w - 2] = occ_map[1:h - 2, 1:w - 2]
+    return outer_occ_map, inner_occ_map
 
+
+def drop_world_walls(_bullet_client, occ_map, resolution, configs):
+    # separate inner walls and outer walls
+    outer_occ_map, inner_occ_map = separate_inner_outer_walls(occ_map)
+    obstacles = []
+    # place outer walls
+    outer_obstacles = drop_walls(_bullet_client, outer_occ_map, resolution, configs["thickness"],
+                                 configs["outer_height"])
+    # place inner walls
+    inner_obstacles = drop_walls(_bullet_client, inner_occ_map, resolution, configs["thickness"],
+                                 configs["inner_height"])
+    obstacles.extend(outer_obstacles)
+    obstacles.extend(inner_obstacles)
     return obstacles
 
 
-def drop_walls(_bullet_client, occ_map, resolution, configs):
-    obstacles = drop_outer_walls(_bullet_client, occ_map, resolution, configs)
+def drop_walls(_bullet_client, occ_map, resolution, thickness, height):
+    obstacles = []
 
     MAXX = occ_map.shape[0]
     MAXY = occ_map.shape[1]
@@ -49,7 +53,7 @@ def drop_walls(_bullet_client, occ_map, resolution, configs):
 
         obstacles.append(
             place_wall_from_cells(
-                _bullet_client, [minx, miny], [maxx, maxy], resolution, configs["thickness"], configs["inner_height"]
+                _bullet_client, [minx, miny], [maxx, maxy], resolution, thickness, height
             )
         )
         occ_map[minx: maxx + 1, miny: maxy + 1] = False

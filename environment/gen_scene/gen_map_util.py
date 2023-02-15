@@ -306,10 +306,10 @@ def is_door_neighbor(door_map: np.array, point: np.array, surr_radius: float) ->
 def make_exit_door(occ_map, conf, res):
     exit_door_width = int(conf["exit_door_width"] / res)
     half_width = int(exit_door_width / 2)
-    max_num_doors = int(conf["max_num_doors"])
-    if max_num_doors <= 0:
+    num_door_range = list(conf["num_door_range"])
+    if num_door_range[0] >= num_door_range[1]:
         return
-    num_doors = np.random.randint(1, max_num_doors)
+    num_doors = np.random.randint(num_door_range[0], num_door_range[1])
     edge_corner_map = compute_edge_neighbor(occ_map)
     evolve_corner_map = evolve_edge_corner_map(edge_corner_map, exit_door_width=exit_door_width)
     up_available_points = []
