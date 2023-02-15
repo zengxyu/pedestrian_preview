@@ -12,7 +12,7 @@ from environment.gen_scene.worlds_mapping import WorldMapClassMapping, get_world
 from environment.nav_utilities.coordinates_converter import cvt_to_bu
 from utils.image_utility import dilate_image
 
-from traditional_planner.a_star.astar import AStar
+from global_planning.a_star.astar import AStar
 
 
 def get_world_config(worlds_config, world_name):

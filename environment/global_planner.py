@@ -1,7 +1,7 @@
 import logging
 
 from utils.image_utility import dilate_image
-from traditional_planner.a_star.astar import AStar
+from global_planning.a_star.astar import AStar
 
 
 def plan_a_star_path(occ_map, robot_occ_start, robot_occ_end):
