@@ -1,8 +1,29 @@
 import numpy as np
 
 
+def drop_outer_walls(_bullet_client, occ_map, resolution, configs):
+    obstacles = []
+    minx = 0
+    miny = 0
+    maxx = occ_map.shape[0]
+    maxy = occ_map.shape[1]
+    top_wall = [[minx, miny], [minx, maxy]]
+    bottom_wall = [[maxx, miny], [maxx, maxy]]
+    left_wall = [[minx, miny], [maxx, miny]]
+    right_wall = [[minx, maxy], [maxx, maxy]]
+    outer_walls = [top_wall, bottom_wall, left_wall, right_wall]
+    for outer_wall in outer_walls:
+        obstacles.append(
+            place_wall_from_cells(
+                _bullet_client, outer_wall[0], outer_wall[1], resolution, configs
+            )
+        )
+    return obstacles
+
+
 def drop_walls(_bullet_client, occ_map, resolution, configs):
     obstacles = []
+    obstacles = drop_outer_walls(_bullet_client, occ_map, resolution, configs)
 
     MAXX = occ_map.shape[0]
     MAXY = occ_map.shape[1]

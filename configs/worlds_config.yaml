@@ -1,5 +1,6 @@
 configs_all:
-  height: 2.5
+  outer_height: 3.5
+  inner_height: 1
   thickness: 0.05
 
 open:
