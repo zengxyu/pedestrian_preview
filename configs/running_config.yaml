@@ -17,7 +17,7 @@ evaluate_n_times: 100
 reward_config_name: reward_config1
 
 # choose from  inputs_config.yaml: input_multi_row_multi_sensor, input_multi_row_cnn
-input_config_name: input_multi_row_cnn
+input_config_name: input_depth_ncp
 
 # choose from worlds_config.yaml: "corridor","cross","office","empty"
 world_name: office
@@ -34,10 +34,10 @@ sensor_name: vision
 agent_robot_name: race_car
 num_agents: 1
 
-npc_robot_name: object_robot
+npc_robot_name: race_car
 #  pedestrian speed
-npc_speed_range: [ 0.8, 1.2 ]
-num_npc: 0
+npc_speed_range: [ 0.8, 1.5 ]
+num_npc: 10
 
 # choose from agent_sg_sampler1, agent_sg_corner_sampler1
 agent_sg_sampler: agent_sg_sampler2

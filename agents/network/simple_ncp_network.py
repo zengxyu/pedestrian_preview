@@ -1,5 +1,4 @@
 import torch
-
 from agents.network.network_base import *
 from agents.network.network_head import *
 from ncps.wirings import AutoNCP
@@ -12,6 +11,7 @@ model_params = {
 
 }
 
+
 class BaseModel(nn.Module):
     def __init__(self, **kwargs):
         super().__init__()
@@ -21,9 +21,12 @@ class BaseModel(nn.Module):
         self.strides = model_params["strides"]
         self.seq_len = kwargs["image_seq_len"]
         self.image_depth = kwargs["image_depth"]
-        self.position_len = 2
+        self.image_h = kwargs["image_h"]
+        self.image_w = kwargs["image_w"]
+        self.position_len = kwargs["pose_seq_len"]
         self.cnn = build_cnns_2d(self.image_depth, self.cnn_dims, self.kernel_sizes, self.strides)
         # self.mlp_relative_position = build_mlp(3, self.mlp_dims, activate_last_layer=False)
+
 
 class SimpleCnnNcpActor(BaseModel):
     def __init__(self, agent_type, action_space, **kwargs):
@@ -31,7 +34,7 @@ class SimpleCnnNcpActor(BaseModel):
         self.n_actions = len(action_space.low)
 
         self.head = build_head(agent_type, action_space)
-
+        self.cnn = build_cnns_2d(self.image_depth, self.cnn_dims, self.kernel_sizes, self.strides)
         self.wirings = AutoNCP(48, 4)
         self.rnn = build_ncpltc(1283, wirings=self.wirings)
 
@@ -39,13 +42,17 @@ class SimpleCnnNcpActor(BaseModel):
         image = x[0].float()
         relative_position = x[1].float()
 
+        image = image.view(-1, self.seq_len, self.image_depth, self.image_h, self.image_w)
+
         batch_size = image.size(0)
         seq_len = image.size(1)
+        image_depth = image.size(2)
 
+        image = image.view(batch_size*seq_len, image_depth, self.image_h, self.image_w)
         relative_position = relative_position.view(batch_size, seq_len, -1)
 
-        image1 = image.view(batch_size*seq_len, *image.shape[2:])
-        out1 = self.cnn(image1)
+        # image1 = image.view(batch_size*seq_len, *image.shape[2:])
+        out1 = self.cnn(image)
         out1 = out1.view(batch_size, seq_len, *out1.shape[1:])
         out1 = out1.reshape(batch_size, seq_len, -1)
         out = torch.cat((out1, relative_position), dim=2)
@@ -54,6 +61,7 @@ class SimpleCnnNcpActor(BaseModel):
         out = out.mean(dim=1)
         out = self.head(out)
         return out
+
 
 class SimpleCnnNcpCritic(BaseModel):
     """
@@ -74,6 +82,8 @@ class SimpleCnnNcpCritic(BaseModel):
         x, action = x
         image = x[0].float()
         relative_position = x[1].float()
+
+        image = image.view(-1, self.seq_len, self.image_depth, self.image_h, self.image_w)
 
         batch_size = image.size(0)
         image = image.view(image.size(0), image.size(1)*image.size(2), image.size(3), image.size(4))

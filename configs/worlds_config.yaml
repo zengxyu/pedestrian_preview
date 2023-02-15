@@ -1,5 +1,5 @@
 configs_all:
-  height: 2.5
+  height: 1
   thickness: 0.05
 
 open:
@@ -24,7 +24,7 @@ office:
   doors: 1
   blocked_width: 2
   exit_door_width: 1.2
-  max_num_doors: 0
+  max_num_doors: 2
 
 
 corridor:
