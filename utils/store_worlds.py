@@ -1,4 +1,6 @@
+import logging
 import os
+import pickle
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -11,7 +13,7 @@ from utils.fo_utility import get_project_path
 from utils.image_utility import dilate_image
 
 
-def generate_world(num_starts):
+def generate_env(num_starts):
     # read specified world config
     world_name = "office"
     worlds_config = read_yaml(os.path.join(get_project_path(), "configs"), "worlds_config.yaml")
@@ -53,6 +55,66 @@ def display(occupancy_map, starts, ends):
     plt.show()
 
 
-if __name__ == '__main__':
-    occupancy_map, starts, ends = generate_world(num_starts=20)
+def generate_n_envs(num_envs, num_starts):
+    envs = []
+    for i in range(num_envs):
+        occupancy_map, starts, ends = generate_env(num_starts=num_starts)
+        envs.append([occupancy_map, starts, ends])
+    return envs
+
+
+def store_envs(envs, parent_folder):
+    """
+    save environments to parent folder
+    """
+    if not os.path.exists(parent_folder):
+        os.makedirs(parent_folder)
+
+    save_file_name_template = "env_{}"
+    for i, env in enumerate(envs):
+        save_file_name = save_file_name_template.format(i)
+        save_path = os.path.join(parent_folder, save_file_name)
+        logging.info("Save env {} to {} ... ".format(save_file_name, save_path))
+        pickle.dump(env, open(save_path, 'wb'))
+        logging.info("Save done!")
+
+
+def read_env(file_path):
+    """
+    read single environment from file path
+    """
+    file = open(file_path, 'rb')
+    env = pickle.load(file)
+    return env
+
+
+def read_envs(parent_folder):
+    """
+    read environments from parent folder
+    """
+    file_names = os.listdir(parent_folder)
+    file_paths = [os.path.join(parent_folder, file_name) for file_name in file_names]
+    envs = []
+    for file_path in file_paths:
+        env = read_env(file_path)
+        envs.append(env)
+    return envs
+
+
+def test_read_envs():
+    parent_folder = os.path.join(get_project_path(), "data", "random_envs")
+    envs = read_envs(parent_folder)
+    display(*envs[0])
+
+
+def test_store_envs():
+    occupancy_map, starts, ends = generate_env(num_starts=20)
+    envs = generate_n_envs(num_envs=2, num_starts=20)
+    parent_folder = os.path.join(get_project_path(), "data", "random_envs")
     display(occupancy_map, starts, ends)
+    store_envs(envs, parent_folder)
+
+
+if __name__ == '__main__':
+    # test_read_envs()
+    test_store_envs()
