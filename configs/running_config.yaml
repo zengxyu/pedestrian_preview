@@ -17,7 +17,7 @@ evaluate_n_times: 100
 reward_config_name: reward_config1
 
 # choose from  inputs_config.yaml: input_multi_row_multi_sensor, input_multi_row_cnn
-input_config_name: input_multi_row_cnn
+input_config_name: input_cnn
 
 # choose from worlds_config.yaml: "corridor","cross","office","empty"
 world_name: office
@@ -40,7 +40,7 @@ npc_speed_range: [ 0.8, 1.2 ]
 num_npc: 5
 
 # choose from agent_sg_sampler1, agent_sg_corner_sampler1
-agent_sg_sampler: agent_sg_sampler2
+agent_sg_sampler: agent_sg_opposite_baffle_sampler1
 npc_sg_sampler: npc_sg_sampler1
 
 
