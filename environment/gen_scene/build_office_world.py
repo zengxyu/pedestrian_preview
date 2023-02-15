@@ -1,8 +1,31 @@
 import numpy as np
 
 
-def drop_walls(_bullet_client, occ_map, resolution, configs):
+def drop_outer_walls(_bullet_client, occ_map, resolution, configs):
     obstacles = []
+    MINX = 0
+    MINY = 0
+    MAXX = occ_map.shape[0] - 1
+    MAXY = occ_map.shape[1] - 1
+    top_wall = [[MINX, MINY], [MINX, MAXY]]
+    bottom_wall = [[MAXX, MINY], [MAXX, MAXY]]
+    left_wall = [[MINX, MINY], [MAXX, MINY]]
+    right_wall = [[MINX, MAXY], [MAXX, MAXY]]
+    outer_walls = [top_wall, bottom_wall, left_wall, right_wall]
+    for outer_wall in outer_walls:
+        [minx, miny], [maxx, maxy] = outer_wall
+        obstacles.append(
+            place_wall_from_cells(
+                _bullet_client, [minx, miny], [maxx, maxy], resolution, configs["thickness"], configs["outer_height"]
+            )
+        )
+        occ_map[minx: maxx + 1, miny: maxy + 1] = False
+
+    return obstacles
+
+
+def drop_walls(_bullet_client, occ_map, resolution, configs):
+    obstacles = drop_outer_walls(_bullet_client, occ_map, resolution, configs)
 
     MAXX = occ_map.shape[0]
     MAXY = occ_map.shape[1]
@@ -26,7 +49,7 @@ def drop_walls(_bullet_client, occ_map, resolution, configs):
 
         obstacles.append(
             place_wall_from_cells(
-                _bullet_client, [minx, miny], [maxx, maxy], resolution, configs
+                _bullet_client, [minx, miny], [maxx, maxy], resolution, configs["thickness"], configs["inner_height"]
             )
         )
         occ_map[minx: maxx + 1, miny: maxy + 1] = False
@@ -34,29 +57,29 @@ def drop_walls(_bullet_client, occ_map, resolution, configs):
     return obstacles
 
 
-def place_wall_from_cells(_bullet_client, start, end, resolution, configs):
+def place_wall_from_cells(_bullet_client, start, end, resolution, thickness, height):
     # x direction
     x = (start[0] + end[0]) * 0.5 * resolution
     dx = end[0] - start[0]
-    dx = configs["thickness"] + (0.0 if dx == 0 else (dx + 1) * resolution * 0.5)
+    dx = thickness + (0.0 if dx == 0 else (dx + 1) * resolution * 0.5)
 
     # y direction
     y = (start[1] + end[1]) * 0.5 * resolution
     dy = end[1] - start[1]
-    dy = configs["thickness"] + (0.0 if dy == 0 else (dy + 1) * resolution * 0.5)
+    dy = thickness + (0.0 if dy == 0 else (dy + 1) * resolution * 0.5)
 
     # place wall and return id
     return _bullet_client.createMultiBody(
         0,
         _bullet_client.createCollisionShape(
             shapeType=_bullet_client.GEOM_BOX,
-            halfExtents=[dx, dy, configs["height"] * 0.5],
-            collisionFramePosition=[x, y, configs["height"] * 0.5],
+            halfExtents=[dx, dy, height * 0.5],
+            collisionFramePosition=[x, y, height * 0.5],
         ),
         _bullet_client.createVisualShape(
             shapeType=_bullet_client.GEOM_BOX,
-            halfExtents=[dx, dy, configs["height"] * 0.5],
-            visualFramePosition=[x, y, configs["height"] * 0.5],
+            halfExtents=[dx, dy, height * 0.5],
+            visualFramePosition=[x, y, height * 0.5],
             rgbaColor=[0.8, 0.8, 0.8, 1]
         ),
     )
