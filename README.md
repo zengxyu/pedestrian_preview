@@ -3,7 +3,7 @@
 
 ## Prerequisites
 ```
-pip3 install -r re[requirements.txt](requirements.txt)
+pip3 install -r requirements.txt
 ```
 
 ## Compile A* global planner
