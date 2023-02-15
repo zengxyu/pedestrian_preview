@@ -13,6 +13,14 @@ import os
 import pickle
 from typing import List, Dict
 import numpy as np
+import torch
+
+
+def add_graph(pf_learner, states):
+    if not pf_learner.add_graph_to_writer:
+        states = [torch.from_numpy(state[np.newaxis, ...]).to(pf_learner.device) for state in states]
+        pf_learner.writer.add_graph(pf_learner.args.networks[0], (states,))
+        pf_learner.add_graph_to_writer = True
 
 
 def add_scalar(writer, phase, episode_info, i_episode):
