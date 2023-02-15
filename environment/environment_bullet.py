@@ -40,7 +40,7 @@ from environment.nav_utilities.check_helper import check_collision, CollisionTyp
 from environment.nav_utilities.counter import Counter
 from utils.math_helper import compute_yaw, compute_distance, compute_manhattan_distance
 from environment.gen_scene.world_generator import load_environment_scene
-from traditional_planner.a_star.astar import AStar
+from global_planning.a_star.astar import AStar
 
 
 class EnvironmentBullet(PybulletBaseEnv):

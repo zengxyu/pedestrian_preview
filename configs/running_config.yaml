@@ -36,8 +36,8 @@ num_agents: 1
 
 npc_robot_name: race_car
 #  pedestrian speed
-npc_speed_range: [ 0.8, 1.5 ]
-num_npc: 10
+npc_speed_range: [ 0.8, 1.2 ]
+num_npc: 5
 
 # choose from agent_sg_sampler1, agent_sg_corner_sampler1
 agent_sg_sampler: agent_sg_sampler2

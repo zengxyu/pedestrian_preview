@@ -14,6 +14,6 @@ from Cython.Build import cythonize
 
 setup(
     ext_modules=cythonize(
-        ["traditional_planner/a_star/astar.pyx"]),
+        ["global_planning/a_star/astar.pyx"]),
 )
 # python setup.py build_ext --inplace

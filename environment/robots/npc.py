@@ -48,7 +48,8 @@ class Npc:
     def create(self, path):
         logger.debug("create a dynamic obstacle")
         yaw = compute_yaw(path[0], path[-1])
-        self.robot = init_robot(self.p, self.client_id, self.npc_robot_name, RobotRoles.NPC, self.physical_step_duration,
+        self.robot = init_robot(self.p, self.client_id, self.npc_robot_name, RobotRoles.NPC,
+                                self.physical_step_duration,
                                 self.npc_robot_config, self.sensor_name,
                                 self.sensor_config, path[0], yaw)
 
