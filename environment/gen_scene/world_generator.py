@@ -3,7 +3,7 @@ from typing import Dict
 import numpy as np
 from pybullet_utils.bullet_client import BulletClient
 
-from environment.gen_scene.build_office_world import drop_walls
+from environment.gen_scene.build_office_world import drop_walls, drop_world_walls
 
 import logging as logger
 
@@ -62,7 +62,7 @@ def load_environment_scene(p: BulletClient, running_config: Dict, worlds_config:
         bu_ends.append(bu_end)
 
     # create office entity in py bullet simulation environment
-    obstacle_ids = drop_walls(p, occupancy_map.copy(), running_config["grid_res"], world_config)
+    obstacle_ids = drop_world_walls(p, occupancy_map.copy(), running_config["grid_res"], world_config)
     bu_starts = np.array(bu_starts)
     bu_ends = np.array(bu_ends)
     return occupancy_map, obstacle_ids, bu_starts, bu_ends

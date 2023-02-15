@@ -70,7 +70,7 @@ def store_envs(envs, parent_folder):
     if not os.path.exists(parent_folder):
         os.makedirs(parent_folder)
 
-    save_file_name_template = "env_{}"
+    save_file_name_template = "env_{}.pkl"
     for i, env in enumerate(envs):
         save_file_name = save_file_name_template.format(i)
         save_path = os.path.join(parent_folder, save_file_name)
