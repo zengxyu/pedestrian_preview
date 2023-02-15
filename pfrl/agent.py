@@ -111,7 +111,7 @@ class AttributeSavingMixin(object):
         self.__load(dirname, [])
 
     def __load(self, dirname: str, ancestors: List[Any]) -> None:
-        map_location = torch.device("cpu") if not torch.cuda.is_available() else None
+        map_location = torch.device("cpu") if not torch.cuda.is_available() else torch.device("cuda:0")
         ancestors.append(self)
         for attr in self.saved_attributes:
             assert hasattr(self, attr)

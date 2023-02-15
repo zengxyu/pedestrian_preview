@@ -3,6 +3,15 @@ import math
 import pybullet as p
 
 
+class ImageMode:
+    DEPTH = "depth"
+    RGB = "rgb"
+    RGBD = "rgbd"
+    ROW = "row"
+    MULTI_ROW = "multi_row"
+    MULTI_ROW_MULTI_SENSOR = "multi_row_multi_sensor"
+
+
 class VisionSensor:
     def __init__(self, robot_id, sensor_config):
         self.robot_id = robot_id
@@ -15,13 +24,14 @@ class VisionSensor:
         self.nearVal = sensor_config["near_val"]
         self.farVal = sensor_config["far_val"]
         self.shadow = sensor_config["shadow"]
+        self.placement_height = sensor_config["placement_height"]
 
     def get_obs(self):
         # get robot observation
         agent_pos, agent_orn = p.getBasePositionAndOrientation(self.robot_id)
         yaw = p.getEulerFromQuaternion(agent_orn)[-1]
         x_eye, y_eye, z_eye = agent_pos
-        z_eye += 0.3  # make the camera a little higher than the robot
+        z_eye += self.placement_height  # make the camera a little higher than the robot
 
         # compute focusing point of the camera
         x_target = x_eye + math.cos(yaw) * self.distance

@@ -54,7 +54,7 @@ def read_reward_configs(args):
     :param args:
     :return:
     """
-    reward_configs = read_yaml(config_dir=args.configs_folder, config_name="rewards.yaml")
+    reward_configs = read_yaml(config_dir=args.configs_folder, config_name="rewards_config.yaml")
     return reward_configs
 
 
@@ -64,5 +64,5 @@ def read_input_configs(args):
     :param args:
     :return:
     """
-    input_configs = read_yaml(config_dir=args.configs_folder, config_name="inputs.yaml")
+    input_configs = read_yaml(config_dir=args.configs_folder, config_name="inputs_config.yaml")
     return input_configs

@@ -13,8 +13,6 @@ import logging
 
 import numpy as np
 
-from environment.gen_scene.common_sampler import static_obs_sampler
-
 
 def create_cross_map(configs):
     grid_resolution = 2.0 * configs["thickness"]

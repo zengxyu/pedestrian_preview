@@ -3,6 +3,13 @@ from typing import List
 from pybullet_utils.bullet_client import BulletClient
 
 
+class CollisionType:
+    NoCollision = -1
+    CollisionWithWall = 1
+    CollisionWithPedestrian = 2
+    CollisionWithAgent = 3
+
+
 def check_collision(_bullet_client: BulletClient, robot_ids: List[int], obstacle_ids: List[int]) -> bool:
     """
     check if robot id in robot_ids collision

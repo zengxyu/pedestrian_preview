@@ -16,32 +16,21 @@ np.set_printoptions(precision=3, suppress=True)
 
 
 class TurtleBot(BaseDifferentialRobot):
-    def __init__(self, p: BulletClient, client_id: int, step_duration: float, robot_config: Dict, args,
-                 start_position, start_yaw):
+    def __init__(self, p: BulletClient, client_id: int, robot_role: str, step_duration: float, robot_config: Dict,
+                 sensor_name: str, sensor_config: Dict, start_position, start_yaw):
         super().__init__(p, client_id)
-        self.lidar_joint_id = None
         self.robot_config = robot_config
+        self.sensor_config = sensor_config
         self.wheel_base = 0.23
-        # self.robot_id, self.left_wheel_id, self.right_wheel_id initialized
-        # 1.5, 2.3
-        # 原本的.75, .75
-        self.load_turtle_bot(start_position[0], start_position[1], start_yaw)
+        self.robot_role = robot_role
         self.v_ctrl_factor: float = self.robot_config["v_ctrl_factor"]
         self.w_ctrl_factor: float = self.robot_config["w_ctrl_factor"]
 
-        self.joint_speed = 5
-
-        self.visible_zone_limit = self.robot_config["visible_width"]
-
-        self.sensor_config = args.sensors_config[self.robot_config["sensor"]]
+        self.load_urdf(start_position[0], start_position[1], start_yaw)
 
         self.sensor = VisionSensor(robot_id=self.robot_id, sensor_config=self.sensor_config)
 
         self.physical_step_duration = step_duration
-
-        self.lidar_scan_interval: float = self.robot_config["lidar_scan_interval"]
-
-        self.n_lidar_scan_step = np.round(self.lidar_scan_interval / step_duration)
 
     def convert_v_w_to_wheel_velocities(self, v, w):
         v = self.v_ctrl_factor * v * 2
@@ -69,7 +58,7 @@ class TurtleBot(BaseDifferentialRobot):
         v = math.sqrt(v_transition[0] ** 2 + v_transition[1] ** 2)
         return v
 
-    def load_turtle_bot(self, cur_x, cur_y, cur_yaw=0):
+    def load_urdf(self, cur_x, cur_y, cur_yaw=0):
         """
         load turtle bot from urdf, turtlebot urdf is from rl_utils
         :return:
@@ -77,10 +66,12 @@ class TurtleBot(BaseDifferentialRobot):
         turtle_bot_path = os.path.join(
             get_project_path(),
             "environment",
+            "robots",
             "urdf",
             "turtlebot",
             "turtlebot.urdf",
         )
+
         turtle = self.p.loadURDF(
             turtle_bot_path,
             [cur_x, cur_y, 0],
@@ -99,6 +90,4 @@ class TurtleBot(BaseDifferentialRobot):
             if "rplidar_joint" in str(self.p.getJointInfo(turtle, j)[1]):
                 lidar_joint = j
 
-        self.wheel_dist = 0.115 * 2
-
-        self.robot_id, self.left_wheel_id, self.right_wheel_id, self.lidar_joint_id = turtle, left_joint, right_joint, lidar_joint
+        self.robot_id, self.left_wheel_id, self.right_wheel_id = turtle, left_joint, right_joint

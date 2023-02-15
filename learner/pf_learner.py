@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import sys
 from typing import List, Dict
 
 import numpy as np
@@ -31,7 +32,6 @@ class PFLearner:
         self.test_collector = EpisodeInfo()
         self.eval = not args.train
 
-
     def run(self):
         print("========================================Start running========================================")
         if self.eval or self.args.resume:
@@ -42,7 +42,6 @@ class PFLearner:
             print("Start training")
             for i in range(self.args.num_episodes):
                 print("\nEpisode:{}".format(i))
-                self.scheduler.print()
                 self.train_once()
 
                 if (i + 1) % self.running_config["evaluate_every_n_training"] == 0:
@@ -50,9 +49,8 @@ class PFLearner:
                     self.evaluate_n_times(self.running_config["evaluate_n_times"])
                     self.agent.save("{}/model_epi_{}".format(self.args.out_model, self.test_i_episode))
                     self.scheduler.lr_schedule(self.test_collector.get_smooth_success_rate())
+                    self.scheduler.print()
 
-                # if (i + 1) % self.running_config["learn_segmentation_every_n_training"] == 0:
-                #     self.segmentation_learner.run()
 
         else:
             print("Start evaluating")
@@ -63,17 +61,16 @@ class PFLearner:
 
             pbar = tqdm(range(self.args.num_episodes))
             for i in pbar:
-                info = self.evaluate_once()
-                if info['a_success']:
-                    success_num += 1
-                elif info["collision"]:
-                    collision_num += 1
-                else:
-                    timeout_num += 1
-                navigation_time_on_success_episodes["{}".format(i)] = info['step_count']
+                self.evaluate_once()
+                # if info['a_success']:
+                #     success_num += 1
+                # elif info["collision"]:
+                #     collision_num += 1
+                # else:
+                #     timeout_num += 1
+                # navigation_time_on_success_episodes["{}".format(i)] = info['step_count']
 
                 pbar.set_description("Success rate:{}".format(self.test_collector.get_success_rate()))
-            # self.env.save_metrics()
 
             test_result = {
                 "success": success_num,
@@ -90,7 +87,8 @@ class PFLearner:
             # store test result
             filename = os.path.join(
                 save_folder,
-                "dynamic_{}+static_{}_speed_{}.".format(self.args.dynamic_num, self.args.static_num, self.args.max_speed)
+                "dynamic_{}+static_{}_speed_{}.".format(self.args.dynamic_num, self.args.static_num,
+                                                        self.args.max_speed)
             )
             with open(filename + "json", "w") as f:
                 json.dump(test_result, f)
@@ -104,17 +102,27 @@ class PFLearner:
         infos_for_sum = []
         infos_for_last = []
         done = False
-        i_step = 0
         while not done:
-            action = self.agent.act(state)
-            state, reward, done, info_for_sum, info_for_last = self.env.step(action)
-            self.agent.observe(obs=state, reward=reward, done=done, reset=False)
-            self.global_i_step += 1
+            if self.args.debug:
+                action = self.agent.act(state[0])
+                state, reward, done, info_for_sum, info_for_last = self.env.step([action])
+                self.agent.observe(obs=state[0], reward=reward, done=done, reset=False)
+                self.global_i_step += 1
+                infos_for_sum.append(info_for_sum)
+                infos_for_last.append(info_for_last)
+            else:
+                try:
+                    action = self.agent.act(state[0])
+                    state, reward, done, info_for_sum, info_for_last = self.env.step([action])
+                    self.agent.observe(obs=state[0], reward=reward, done=done, reset=False)
+                    self.global_i_step += 1
+                    infos_for_sum.append(info_for_sum)
+                    infos_for_last.append(info_for_last)
+                except Exception as e:
+                    logging.error("Exception:{}".format(e))
+                    logging.error("State:{}".format(state))
 
-            i_step += 1
-            infos_for_sum.append(info_for_sum)
-            infos_for_last.append(info_for_last)
-
+                    done = True
         add_statistics_to_collector(infos_episode_for_sum=infos_for_sum,
                                     infos_episode_for_last=infos_for_last,
                                     agent_statistics=self.agent.get_statistics(),
@@ -131,24 +139,32 @@ class PFLearner:
         done = False
         infos_for_sum = []
         infos_for_last = []
-        i_step = 0
         with self.agent.eval_mode():
             while not done:
-                action = self.agent.act(state)
-                state, reward, done, info_for_sum, info_for_last = self.env.step(action)
-                self.agent.observe(obs=state, reward=reward, done=done, reset=False)
-                self.global_i_step += 1
-                i_step += 1
-                infos_for_sum.append(info_for_sum)
-                infos_for_last.append(info_for_last)
+                if self.args.debug:
+                    actions = self.agent.batch_act(state)
+                    state, reward, done, info_for_sum, info_for_last = self.env.step(actions)
+                    self.agent.observe(obs=state, reward=reward, done=done, reset=False)
+                    self.global_i_step += 1
+                    infos_for_sum.append(info_for_sum)
+                    infos_for_last.append(info_for_last)
+                else:
+                    try:
+                        actions = self.agent.batch_act(state)
+                        state, reward, done, info_for_sum, info_for_last = self.env.step(actions)
+                        self.agent.observe(obs=state, reward=reward, done=done, reset=False)
+                        self.global_i_step += 1
+                        infos_for_sum.append(info_for_sum)
+                        infos_for_last.append(info_for_last)
+                    except:
+                        print("state:{}".format(state))
+                        done = True
         add_statistics_to_collector(infos_episode_for_sum=infos_for_sum,
                                     infos_episode_for_last=infos_for_last,
                                     agent_statistics=self.agent.get_statistics(),
                                     episode_info_collector=self.test_collector)
 
         logging.info('Complete evaluation episode {}'.format(self.test_i_episode))
-
-        return info_for_last
 
     def evaluate_n_times(self, n_times):
         phase = "ZEvaluation"

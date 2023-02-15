@@ -1,8 +1,0 @@
-reward_config1:
-  collision: -10.0
-  robot_to_ideal_target: -0.3
-  robot_to_original: 0 #-0.6
-  robot_to_obstacle: -3 #-1
-  success: 0
-  over_max_step: 0.
-

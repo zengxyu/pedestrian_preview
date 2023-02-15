@@ -8,43 +8,14 @@ class BaseRobot:
         self.client_id = client_id
         self.robot_id = None
 
-    def get_formatted_robot_pose(self):
-        """
-        :return: cur_position : [x, y]
-                cur_orientation : [d_x, d_y, d_z] a direction vector where the robot looks at
-        """
-        cur_position, cur_orientation_quat = self.p.getBasePositionAndOrientation(self.robot_id)
-        cur_orientation_mat = self.p.getMatrixFromQuaternion(cur_orientation_quat)
-        cur_orientation = np.array([cur_orientation_mat[0], cur_orientation_mat[3], cur_orientation_mat[6]])
-        return np.array(cur_position), np.array(cur_orientation)
-
-    def get_x_y_yaw_v_w(self):
-        x, y, z = self.get_x_y_yaw()
-        v, w = self.get_v_w()
-        return x, y, z, v, w
-
     def get_position(self):
         cur_position, cur_orientation_quat = self.p.getBasePositionAndOrientation(self.robot_id)
         return np.array([cur_position[0], cur_position[1]])
-
-    def get_x_y(self):
-        cur_position, cur_orientation_quat = self.p.getBasePositionAndOrientation(self.robot_id)
-        return [cur_position[0], cur_position[1]]
 
     def get_yaw(self):
         cur_position, cur_orientation_quat = self.p.getBasePositionAndOrientation(self.robot_id)
         cur_euler = self.p.getEulerFromQuaternion(cur_orientation_quat)
         return cur_euler[2]
-
-    def get_x_y_yaw(self):
-        cur_position, cur_orientation_quat = self.p.getBasePositionAndOrientation(self.robot_id)
-        cur_euler = self.p.getEulerFromQuaternion(cur_orientation_quat)
-        return cur_position[0], cur_position[1], cur_euler[2]
-
-    def get_v_w(self):
-        cur_v, cur_w = self.p.getBaseVelocity(self.robot_id)
-        speed = np.linalg.norm(cur_v[:2])
-        return speed, cur_w[2]
 
     def get_v(self):
         cur_v, cur_w = self.p.getBaseVelocity(self.robot_id)
@@ -93,3 +64,6 @@ class BaseRobot:
         if check_collision:
             pass
         return
+
+    def small_step(self, planned_v, planned_w):
+        pass

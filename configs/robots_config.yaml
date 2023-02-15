@@ -1,0 +1,13 @@
+turtlebot:
+  v_ctrl_factor: 14
+  w_ctrl_factor: 30
+
+race_car:
+  v_ctrl_factor: 5
+  w_ctrl_factor: 30
+
+object_robot:
+  shape: cylinder
+  radius_range: [ 0.24, 0.26 ]
+  height_range: [ 1.69, 1.7 ]
+  with_collision: False

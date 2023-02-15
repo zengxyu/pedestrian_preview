@@ -1,0 +1,3 @@
+--gpu 0  --in_folder=npc_object_5_without_collision --in_model_index=600 --max_steps=200 --goal_reached_thresh 1 --render
+--load_map_from "data/env1/maps/map.txt"
+--load_coordinates_from "data/env1/start_coordinates.txt"

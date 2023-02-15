@@ -6,8 +6,6 @@ import numpy as np
 from utils.config_utility import *
 from utils.fo_utility import get_project_path
 
-os.environ['CUDA_LAUNCH_BLOCKING'] = ''
-
 
 def process_args():
     parser = argparse.ArgumentParser()
@@ -18,19 +16,22 @@ def process_args():
     parser.add_argument("--num_episodes", type=int, default=50000)
     parser.add_argument("--train", action="store_true", default=False)
     parser.add_argument("--render", action="store_true", default=False)
+    parser.add_argument("--debug", action="store_true", default=False)
+
     parser.add_argument("--resume", action="store_true", default=False)
-    parser.add_argument("--gpu", type=int, default=0, help="gpu >=0 : use gpu; gpu <0 : use cpu")
-
-    parser.add_argument("--visualize", action="store_true", default=False)
-    parser.add_argument("--save", action="store_true", default=False)
-
-    # parser.add_argument("--resume_model_path", action="store_true", default=False)
-    parser.add_argument("--plot_trajectory", action="store_true", default=False)
     parser.add_argument("--from_configs", type=str, default="configs")
+    parser.add_argument("--gpu", type=int, default=0, help="gpu >=0 : use gpu; gpu <0 : use cpu")
     parser.add_argument('--scene_name', type=str, help='')
     parser.add_argument("--max_speed", type=float, help='')
     parser.add_argument("--dynamic_num", type=int, help='')
     parser.add_argument("--static_num", type=int, help='')
+    parser.add_argument("--max_steps", type=int, help='')
+    parser.add_argument("--load_coordinates_from", type=str)
+    parser.add_argument("--load_map_from", type=str)
+    parser.add_argument("--goal_reached_thresh", type=float)
+    parser.add_argument("--num_npc", type=int)
+    parser.add_argument("--num_agents", type=int)
+    parser.add_argument("--prm", action="store_true", default=False)
 
     parser_args = parser.parse_args()
     parser_args.out_folder = os.path.join(get_project_path(), "output", parser_args.out_folder)
@@ -59,41 +60,37 @@ def process_args():
     # load some yaml files
     # configs_folder = os.path.join(parser_args.out_folder, "configs")
     parser_args.configs_folder = configs_folder
-    parser_args.network_configs_folder = os.path.join(configs_folder, "network_config")
-    parser_args.robot_config_folder = os.path.join(configs_folder, "robot_config")
     parser_args.agents_config_folder = os.path.join(configs_folder, "agents_config")
-    parser_args.action_space_config_folder = os.path.join(configs_folder, "action_space_config")
 
-    parser_args.input_config = read_yaml(parser_args.configs_folder, "inputs.yaml")
-    parser_args.robot_config = read_yaml(parser_args.robot_config_folder, "robot.yaml")
     parser_args.agents_config = read_yaml(parser_args.agents_config_folder, "agents.yaml")
-    parser_args.env_config = read_yaml(configs_folder, "env_config.yaml")
-    parser_args.world_config = read_yaml(configs_folder, "world_config.yaml")
-    parser_args.sensors_config = read_yaml(configs_folder, "sensors_config.yaml")
-    parser_args.running_config = read_yaml(configs_folder, "running_rl.yaml")
+    parser_args.inputs_config = read_yaml(parser_args.configs_folder, "inputs_config.yaml")
+    parser_args.action_spaces_config = read_yaml(parser_args.configs_folder, "action_spaces_config.yaml")
+    parser_args.robots_config = read_yaml(parser_args.configs_folder, "robots_config.yaml")
+    parser_args.worlds_config = read_yaml(parser_args.configs_folder, "worlds_config.yaml")
+    parser_args.sensors_config = read_yaml(parser_args.configs_folder, "sensors_config.yaml")
+    parser_args.samplers_config = read_yaml(parser_args.configs_folder, "samplers_config.yaml")
+    parser_args.rewards_config = read_yaml(parser_args.configs_folder, "rewards_config.yaml")
+    parser_args.running_config = read_yaml(parser_args.configs_folder, "running_config.yaml")
 
     # evaluation时动态配置的环境参数，
     if not parser_args.train or parser_args.resume:
         if parser_args.scene_name is not None:
-            if parser_args.env_config["scene_name"] == "random":
+            if parser_args.running_config["scene_name"] == "random":
                 scene_name = np.random.choice(a=["office", "corridor", "cross"])
             else:
                 scene_name = parser_args.scene_name
-            parser_args.env_config["scene_name"] = scene_name
+            parser_args.running_config["scene_name"] = scene_name
 
-        if parser_args.max_speed is not None:
-            parser_args.env_config["pedestrian_speed_range"] = [parser_args.max_speed - 0.01,
-                                                                parser_args.max_speed]
+        if parser_args.max_steps is not None:
+            parser_args.running_config["max_steps"] = parser_args.max_steps
 
-        if parser_args.dynamic_num is not None:
-            parser_args.env_config["pedestrian_dynamic_num"] = parser_args.dynamic_num
+        if parser_args.goal_reached_thresh is not None:
+            parser_args.running_config["goal_reached_thresh"] = parser_args.goal_reached_thresh
+        if parser_args.num_npc is not None:
+            parser_args.running_config["num_npc"] = parser_args.num_npc
+        if parser_args.num_agents is not None:
+            parser_args.running_config["num_agents"] = parser_args.num_agents
 
-        if parser_args.static_num is not None:
-            parser_args.env_config["pedestrian_static_num"] = parser_args.static_num
-
-    print("\nYaml env_config config:", parser_args.env_config)
-    print("\nYaml agents_config config:", parser_args.agents_config)
     print("\nYaml training config:", parser_args.running_config)
-    print("\nYaml world config:", parser_args.world_config)
     print("\n==============================================================================================\n")
     return parser_args
