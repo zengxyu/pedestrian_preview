@@ -193,7 +193,7 @@ class EnvironmentBullet(PybulletBaseEnv):
 
         # whether done
         if self.args.train:
-            done =  reach_goal or over_max_step
+            done = (collision == CollisionType.CollisionWithWall) or reach_goal or over_max_step
         else:
             done = reach_goal or over_max_step
         # done = reach_goal or over_max_step
@@ -491,7 +491,7 @@ class EnvironmentBullet(PybulletBaseEnv):
             robot = init_robot(self.p, self.client_id, self.agent_robot_name, RobotRoles.AGENT,
                                self.physical_step_duration,
                                self.agent_robot_config, self.sensor_name, self.sensor_config, self.agent_starts[i],
-                               compute_yaw(self.agent_starts[i], self.agent_goals[i]))
+                               2 * np.pi * np.random.random())
             self.agent_robot_ids.append(robot.robot_id)
             agents.append(robot)
         return agents
