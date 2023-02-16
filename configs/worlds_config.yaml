@@ -18,8 +18,8 @@ inclosure:
 
 office:
   outer_limit: [ [ 7,7 ] ]
-  wall_ratio: [ 0.072 ]
-  pole_ratio: 0.1
+  wall_ratio: [ 0.069 ]
+  pole_ratio: 0.5
   wall_length: [ 10.0, 10.0 ]
   distance: 1.0
   doors: 1

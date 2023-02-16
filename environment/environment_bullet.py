@@ -230,7 +230,7 @@ class EnvironmentBullet(PybulletBaseEnv):
         reward += delta_distance_reward
 
         """================step punish reward=================="""
-        reward -= np.log(self.step_count.value) * 0.1
+        reward -= np.log(self.step_count.value) * 0.5
 
         """================reach goal reward=================="""
 
