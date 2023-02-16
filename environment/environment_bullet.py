@@ -269,7 +269,8 @@ class EnvironmentBullet(PybulletBaseEnv):
                     self.ma_images_deque[i].append(temp)
                     temp2 = np.zeros_like(relative_pose)
                     self.ma_relative_poses_deque[i].append(temp2)
-
+            # plt.imshow(depth_image)
+            # plt.show()
             self.ma_images_deque[i].append(image)
             ma_images.append(np.array(self.ma_images_deque[i]))
 
