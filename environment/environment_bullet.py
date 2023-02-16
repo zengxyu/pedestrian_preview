@@ -193,7 +193,7 @@ class EnvironmentBullet(PybulletBaseEnv):
 
         # whether done
         if self.args.train:
-            done = (collision == CollisionType.CollisionWithWall) or reach_goal or over_max_step
+            done =  reach_goal or over_max_step
         else:
             done = reach_goal or over_max_step
         # done = reach_goal or over_max_step

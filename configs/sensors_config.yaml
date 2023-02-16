@@ -12,7 +12,7 @@ lidar:
   ray_length: 3.5
 
 vision:
-  distance: 100000
+  distance: 100
   image_width: 120
   image_height: 80
   fov: 120
