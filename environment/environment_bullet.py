@@ -248,7 +248,7 @@ class EnvironmentBullet(PybulletBaseEnv):
 
     def get_all_path(self):
         paths = []
-        prm = prm_path_planning(dilate_image(self.occ_map.copy(), 2), num_samples=100, end=self.agent_goals[0],
+        prm = prm_path_planning(dilate_image(self.occ_map.copy(), 2), num_samples=200, end=self.agent_goals[0],
                                 grid_res=self.grid_res)
         for i in range(len(self.agent_robots)):
             start = self.agent_starts[i]
@@ -267,7 +267,7 @@ class EnvironmentBullet(PybulletBaseEnv):
             self.agent_sub_goals = []
             self.agent_sub_goals_indexes = []
             for i, rt in enumerate(self.agent_robots):
-                self.agent_sub_goals_indexes.append(0)
+                self.agent_sub_goals_indexes.append(min(1, len(self.paths[i])))
                 self.agent_sub_goals.append(self.paths[i][0])
 
         else:
