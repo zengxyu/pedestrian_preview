@@ -21,8 +21,6 @@ class PybulletBaseEnv(gym.Env, ABC):
         # bullet client id
         self.client_id = self.p._client
 
-        self.robot_direction_id = None
-
         self.physical_step_duration = args.running_config["physical_step_duration"]
         self.episode_count = Counter()
         self.step_count = Counter()

@@ -15,7 +15,7 @@ vision:
   distance: 100
   image_width: 120
   image_height: 80
-  fov: 120
+  fov: 90
   aspect: 1.5
   near_val: 0.02
   far_val: 10

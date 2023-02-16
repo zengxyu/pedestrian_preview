@@ -26,6 +26,11 @@ class BaseRobot:
         cur_v, cur_w = self.p.getBaseVelocity(self.robot_id)
         return cur_w[2]
 
+    def get_x_y_yaw(self):
+        position = self.get_position()
+        yaw = self.get_yaw()
+        return np.array([position[0], position[1], yaw])
+
     def reset_base_body(self, linear_velocity, angular_velocity):
         """
 

@@ -94,7 +94,7 @@ class SimpleCnnActor(BaseModel):
 
         self.head = build_head(agent_type, action_space)
 
-        self.mlp_action = build_mlp(self.dim_cnn_out_flatten + 3 * self.pose_seq_len,
+        self.mlp_action = build_mlp(self.dim_cnn_out_flatten + 2 * self.pose_seq_len,
                                     mlp_values_dims + [self.n_actions * 2],
                                     activate_last_layer=False,
                                     )
@@ -124,7 +124,7 @@ class SimpleCnnCritic(BaseModel):
         self.n_actions = len(action_space.low)
         mlp_values_dims = model_params["mlp_values"]
 
-        self.mlp_value = build_mlp(self.dim_cnn_out_flatten + 3 * self.pose_seq_len + self.n_actions,
+        self.mlp_value = build_mlp(self.dim_cnn_out_flatten + 2 * self.pose_seq_len + self.n_actions,
                                    mlp_values_dims + [1],
                                    activate_last_layer=False,
                                    )
