@@ -193,7 +193,7 @@ class EnvironmentBullet(PybulletBaseEnv):
 
         # whether done
         if self.args.train:
-            done =  reach_goal or over_max_step
+            done = reach_goal or over_max_step
         else:
             done = reach_goal or over_max_step
         # done = reach_goal or over_max_step
@@ -217,6 +217,8 @@ class EnvironmentBullet(PybulletBaseEnv):
         reward = 0
         collision_reward = 0
         reach_goal_reward = 0
+        delta_distance_reward = 0
+        distance = 0
         """================collision reward=================="""
         if collision == CollisionType.CollisionWithWall:
             collision_reward = self.reward_config["collision"]
@@ -224,10 +226,11 @@ class EnvironmentBullet(PybulletBaseEnv):
 
         """================delta distance reward=================="""
         # compute distance from current to goal
-        distance = compute_distance(self.agent_goals[0], self.agent_robots[0].get_position())
-        delta_distance_reward = (self.last_distance - distance) * self.reward_config["delta_distance"]
-        self.last_distance = distance
-        reward += delta_distance_reward
+        if self.step_count.value % 6 == 0:
+            distance = compute_distance(self.agent_goals[0], self.agent_robots[0].get_position())
+            delta_distance_reward = (self.last_distance - distance) * self.reward_config["delta_distance"]
+            self.last_distance = distance
+            reward += delta_distance_reward
 
         """================reach goal reward=================="""
 
