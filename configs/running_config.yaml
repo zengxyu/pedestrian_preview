@@ -4,12 +4,12 @@ physical_step_duration: 0.1
 
 #  """ the resolution of bullet to occupancy map, one cell in occ map = 0.1 meter in bullet"""
 dilation_size: 4
-goal_reached_thresh: 0.1
+goal_reached_thresh: 0.2
 
 # train
 save_result_n: 1000
 max_steps: 100
-inference_duration: 0.2 # [s]
+inference_duration: 0.4 # [s]
 
 evaluate_every_n_training: 1000
 evaluate_n_times: 100
@@ -40,7 +40,7 @@ npc_speed_range: [ 0.8, 1.2 ]
 num_npc: 2
 
 # choose from agent_sg_sampler1, agent_sg_corner_sampler1
-agent_sg_sampler: agent_sg_sampler2
+agent_sg_sampler: agent_sg_opposite_baffle_sampler1
 npc_sg_sampler: npc_sg_sampler1
 
 

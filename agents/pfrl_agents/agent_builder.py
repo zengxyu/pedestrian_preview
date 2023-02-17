@@ -22,20 +22,22 @@ def build_agent(args):
     agent_name = get_agent_name(parser_args=args)
 
     scheduler, replay_buffer = None, None
-
+    networks = []
     if agent_name in ["ddpg", "ddpg_recurrent"]:
         actor_network, critic_network = build_network(parser_args=args, action_space=action_space,
                                                       input_kwargs=input_kwargs)
         agent, scheduler, replay_buffer = build_ddpg_agent(args, actor_network, critic_network, agent_name,
                                                            action_space)
         args.actor_network = actor_network
+        networks = [actor_network, critic_network]
         logging.info("actor_network:{}, critic_network:{}".format(actor_network, critic_network))
-
     elif agent_name in ["td3", "td3_recurrent"]:
         actor_network, critic_network1, critic_network2 = build_network(parser_args=args, action_space=action_space,
                                                                         input_kwargs=input_kwargs)
         agent, scheduler, replay_buffer = build_td3_agent(args, actor_network, critic_network1, critic_network2,
                                                           agent_name, action_space)
+        networks = [actor_network, critic_network1, critic_network2]
+
         logging.info("actor_network:{}, critic_network1:{}, critic_network2:{}".format(actor_network, critic_network1,
                                                                                        critic_network2))
     elif agent_name in ["sac"]:
@@ -46,6 +48,8 @@ def build_agent(args):
                                                                                        critic_network2))
         agent, scheduler, replay_buffer = build_sac_agent(args, actor_network, critic_network1, critic_network2,
                                                           agent_name, action_space)
+        networks = [actor_network, critic_network1, critic_network2]
+    args.networks = networks
     return agent, action_space, scheduler, replay_buffer
 
 

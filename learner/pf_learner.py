@@ -5,10 +5,11 @@ import sys
 from typing import List, Dict
 
 import numpy as np
+import torch
 
 from torch.utils.tensorboard import SummaryWriter
 
-from learner.trainer_helper import add_scalar, save_episodes_info, get_items
+from learner.trainer_helper import add_scalar, save_episodes_info, get_items, add_graph
 from utils.info import EpisodeInfo
 from tqdm import tqdm
 
@@ -31,6 +32,7 @@ class PFLearner:
         self.train_collector = EpisodeInfo()
         self.test_collector = EpisodeInfo()
         self.eval = not args.train
+        self.device = torch.device("cpu") if self.args.gpu == -1 else torch.device("cuda:{}".format(self.args.gpu))
 
     def run(self):
         print("========================================Start running========================================")
@@ -92,13 +94,12 @@ class PFLearner:
             )
             with open(filename + "json", "w") as f:
                 json.dump(test_result, f)
-            self.env.writer.close()
-            self.agent.writer.close()
 
     def train_once(self):
         phase = "Train"
         self.train_i_episode += 1
         state = self.env.reset()
+
         infos_for_sum = []
         infos_for_last = []
         done = False
