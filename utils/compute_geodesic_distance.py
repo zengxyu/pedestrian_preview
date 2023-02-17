@@ -127,5 +127,5 @@ def compute_geodesic_distance(file_name):
 
 
 out = compute_geodesic_distance(file_name='../data/random_envs/env_0.pkl')
-
+pickle.dump(out, open("../data/shortest_path_distance_0.pkl", 'wb'))
 print()

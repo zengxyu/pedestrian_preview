@@ -109,7 +109,7 @@ def create_office_map(configs):
             if ((x, y - 1) in inds) and ((x, y + 1) in inds):
                 corner_inds.append((x, y))
 
-        corner_inds = filter_corners_in_same_room(border_map, occupancy_map, corner_inds)
+        # corner_inds = filter_corners_in_same_room(border_map, occupancy_map, corner_inds)
         corner_map = np.zeros_like(occupancy_map)
         for x, y in corner_inds:
             corner_map[x, y] = True
