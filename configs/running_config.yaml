@@ -4,7 +4,7 @@ physical_step_duration: 0.1
 
 #  """ the resolution of bullet to occupancy map, one cell in occ map = 0.1 meter in bullet"""
 dilation_size: 4
-goal_reached_thresh: 0.2
+goal_reached_thresh: 0.3
 
 # train
 save_result_n: 1000
