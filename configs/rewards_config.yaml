@@ -2,4 +2,11 @@ reward_config1:
   collision: -200.0
   reach_goal: 200
   delta_distance: 50
+  collision_reset: True
+
+reward_config2:
+  collision_reset: False
+  collision: -0.5
+  reach_goal: 200
+  delta_distance: 50
 

@@ -192,7 +192,7 @@ class EnvironmentBullet(PybulletBaseEnv):
         over_max_step = self.step_count >= self.max_step
 
         # whether done
-        if self.args.train:
+        if self.args.train and self.reward_config["collision_reset"]:
             done = (collision == CollisionType.CollisionWithWall) or reach_goal or over_max_step
         else:
             done = reach_goal or over_max_step
@@ -218,10 +218,14 @@ class EnvironmentBullet(PybulletBaseEnv):
         collision_reward = 0
         reach_goal_reward = 0
         """================collision reward=================="""
-        if collision == CollisionType.CollisionWithWall:
-            collision_reward = self.reward_config["collision"]
-            reward += collision_reward
-
+        if self.reward_config["collision_reset"]:
+            if collision == CollisionType.CollisionWithWall:
+                collision_reward = self.reward_config["collision"]
+                reward += collision_reward
+        else:
+            if collision == CollisionType.CollisionWithWall or collision == CollisionType.CollisionWithPedestrian:
+                collision_reward = self.reward_config["collision"]
+                reward += collision_reward
         """================delta distance reward=================="""
         # compute distance from current to goal
         distance = compute_distance(self.agent_goals[0], self.agent_robots[0].get_position())
@@ -230,7 +234,7 @@ class EnvironmentBullet(PybulletBaseEnv):
         reward += delta_distance_reward
 
         """================step punish reward=================="""
-        reward -= np.log(self.step_count.value) * 0.5
+        reward -= np.log(self.step_count.value) * 0.1
 
         """================reach goal reward=================="""
 
@@ -294,7 +298,7 @@ class EnvironmentBullet(PybulletBaseEnv):
         h = 0
         for i, rt in enumerate(self.agent_robots):
             width, height, rgba_image, depth_image, seg_image = rt.sensor.get_obs()
-            rgba_image = rgba_image / 255
+            rgba_image = (rgba_image / 127) - 1
             depth_image = (depth_image - 0.79) / 0.21
             if self.args.prm:
                 relative_position = self.agent_sub_goals[i] - rt.get_position()
