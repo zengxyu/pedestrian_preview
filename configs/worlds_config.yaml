@@ -20,9 +20,8 @@ office:
   outer_limit: [ [ 7,7 ] ]
   wall_ratio: [ 0.072 ]
   pole_ratio: 0.1
-  wall_length_range: [ 1, 5 ]
-  door_width_range: [1.0, 2.0]
-  blocked_width: 2
+  wall_length_range: [ 2, 10 ]
+  door_width_range: [0.8, 1.2]
   exit_door_width: 1.2
   num_door_range: [ 1, 2 ]
 
