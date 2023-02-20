@@ -20,7 +20,7 @@ def generate_env(num_starts):
     world_config = get_world_config(worlds_config, world_name)
 
     # read specified sampler config
-    agent_sampler_name = "agent_sg_opposite_baffle_sampler1"
+    agent_sampler_name = "agent_sg_opposite_baffle_sampler2"
     samplers_config = read_yaml(os.path.join(get_project_path(), "configs"), "samplers_config.yaml")
     agent_sampler_config = samplers_config[agent_sampler_name]
     agent_sg_sampler_class = get_sampler_class(agent_sampler_config["sampler_name"])
@@ -30,51 +30,68 @@ def generate_env(num_starts):
     create_world = get_world_creator_func(world_name)
     occupancy_map = create_world(world_config)
     # dilate occupancy map
-    dilated_occ_map = dilate_image(occupancy_map, dilation_size=10)
+    dilated_occ_map = dilate_image(occupancy_map, dilation_size=5)
 
     starts = []
     ends = []
+    count = 0
+    sample_success = False
+    while len(starts) < num_starts and count < 100:
+        # print("start point number:{}".format(len(starts)))
 
-    while len(starts) < num_starts:
-        sample_success = False
-        print("start point number:{}".format(len(starts)))
-        while not sample_success:
-            # sample start and goal
-            [start, end], sample_success = agent_sg_sampler_class(dilate_occupancy_map=dilated_occ_map,
-                                                                  occupancy_map=occupancy_map,
-                                                                  **agent_sg_sampler_params)
-            print("sample_success:{}".format(sample_success))
+        # sample start and goal
+        [start, end], sample_success = agent_sg_sampler_class(dilate_occupancy_map=dilated_occ_map,
+                                                              occupancy_map=occupancy_map,
+                                                              **agent_sg_sampler_params)
+        # print("sample_success:{}".format(sample_success))
 
-        starts.append(start)
-        ends.append(end)
-    return occupancy_map, np.array(starts), np.array(ends)
+        if sample_success:
+            starts.append(start)
+            ends.append(end)
+        count += 1
+    sample_success = len(starts) >= num_starts
+    return occupancy_map, np.array(starts), np.array(ends), sample_success
 
 
-def display(occupancy_map, starts, ends):
+def display_and_save(occupancy_map, starts, ends, save, save_path):
     plt.imshow(occupancy_map)
-    plt.scatter(starts[:, 0], starts[:, 1], c='g')
-    plt.scatter(ends[:, 0], ends[:, 1], c='g')
+    plt.scatter(starts[:, 1], starts[:, 0], c='g')
+    plt.scatter(ends[:, 1], ends[:, 0], c='g')
     for s, e in zip(starts, ends):
-        plt.plot([s[0], e[0]], [s[1], e[1]])
-    plt.show()
+        plt.plot([s[1], e[1]], [s[0], e[0]])
+
+    if save:
+        plt.savefig(save_path)
+        plt.clf()
+    else:
+        plt.show()
 
 
-def generate_n_envs(num_envs, num_starts, parent_folder):
+def generate_n_envs(num_envs, num_starts, parent_folder, image_save_folder):
     if not os.path.exists(parent_folder):
         os.makedirs(parent_folder)
+    if not os.path.exists(image_save_folder):
+        os.makedirs(image_save_folder)
 
-    save_file_name_template = "env_{}.pkl"
-
+    save_name_template = "env_{}.pkl"
+    image_save_name_template = "env_{}.png"
     envs = []
-    for i in range(num_envs):
-        save_file_name = save_file_name_template.format(i)
+    i = 0
+    while i < num_envs:
+        save_file_name = save_name_template.format(i)
+        image_save_file_name = image_save_name_template.format(i)
         save_path = os.path.join(parent_folder, save_file_name)
+        image_save_path = os.path.join(image_save_folder, image_save_file_name)
         print("Generating {}-th office...".format(i))
-        occupancy_map, starts, ends = generate_env(num_starts=num_starts)
-        env = [occupancy_map, starts, ends]
-        print("Save env {} to {} ... ".format(save_file_name, save_path))
-        pickle.dump(env, open(save_path, 'wb'))
-        print("Save done!")
+        occupancy_map, starts, ends, sample_success = generate_env(num_starts=num_starts)
+        if sample_success:
+            env = [occupancy_map, starts, ends]
+            print("Save env {} to {} ... ".format(save_file_name, save_path))
+            pickle.dump(env, open(save_path, 'wb'))
+            display_and_save(occupancy_map, starts, ends, save=True, save_path=image_save_path)
+
+            print("Save done!")
+            i += 1
         # envs.append([occupancy_map, starts, ends])
     return envs
 
@@ -120,15 +137,15 @@ def read_envs(parent_folder):
 def test_read_envs():
     parent_folder = os.path.join(get_project_path(), "data", "random_envs")
     envs = read_envs(parent_folder)
-    display(*envs[0])
+    display_and_save(*envs[0])
 
 
 def test_store_envs():
     # occupancy_map, starts, ends = generate_env(num_starts=20)
     # envs = generate_n_envs(num_envs=1000, num_starts=20)
     parent_folder = os.path.join(get_project_path(), "data", "random_envs")
-    # display(occupancy_map, starts, ends)
-    generate_n_envs(num_envs=1000, num_starts=20, parent_folder=parent_folder)
+    image_save_parent_folder = os.path.join(get_project_path(), "data", "random_envs_images")
+    generate_n_envs(num_envs=1000, num_starts=20, parent_folder=parent_folder, image_save_folder=image_save_parent_folder)
 
     # store_envs(envs, parent_folder)
 

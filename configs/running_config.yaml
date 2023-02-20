@@ -40,7 +40,7 @@ npc_speed_range: [ 0.8, 1.2 ]
 num_npc: 0
 
 # choose from agent_sg_sampler1, agent_sg_corner_sampler1
-agent_sg_sampler: agent_sg_opposite_baffle_sampler1
+agent_sg_sampler: agent_sg_opposite_baffle_sampler2
 npc_sg_sampler: npc_sg_sampler1
 
 
