@@ -6,7 +6,7 @@ reward_config1:
 
 reward_config2:
   collision_reset: False
-  collision: -0.5
+  collision: -1.0
   reach_goal: 100
   delta_distance: 50
 

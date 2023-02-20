@@ -72,6 +72,7 @@ class SimpleCnnMlpNcpActor(BaseModel):
         self.cnn = build_cnns_2d(self.image_depth, self.cnn_dims, self.kernel_sizes, self.strides)
         self.wirings = AutoNCP(48, 4)
         self.rnn = build_ncpltc(67, wirings=self.wirings)
+        self.mlp_net = build_mlp(1280, self.mlp_dims, activate_last_layer=True)
 
     def forward(self, x, hx=None):
         image = x[0].float()
@@ -87,9 +88,11 @@ class SimpleCnnMlpNcpActor(BaseModel):
         relative_position = relative_position.view(batch_size, seq_len, -1)
 
         out1 = self.cnn(image)
+        out1 = out1.reshape(batch_size*seq_len, -1)
         out2 = self.mlp_net(out1)
-        out2 = out2.view(batch_size, seq_len, *out2.shape[1:])
+
         out2 = out2.reshape(batch_size, seq_len, -1)
+
         out = torch.cat((out2, relative_position), dim=2)
 
         out, hx = self.rnn(out, hx)

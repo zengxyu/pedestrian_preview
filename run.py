@@ -13,7 +13,7 @@ from warnings import filterwarnings
 from environment.environment_bullet import EnvironmentBullet
 
 filterwarnings(action='ignore', category=DeprecationWarning, message='`np.')
-set_random_seeds(10121)
+set_random_seeds(110)
 args = process_args()
 
 if args.render:
