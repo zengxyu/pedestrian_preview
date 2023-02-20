@@ -1,3 +1,5 @@
+import logging
+import os
 import pickle
 import heapq
 from collections import defaultdict
@@ -119,13 +121,29 @@ def compute_geodesic_distance(file_name):
         # 调整输出格式
         for s_point, dist in distance.items():
             position = node_num2_position[s_point]
-            if position not in position_dict:
-                position_dict[position] = {node_num2_position[e]: dist}
+            if node_num2_position[e] not in position_dict:
+                position_dict[node_num2_position[e]] = {position: dist}
             else:
-                position_dict[position][node_num2_position[e]] = dist
+                position_dict[node_num2_position[e]][position] = dist
     return position_dict
 
 
-out = compute_geodesic_distance(file_name='../data/random_envs/env_0.pkl')
-pickle.dump(out, open("../data/shortest_path_distance_0.pkl", 'wb'))
-print()
+
+if __name__ == '__main__':
+    env_parent_folder = '../data/office_1000/random_envs'
+    geodesic_distance_parent_folder = '../data/office_1000/geodesic_distance'
+    if not os.path.exists(geodesic_distance_parent_folder):
+        os.makedirs(geodesic_distance_parent_folder)
+
+    env_names = os.listdir(env_parent_folder)
+    length = len(env_names)
+    template = "env_{}.pkl"
+    for i in range(length):
+        env_name = template.format(i)
+        env_path = os.path.join(env_parent_folder, env_name)
+        print("Computing geodesic distance for {}...".format(env_name))
+        out = compute_geodesic_distance(file_name=env_path)
+        out_path = os.path.join(geodesic_distance_parent_folder, env_name)
+        pickle.dump(out, open(out_path, 'wb'))
+        print("Save to {}!".format(out_path))
+    print("Done!")
