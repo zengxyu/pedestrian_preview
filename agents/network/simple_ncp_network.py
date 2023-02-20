@@ -7,7 +7,7 @@ model_params = {
     'kernel_sizes': [3, 3, 3],
     'strides': [2, 2, 2],
     'mlp_waypoints': [64, 40, 30],
-    'mlp_values': [256, 128, 64],
+    'mlp_values': [256, 64],
 
 }
 
@@ -17,6 +17,7 @@ class BaseModel(nn.Module):
         super().__init__()
 
         self.cnn_dims = model_params["cnn"]
+        self.mlp_dims = model_params["mlp_values"]
         self.kernel_sizes = model_params["kernel_sizes"]
         self.strides = model_params["strides"]
         self.seq_len = kwargs["image_seq_len"]
@@ -25,7 +26,7 @@ class BaseModel(nn.Module):
         self.image_w = kwargs["image_w"]
         self.position_len = kwargs["pose_seq_len"]
         self.cnn = build_cnns_2d(self.image_depth, self.cnn_dims, self.kernel_sizes, self.strides)
-        # self.mlp_relative_position = build_mlp(3, self.mlp_dims, activate_last_layer=False)
+        self.mlp_net = build_mlp(2, self.mlp_dims, activate_last_layer=True)
 
 
 class SimpleCnnNcpActor(BaseModel):
@@ -62,6 +63,39 @@ class SimpleCnnNcpActor(BaseModel):
         out = self.head(out)
         return out
 
+class SimpleCnnMlpNcpActor(BaseModel):
+    def __init__(self, agent_type, action_space, **kwargs):
+        super().__init__(**kwargs)
+        self.n_actions = len(action_space.low)
+
+        self.head = build_head(agent_type, action_space)
+        self.cnn = build_cnns_2d(self.image_depth, self.cnn_dims, self.kernel_sizes, self.strides)
+        self.wirings = AutoNCP(48, 4)
+        self.rnn = build_ncpltc(67, wirings=self.wirings)
+
+    def forward(self, x, hx=None):
+        image = x[0].float()
+        relative_position = x[1].float()
+
+        image = image.view(-1, self.seq_len, self.image_depth, self.image_h, self.image_w)
+
+        batch_size = image.size(0)
+        seq_len = image.size(1)
+        image_depth = image.size(2)
+
+        image = image.view(batch_size*seq_len, image_depth, self.image_h, self.image_w)
+        relative_position = relative_position.view(batch_size, seq_len, -1)
+
+        out1 = self.cnn(image)
+        out2 = self.mlp_net(out1)
+        out2 = out2.view(batch_size, seq_len, *out2.shape[1:])
+        out2 = out2.reshape(batch_size, seq_len, -1)
+        out = torch.cat((out2, relative_position), dim=2)
+
+        out, hx = self.rnn(out, hx)
+        out = out.mean(dim=1)
+        out = self.head(out)
+        return out
 
 class SimpleCnnNcpCritic(BaseModel):
     """
