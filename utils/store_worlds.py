@@ -34,13 +34,17 @@ def generate_env(num_starts):
 
     starts = []
     ends = []
+
     while len(starts) < num_starts:
         sample_success = False
+        print("start point number:{}".format(len(starts)))
         while not sample_success:
             # sample start and goal
             [start, end], sample_success = agent_sg_sampler_class(dilate_occupancy_map=dilated_occ_map,
                                                                   occupancy_map=occupancy_map,
                                                                   **agent_sg_sampler_params)
+            print("sample_success:{}".format(sample_success))
+
         starts.append(start)
         ends.append(end)
     return occupancy_map, np.array(starts), np.array(ends)
@@ -55,11 +59,23 @@ def display(occupancy_map, starts, ends):
     plt.show()
 
 
-def generate_n_envs(num_envs, num_starts):
+def generate_n_envs(num_envs, num_starts, parent_folder):
+    if not os.path.exists(parent_folder):
+        os.makedirs(parent_folder)
+
+    save_file_name_template = "env_{}.pkl"
+
     envs = []
     for i in range(num_envs):
+        save_file_name = save_file_name_template.format(i)
+        save_path = os.path.join(parent_folder, save_file_name)
+        print("Generating {}-th office...".format(i))
         occupancy_map, starts, ends = generate_env(num_starts=num_starts)
-        envs.append([occupancy_map, starts, ends])
+        env = [occupancy_map, starts, ends]
+        print("Save env {} to {} ... ".format(save_file_name, save_path))
+        pickle.dump(env, open(save_path, 'wb'))
+        print("Save done!")
+        # envs.append([occupancy_map, starts, ends])
     return envs
 
 
@@ -108,11 +124,13 @@ def test_read_envs():
 
 
 def test_store_envs():
-    occupancy_map, starts, ends = generate_env(num_starts=20)
-    envs = generate_n_envs(num_envs=2, num_starts=20)
+    # occupancy_map, starts, ends = generate_env(num_starts=20)
+    # envs = generate_n_envs(num_envs=1000, num_starts=20)
     parent_folder = os.path.join(get_project_path(), "data", "random_envs")
-    display(occupancy_map, starts, ends)
-    store_envs(envs, parent_folder)
+    # display(occupancy_map, starts, ends)
+    generate_n_envs(num_envs=1000, num_starts=20, parent_folder=parent_folder)
+
+    # store_envs(envs, parent_folder)
 
 
 if __name__ == '__main__':
