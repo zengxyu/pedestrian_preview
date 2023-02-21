@@ -88,6 +88,7 @@ class EnvironmentBullet(PybulletBaseEnv):
         self.physical_steps = Counter()
 
         self.last_distance = None
+        self.last_geodesic_distance = None
 
         self.image_seq_len = self.args.inputs_config[self.running_config['input_config_name']]["image_seq_len"]
         self.pose_seq_len = self.args.inputs_config[self.running_config['input_config_name']]["pose_seq_len"]
@@ -219,7 +220,7 @@ class EnvironmentBullet(PybulletBaseEnv):
         # plot stored information
         return state, reward, done, step_info, episode_info
 
-    def get_geodesic_distance(self, robot_index, cur_position):
+    def compute_geodesic_distance(self, robot_index, cur_position):
         occ_pos = cvt_to_om(cur_position, self.grid_res)
         occ_pos = tuple(occ_pos)
         geodesic_distance_map = self.geodesic_distance_list[robot_index]
@@ -230,6 +231,8 @@ class EnvironmentBullet(PybulletBaseEnv):
     def get_reward(self, reach_goal, collision):
         if self.last_distance is None:
             self.last_distance = compute_distance(self.agent_goals[0], self.agent_starts)
+            self.last_geodesic_distance = self.compute_geodesic_distance(robot_index=0, cur_position=self.agent_robots[
+                0].get_position())
         reward = 0
         collision_reward = 0
         reach_goal_reward = 0
@@ -245,8 +248,14 @@ class EnvironmentBullet(PybulletBaseEnv):
         self.last_distance = distance
         reward += delta_distance_reward
 
-        geodesic_distance = self.get_geodesic_distance(robot_index=0, cur_position=self.agent_robots[0].get_position())
+        """================delta geodesic distance reward=================="""
 
+        geodesic_distance = self.compute_geodesic_distance(robot_index=0,
+                                                           cur_position=self.agent_robots[0].get_position())
+        delta_geodesic_reward = (self.last_geodesic_distance - geodesic_distance) * self.reward_config[
+            "delta_geodesic_distance"]
+        self.last_geodesic_distance = geodesic_distance
+        reward += delta_geodesic_reward
 
         """================reach goal reward=================="""
 
@@ -477,6 +486,7 @@ class EnvironmentBullet(PybulletBaseEnv):
             self.npc_group.clear()
             self.npc_group = None
         self.last_distance = None
+        self.last_geodesic_distance = None
         self.wall_ids = []
 
         self.ma_images_deque = [deque(maxlen=self.image_seq_len) for i in range(self.num_agents)]
