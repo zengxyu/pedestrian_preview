@@ -1,12 +1,16 @@
 reward_config1:
   collision: -100.0
   reach_goal: 100
-  delta_distance: 50
+  delta_distance: 5
   collision_reset: True
+  geodesic_distance: True
+  delta_geodesic_distance: 10
 
 reward_config2:
   collision_reset: False
-  collision: -1.0
+  geodesic_distance: False
+  collision: -0.5
   reach_goal: 100
-  delta_distance: 50
+  delta_distance: 5
+  delta_geodesic_distance: 10
 

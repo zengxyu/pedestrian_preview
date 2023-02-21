@@ -234,10 +234,13 @@ class EnvironmentBullet(PybulletBaseEnv):
 
     def get_reward(self, reach_goal, collision):
         if self.last_distance is None:
-            self.last_distance = compute_distance(self.agent_goals[0], self.agent_starts)
+            if self.reward_config["geodesic_distance"]:
+                self.last_distance = self.compute_geodesic_distance(robot_index=0,
+                                                                             cur_position=self.agent_robots[
+                                                                                 0].get_position())
+            else:
+                self.last_distance = compute_distance(self.agent_goals[0], self.agent_starts)
 
-            self.last_geodesic_distance = self.compute_geodesic_distance(robot_index=0, cur_position=self.agent_robots[
-                0].get_position())
         reward = 0
         collision_reward = 0
         reach_goal_reward = 0
@@ -250,21 +253,22 @@ class EnvironmentBullet(PybulletBaseEnv):
             if collision == CollisionType.CollisionWithWall or collision == CollisionType.CollisionWithPedestrian:
                 collision_reward = self.reward_config["collision"]
                 reward += collision_reward
-        """================delta distance reward=================="""
-        # compute distance from current to goal
-        distance = compute_distance(self.agent_goals[0], self.agent_robots[0].get_position())
-        delta_distance_reward = (self.last_distance - distance) * self.reward_config["delta_distance"]
+
+        if self.reward_config["geodesic_distance"]:
+            """================delta geodesic distance reward=================="""
+            distance = self.compute_geodesic_distance(robot_index=0,
+                                                               cur_position=self.agent_robots[0].get_position())
+            delta_distance_reward = (self.last_distance - distance) * self.reward_config["delta_geodesic_distance"]
+        else:
+            """================delta distance reward=================="""
+            distance = compute_distance(self.agent_goals[0], self.agent_robots[0].get_position())
+            delta_distance_reward = (self.last_distance - distance) * self.reward_config["delta_distance"]
+
         self.last_distance = distance
         reward += delta_distance_reward
 
-        """================delta geodesic distance reward=================="""
-
-        geodesic_distance = self.compute_geodesic_distance(robot_index=0,
-                                                           cur_position=self.agent_robots[0].get_position())
-        delta_distance_reward = (self.last_geodesic_distance - geodesic_distance) * self.reward_config[
-            "delta_geodesic_distance"]
-        self.last_geodesic_distance = geodesic_distance
-        reward += delta_distance_reward
+        """================step punish reward=================="""
+        reward -= np.log(self.step_count.value) * 0.1
 
         """================reach goal reward=================="""
 
