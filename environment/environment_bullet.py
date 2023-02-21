@@ -238,6 +238,7 @@ class EnvironmentBullet(PybulletBaseEnv):
                 self.last_distance = self.compute_geodesic_distance(robot_index=0,
                                                                              cur_position=self.agent_robots[
                                                                                  0].get_position())
+                self.last_distance = min(self.last_distance, 10)
             else:
                 self.last_distance = compute_distance(self.agent_goals[0], self.agent_starts)
 
@@ -258,6 +259,7 @@ class EnvironmentBullet(PybulletBaseEnv):
             """================delta geodesic distance reward=================="""
             distance = self.compute_geodesic_distance(robot_index=0,
                                                                cur_position=self.agent_robots[0].get_position())
+            distance = min(distance, 10)
             delta_distance_reward = (self.last_distance - distance) * self.reward_config["delta_geodesic_distance"]
         else:
             """================delta distance reward=================="""
@@ -268,6 +270,8 @@ class EnvironmentBullet(PybulletBaseEnv):
         reward += delta_distance_reward
 
         """================step punish reward=================="""
+        if self.step_count.value <= 0:
+            self.step_count.value = 1
         reward -= np.log(self.step_count.value) * 0.1
 
         """================reach goal reward=================="""
@@ -282,6 +286,7 @@ class EnvironmentBullet(PybulletBaseEnv):
                        "reward/reward_reach_goal": reach_goal_reward,
                        "reward/reward": reward
                        }
+        # print("distance = ", distance, "---reward = ", reward)
         return reward, reward_info
 
     def get_state(self):
@@ -296,7 +301,7 @@ class EnvironmentBullet(PybulletBaseEnv):
         h = 0
         for i, rt in enumerate(self.agent_robots):
             width, height, rgba_image, depth_image, seg_image = rt.sensor.get_obs()
-            rgba_image = (rgba_image / 127) - 1
+            rgba_image = (rgba_image / 255)
             depth_image = (depth_image - 0.75) / 0.25
             # relative_pose = cvt_positions_to_reference(self.agent_goals, rt.get_position(), rt.get_yaw())
             relative_position = self.agent_goals[i] - rt.get_position()
