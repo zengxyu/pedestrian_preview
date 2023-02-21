@@ -313,7 +313,7 @@ class EnvironmentBullet(PybulletBaseEnv):
                 rgb_image = cv2.resize(rgba_image[:, :, :3], (w, h))
                 gray_image = cv2.cvtColor(rgb_image, cv2.COLOR_RGB2GRAY)
                 gray_image = gray_image / 255
-                image = np.concatenate([depth_image, gray_image], axis=0)
+                image = np.array([depth_image, gray_image])
             elif self.input_config["image_mode"] == ImageMode.RGB:
                 rgba_image = rgba_image / 255
                 image = cv2.resize(rgba_image[:, :, :3], (w, h))
