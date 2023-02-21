@@ -16,3 +16,4 @@ scikit-image
 filelock
 ncps
 shapely
+pytest
