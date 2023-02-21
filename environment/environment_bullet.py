@@ -229,7 +229,10 @@ class EnvironmentBullet(PybulletBaseEnv):
 
     def get_reward(self, reach_goal, collision):
         if self.last_distance is None:
-            self.last_distance = compute_distance(self.agent_goals[0], self.agent_starts)
+            if not self.reward_config["geodesic_distance"]:
+                self.last_distance = compute_distance(self.agent_goals[0], self.agent_starts)
+            else:
+                self.last_distance = self.get_geodesic_distance(robot_index=0, cur_position=self.agent_robots[0].get_position())
         reward = 0
         collision_reward = 0
         reach_goal_reward = 0
@@ -244,12 +247,14 @@ class EnvironmentBullet(PybulletBaseEnv):
                 reward += collision_reward
         """================delta distance reward=================="""
         # compute distance from current to goal
-        distance = compute_distance(self.agent_goals[0], self.agent_robots[0].get_position())
+        if not self.reward_config["geodesic_distance"]:
+            distance = compute_distance(self.agent_goals[0], self.agent_robots[0].get_position())
+        else:
+            distance = self.get_geodesic_distance(robot_index=0, cur_position=self.agent_robots[0].get_position())
         delta_distance_reward = (self.last_distance - distance) * self.reward_config["delta_distance"]
         self.last_distance = distance
         reward += delta_distance_reward
-
-        geodesic_distance = self.get_geodesic_distance(robot_index=0, cur_position=self.agent_robots[0].get_position())
+        # geodesic_distance = self.get_geodesic_distance(robot_index=0, cur_position=self.agent_robots[0].get_position())
 
 
         """================reach goal reward=================="""
