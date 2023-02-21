@@ -11,6 +11,7 @@
 """
 
 import numpy as np
+from matplotlib import pyplot as plt
 
 
 def convolve_map(input_map, window=5):
@@ -88,9 +89,44 @@ def evolve_neighbors(occ_map, x, y):
     return occ_map
 
 
+def is_direct_neighbor(p1, p2):
+    if abs(p1[0] - p2[0]) <= 1 and abs(p1[1] - p2[1]) <= 1:
+        return True
+    return False
+
+
+def is_evolved_neighbor(occ_map, p1, p2, is_neighbor_res):
+    x1, y1 = p1
+    x2, y2 = p2
+    if len(is_neighbor_res) > 0 and is_neighbor_res[0]:
+        return True
+    if occ_map[x1, y1]:
+        occ_map[x1, y1] = False
+        neighbors = [
+            [x1, max(y1 - 1, 0)],
+            [x1, min(y1 + 1, occ_map.shape[1] - 1)],
+            [max(x1 - 1, 0), y1],
+            [min(x1 + 1, occ_map.shape[0] - 1), y1],
+        ]
+        for neighbor in neighbors:
+            if x2 == neighbor[0] and y2 == neighbor[1]:
+                is_neighbor_res[0] = True
+                return True
+            else:
+                is_evolved_neighbor(occ_map, neighbor, [x2, y2], is_neighbor_res)
+    return False
+
+
+def show_image(plt, image):
+    plt.imshow(image)
+    plt.show()
+
+
 def make_door(occ_map, out_map, door_list, x, y, conf, res):
-    width = int(0.5 * conf["doors"] / res)
-    narrow_width = int(conf["distance"] / res)
+    min_door_width = int(conf["door_width_range"][0] / res)
+    max_door_width = int(conf["door_width_range"][1] / res)
+    narrow_width = (max_door_width - min_door_width) * np.random.random() + min_door_width
+    width = int(0.5 * narrow_width)
     if x > 0 and x < (occ_map.shape[0] - 1):
         if occ_map[x - 1, y] and occ_map[x + 1, y]:
             if y > 0:
@@ -395,3 +431,7 @@ def evolve_edge_corner_map(edge_corner_map, exit_door_width):
             if edge_corner_map[i, j]:
                 edge_corner_map_copy[i, max(0, j - half_width):min(j + half_width + 1, edge_corner_map.shape[1])] = 1
     return edge_corner_map_copy
+
+
+def get_close_room(occupancy_map):
+    return

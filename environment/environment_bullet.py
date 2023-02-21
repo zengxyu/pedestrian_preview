@@ -12,6 +12,7 @@
 
 import logging
 import os
+import pickle
 import sys
 import time
 from collections import deque
@@ -19,6 +20,8 @@ from collections import deque
 import cv2
 from matplotlib import pyplot as plt
 
+from environment.env_types import EnvTypes
+from environment.gen_scene.office1000_loader import load_office1000_scene
 from environment.gen_scene.world_loader import load_scene
 from environment.human_npc_generator import generate_human_npc
 from environment.nav_utilities.coordinates_converter import cvt_to_om, cvt_to_bu, cvt_positions_to_reference
@@ -28,6 +31,7 @@ from environment.robots.robot_roles import RobotRoles
 from environment.robots.robot_types import RobotTypes, init_robot
 from environment.sensors.sensor_types import SensorTypes
 from environment.sensors.vision_sensor import ImageMode
+from utils.fo_utility import get_project_path
 from utils.image_utility import dilate_image
 
 sys.path.append(
@@ -103,6 +107,7 @@ class EnvironmentBullet(PybulletBaseEnv):
         self.paths = None
         self.temp_ids = []
         self.robot_direction_ids = [None] * self.num_agents
+        self.geodesic_distance_list = None
 
     def render(self, mode="human"):
         width, height, rgb_image, depth_image, seg_image = self.agent_robots[0].sensor.get_obs()
@@ -119,7 +124,10 @@ class EnvironmentBullet(PybulletBaseEnv):
         self.reset_simulation()
         self.clear_variables()
 
-        if self.args.load_map_from is not None and self.args.load_map_from != "":
+        if self.args.env == EnvTypes.OFFICE1000:
+            self.load_office_1000()
+        elif self.args.env == EnvTypes.P2V:
+            assert self.args.load_map_from is not None and self.args.load_map_from != "", "args.load_map_from is None and args.load_map_from == ''"
             self.load_env()
         else:
             # randomize environment
@@ -135,6 +143,29 @@ class EnvironmentBullet(PybulletBaseEnv):
                 self.robot_direction_ids[i] = robot_direction_id
 
         return state
+
+    def load_office_1000(self):
+        url = "https://pan.dm-ai.com/s/QeWoo4tzagiNqgS"
+        password = "12345678"
+        office1000_parent_folder = os.path.join(get_project_path(), "data/office_1000")
+        warning = "Please download data from url:{}; password:{}; and put it in your project_folder/data; Your folder structure should be like project_folder/data/office_1000/geodesic_distance".format(
+            url, password)
+        assert os.path.exists(office1000_parent_folder), warning
+
+        occ_map, geodesic_distance_list, wall_ids, agent_starts, agent_goals = load_office1000_scene(p=self.p,
+                                                                                                     running_config=self.running_config,
+                                                                                                     worlds_config=self.worlds_config)
+
+        # sample start pose and goal pose
+        self.wall_ids = wall_ids
+        self.occ_map = occ_map
+        self.agent_starts = agent_starts
+        # 如果有多个agent，去往同一个目标
+        self.agent_goals = [agent_goals[0] for i in range(self.num_agents)]
+        # initialize robot
+        logging.debug("Create the environment, Done...")
+        self.agent_robots = self.init_robots()
+        self.geodesic_distance_list = geodesic_distance_list
 
     def visualize_goals(self, bu_goals, colors):
         thetas = np.linspace(0, np.pi * 2, 10)
@@ -193,6 +224,14 @@ class EnvironmentBullet(PybulletBaseEnv):
         # plot stored information
         return state, reward, done, step_info, episode_info
 
+    def get_geodesic_distance(self, robot_index, cur_position):
+        occ_pos = cvt_to_om(cur_position, self.grid_res)
+        occ_pos = tuple(occ_pos)
+        geodesic_distance_map = self.geodesic_distance_list[robot_index]
+        geodesic_distance = geodesic_distance_map[occ_pos]
+        geodesic_distance = geodesic_distance * self.grid_res
+        return geodesic_distance
+
     def get_reward(self, reach_goal, collision):
         if self.last_distance is None:
             self.last_distance = compute_distance(self.agent_goals[0], self.agent_starts)
@@ -215,9 +254,7 @@ class EnvironmentBullet(PybulletBaseEnv):
         self.last_distance = distance
         reward += delta_distance_reward
 
-        """================step punish reward=================="""
-        reward -= np.log(self.step_count.value) * 0.2
-
+        geodesic_distance = self.get_geodesic_distance(robot_index=0, cur_position=self.agent_robots[0].get_position())
         """================reach goal reward=================="""
 
         if reach_goal:

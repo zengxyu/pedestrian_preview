@@ -86,7 +86,7 @@ def sg_opposite_baffle_sampler(**kwargs):
 
     counter = 0
 
-    while no_meet_requirement or not line_through_baffle and counter < 100:
+    while (no_meet_requirement or not line_through_baffle) and counter < 100:
         x_start, y_start = point_sampler(dilate_occupancy_map)
         x_end, y_end = point_sampler(dilate_occupancy_map)
         distance = np.sqrt(np.square(x_end - x_start) + np.square(y_end - y_start))
@@ -98,6 +98,30 @@ def sg_opposite_baffle_sampler(**kwargs):
         line_through_baffle = check_intersection_with_wall([x_start, y_start], [x_end, y_end], walls)
         counter += 1
     sample_success = not no_meet_requirement and line_through_baffle
+    return [[x_start, y_start], [x_end, y_end]], sample_success
+
+
+def sg_opposite_baffle_sampler2(**kwargs):
+    """
+    generate start and goal on the opposite of the baffle
+    """
+    dilate_occupancy_map = kwargs["dilate_occupancy_map"]
+    occupancy_map = kwargs["occupancy_map"]
+    walls = get_walls(occupancy_map.copy())
+
+    x_start, y_start = point_sampler(dilate_occupancy_map)
+    x_end, y_end = point_sampler(dilate_occupancy_map)
+    # distance = compute_distance([x_start, y_start], [x_end, y_end])
+    line_through_baffle = check_intersection_with_wall([x_start, y_start], [x_end, y_end], walls)
+
+    counter = 0
+
+    while (not line_through_baffle) and counter < 100:
+        x_start, y_start = point_sampler(dilate_occupancy_map)
+        x_end, y_end = point_sampler(dilate_occupancy_map)
+        line_through_baffle = check_intersection_with_wall([x_start, y_start], [x_end, y_end], walls)
+        counter += 1
+    sample_success = line_through_baffle
     return [[x_start, y_start], [x_end, y_end]], sample_success
 
 

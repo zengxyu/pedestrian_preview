@@ -1,6 +1,8 @@
 import itertools
 import sys
 
+from matplotlib import pyplot as plt
+
 from environment.gen_scene.gen_map_util import *
 from environment.gen_scene.common_sampler import *
 
@@ -49,17 +51,10 @@ def create_office_map(configs):
             indx, indy = indx[cell], indy[cell]
 
             # get number if cells
-            wall_length = max_wall_length  # int(
-            """
-                (
-                    configs["wall_length"][0]
-                    + np.random.random_sample()
-                    * (configs["wall_length"][1] - configs["wall_length"][0])
-                )
-                / grid_resolution
-            )
-            """
-
+            # wall_length = configs["wall_length_range"][0] + np.random.random() * (
+            #         configs["wall_length_range"][1] - configs["wall_length_range"][0])
+            # wall_length = int(wall_length / grid_resolution)
+            wall_length = max_wall_length
             # Sample direction and adjust probs
             prob = 0.5 * par_walls / total_walls
             direction = np.random.choice(
@@ -95,17 +90,18 @@ def create_office_map(configs):
                     if conv_map[indx, i]:
                         break
                     occupancy_map[indx, i] = True
-            # show_image(plt, occupancy_map)
-        occupancy_map = fill_gaps(occupancy_map, 12)
+        # show_image(plt, occupancy_map)
+        room_map = fill_gaps(occupancy_map, 12)
+        # show_image(plt, room_map)
+
+        border_map = get_borders(room_map)
         # show_image(plt, occupancy_map)
 
-        occupancy_map = get_borders(occupancy_map)
+        occupancy_map = fill_gaps(border_map, 5)
         # show_image(plt, occupancy_map)
 
-        occupancy_map = fill_gaps(occupancy_map, 5)
-        # show_image(plt, occupancy_map)
-
-        inds = [(x, y) for x, y in zip(*np.where(compute_neighborhood(occupancy_map)))]
+        neighbor_map = compute_neighborhood(occupancy_map, count=4)
+        inds = [(x, y) for x, y in zip(*np.where(neighbor_map))]
         corner_inds = []
         for (x, y) in inds:
             if ((x - 1, y) in inds) and ((x + 1, y) in inds):
@@ -113,24 +109,61 @@ def create_office_map(configs):
             if ((x, y - 1) in inds) and ((x, y + 1) in inds):
                 corner_inds.append((x, y))
 
+        # corner_inds = filter_corners_in_same_room(border_map, occupancy_map, corner_inds)
+        corner_map = np.zeros_like(occupancy_map)
+        for x, y in corner_inds:
+            corner_map[x, y] = True
+        # show_image(plt, corner_map)
+
         sys.setrecursionlimit(int(1e6))
         disconnected_map = occupancy_map.copy()
+
         for (x, y) in corner_inds:
             disconnected_map = evolve_neighbors(disconnected_map, x, y)
+
         # disconnected_map used for checking if has_no_closed_rooms_in_free_space
         indx_disc, indy_disc = np.where(disconnected_map)
         if not ((len(list(set(indx_disc))) > 1) and (len(list(set(indy_disc))) > 1)):
             has_no_closed_rooms_in_free_space = False
+
     door_map = occupancy_map.copy()
     door_list = []
     for (x, y) in corner_inds:
         door_map, door_list = make_door(
             occupancy_map, door_map, door_list, x, y, configs, grid_resolution
         )
-    door_list = sorted(door_list)
-    door_list = list(door for door, _ in itertools.groupby(door_list))
-
-    corridor_map = get_corridor_map(occupancy_map, door_list, configs)
     occupancy_map = door_map.copy()
+    # show_image(plt, occupancy_map)
     make_exit_door(occupancy_map, configs, grid_resolution)
     return occupancy_map
+
+
+def filter_corners_in_same_room(room_map, occ_map, corners):
+    # 去掉边缘
+    room_map[0, :] = False
+    room_map[room_map.shape[0] - 1, :] = False
+    room_map[:, 0] = False
+    room_map[:, room_map.shape[1] - 1] = False
+    for corner in corners:
+        room_map[corner[0], corner[1]] = True
+
+    corners_res = []
+    # 是同一个房间的角落
+    while len(corners) > 0:
+        corner = corners[0]
+        corners_res.append(corner)
+        corners.remove(corner)
+        if len(corners) > 0:
+            for temp in corners[::-1]:
+                is_neighbor_res = [False]
+                is_evolved_neighbor(room_map.copy(), corner, temp, is_neighbor_res)
+
+                if is_neighbor_res[0] and not is_direct_neighbor(corner, temp):
+                    corners.remove(temp)
+
+    return corners_res
+
+
+def show_image(plt, image):
+    plt.imshow(image)
+    plt.show()
