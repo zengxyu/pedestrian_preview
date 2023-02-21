@@ -11,6 +11,24 @@ from environment.nav_utilities.coordinates_converter import cvt_to_bu
 from utils.fo_utility import get_project_path
 
 
+def check_office1000_folder():
+    url = "https://pan.dm-ai.com/s/QeWoo4tzagiNqgS"
+    password = "12345678"
+    office1000_parent_folder = os.path.join(get_project_path(), "data/office_1000")
+    folder_structure = "\n-data\n\t-office_1000\n\t\t-geodesic_distance\n\t\t-random_envs\n\t\t-random_envs_images"
+    warning = "Please download data from url:{}; password:{}; and put it in your project_folder/data; \nYour folder structure should be like : {}".format(
+        url, password, folder_structure)
+    assert os.path.exists(office1000_parent_folder), warning
+
+    geodesic_distance_folder = os.path.join(office1000_parent_folder, "geodesic_distance")
+    random_env_folder = os.path.join(office1000_parent_folder, "random_envs")
+    random_envs_images_folder = os.path.join(office1000_parent_folder, "random_envs_images")
+
+    assert os.path.exists(geodesic_distance_folder), warning
+    assert os.path.exists(random_env_folder), warning
+    assert os.path.exists(random_envs_images_folder), warning
+
+
 def load_office1000_scene(p, running_config, worlds_config):
     """
     load scene from map path and trajectory path
