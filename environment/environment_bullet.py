@@ -256,6 +256,8 @@ class EnvironmentBullet(PybulletBaseEnv):
         reward += delta_distance_reward
         # geodesic_distance = self.get_geodesic_distance(robot_index=0, cur_position=self.agent_robots[0].get_position())
 
+        """================step punish reward================="""
+        reward -= np.log(self.step_count.value) * 0.1
 
         """================reach goal reward=================="""
 
