@@ -16,6 +16,7 @@ import pickle
 import sys
 import time
 from collections import deque
+from typing import Dict, List
 
 import cv2
 from matplotlib import pyplot as plt
@@ -108,7 +109,7 @@ class EnvironmentBullet(PybulletBaseEnv):
         self.paths = None
         self.temp_ids = []
         self.robot_direction_ids = [None] * self.num_agents
-        self.geodesic_distance_list = None
+        self.geodesic_distance_list: List[Dict] = None
 
     def render(self, mode="human"):
         width, height, rgb_image, depth_image, seg_image = self.agent_robots[0].sensor.get_obs()
@@ -224,7 +225,10 @@ class EnvironmentBullet(PybulletBaseEnv):
         occ_pos = cvt_to_om(cur_position, self.grid_res)
         occ_pos = tuple(occ_pos)
         geodesic_distance_map = self.geodesic_distance_list[robot_index]
-        geodesic_distance = geodesic_distance_map[occ_pos]
+        if occ_pos in geodesic_distance_map.keys():
+            geodesic_distance = geodesic_distance_map[occ_pos]
+        else:
+            geodesic_distance = 100
         geodesic_distance = geodesic_distance * self.grid_res
         return geodesic_distance
 
