@@ -5,6 +5,9 @@ import os, time, random
 
 from utils.compute_geodesic_distance import compute_geodesic_distance
 
+env_parent_folder = '../data/office_1000/random_envs'
+geodesic_distance_parent_folder = '../data/office_1000/geodesic_distance'
+
 
 def compute_and_save_geodesic_distance(start_index, end_index):
     print('Run task from {} to {}'.format(start_index, end_index))
@@ -26,8 +29,6 @@ def compute_and_save_geodesic_distance(start_index, end_index):
 
 
 def multi_process():
-    env_parent_folder = '../data/office_1000/random_envs'
-    geodesic_distance_parent_folder = '../data/office_1000/geodesic_distance'
     if not os.path.exists(geodesic_distance_parent_folder):
         os.makedirs(geodesic_distance_parent_folder)
 
@@ -48,7 +49,7 @@ def multi_process():
     p.close()
     p.join()
     print('All subprocesses done.')
-    return
+
 
 
 if __name__ == '__main__':
