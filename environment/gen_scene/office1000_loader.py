@@ -12,7 +12,7 @@ from utils.fo_utility import get_project_path
 
 
 def check_office1000_folder():
-    url = "https://pan.dm-ai.com/s/QeWoo4tzagiNqgS"
+    url = "https://pan.dm-ai.com/s/AsHXrJGKe4NLsKH"
     password = "12345678"
     office1000_parent_folder = os.path.join(get_project_path(), "data/office_1000")
     folder_structure = "\n-data\n\t-office_1000\n\t\t-geodesic_distance\n\t\t-random_envs\n\t\t-random_envs_images"
