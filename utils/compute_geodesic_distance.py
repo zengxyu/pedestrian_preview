@@ -129,15 +129,15 @@ def compute_geodesic_distance(file_name):
 
 
 if __name__ == '__main__':
-    env_parent_folder = '../data/office_1000/random_envs'
-    geodesic_distance_parent_folder = '../data/office_1000/geodesic_distance'
+    env_parent_folder = '../data/office_1000_goal_outdoor/random_envs'
+    geodesic_distance_parent_folder = '../data/office_1000_goal_outdoor/geodesic_distance'
     if not os.path.exists(geodesic_distance_parent_folder):
         os.makedirs(geodesic_distance_parent_folder)
 
     env_names = os.listdir(env_parent_folder)
     length = len(env_names)
     template = "env_{}.pkl"
-    indexes = [303, 553, 678]
+    indexes = range(1000)
     for i in indexes:
         env_name = template.format(i)
         env_path = os.path.join(env_parent_folder, env_name)

@@ -11,7 +11,7 @@ from environment.nav_utilities.coordinates_converter import cvt_to_bu
 from utils.fo_utility import get_project_path
 
 
-def check_office1000_folder():
+def check_office1000_folder_structure():
     url = "https://pan.dm-ai.com/s/AsHXrJGKe4NLsKH"
     password = "12345678"
     office1000_parent_folder = os.path.join(get_project_path(), "data/office_1000")
@@ -74,7 +74,6 @@ def load_office1000_scene(p, running_config, worlds_config):
         bu_ends.append(bu_end)
 
     obstacle_ids = drop_world_walls(p, occupancy_map.copy(), running_config["grid_res"], world_config)
-
 
     # maps, obstacle_ids, bu_starts, bu_goals
     return occupancy_map, geodesic_distance_list, obstacle_ids, bu_starts, bu_ends
