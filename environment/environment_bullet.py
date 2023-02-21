@@ -21,7 +21,7 @@ import cv2
 from matplotlib import pyplot as plt
 
 from environment.env_types import EnvTypes
-from environment.gen_scene.office1000_loader import load_office1000_scene
+from environment.gen_scene.office1000_loader import load_office1000_scene, check_office1000_folder
 from environment.gen_scene.world_loader import load_scene
 from environment.human_npc_generator import generate_human_npc
 from environment.nav_utilities.coordinates_converter import cvt_to_om, cvt_to_bu, cvt_positions_to_reference
@@ -145,13 +145,7 @@ class EnvironmentBullet(PybulletBaseEnv):
         return state
 
     def load_office_1000(self):
-        url = "https://pan.dm-ai.com/s/QeWoo4tzagiNqgS"
-        password = "12345678"
-        office1000_parent_folder = os.path.join(get_project_path(), "data/office_1000")
-        warning = "Please download data from url:{}; password:{}; and put it in your project_folder/data; Your folder structure should be like project_folder/data/office_1000/geodesic_distance".format(
-            url, password)
-        assert os.path.exists(office1000_parent_folder), warning
-
+        check_office1000_folder()
         occ_map, geodesic_distance_list, wall_ids, agent_starts, agent_goals = load_office1000_scene(p=self.p,
                                                                                                      running_config=self.running_config,
                                                                                                      worlds_config=self.worlds_config)
