@@ -16,12 +16,13 @@ import pickle
 import sys
 import time
 from collections import deque
+from typing import Dict, List
 
 import cv2
 from matplotlib import pyplot as plt
 
 from environment.env_types import EnvTypes
-from environment.gen_scene.office1000_loader import load_office1000_scene
+from environment.gen_scene.office1000_loader import load_office1000_scene, check_office1000_folder
 from environment.gen_scene.world_loader import load_scene
 from environment.human_npc_generator import generate_human_npc
 from environment.nav_utilities.coordinates_converter import cvt_to_om, cvt_to_bu, cvt_positions_to_reference
@@ -88,6 +89,7 @@ class EnvironmentBullet(PybulletBaseEnv):
         self.physical_steps = Counter()
 
         self.last_distance = None
+        self.last_geodesic_distance = None
 
         self.image_seq_len = self.args.inputs_config[self.running_config['input_config_name']]["image_seq_len"]
         self.pose_seq_len = self.args.inputs_config[self.running_config['input_config_name']]["pose_seq_len"]
@@ -107,7 +109,7 @@ class EnvironmentBullet(PybulletBaseEnv):
         self.paths = None
         self.temp_ids = []
         self.robot_direction_ids = [None] * self.num_agents
-        self.geodesic_distance_list = None
+        self.geodesic_distance_list: List[Dict] = None
 
     def render(self, mode="human"):
         width, height, rgb_image, depth_image, seg_image = self.agent_robots[0].sensor.get_obs()
@@ -126,6 +128,7 @@ class EnvironmentBullet(PybulletBaseEnv):
 
         if self.args.env == EnvTypes.OFFICE1000:
             self.load_office_1000()
+            self.randomize_human_npc()
         elif self.args.env == EnvTypes.P2V:
             assert self.args.load_map_from is not None and self.args.load_map_from != "", "args.load_map_from is None and args.load_map_from == ''"
             self.load_env()
@@ -145,13 +148,7 @@ class EnvironmentBullet(PybulletBaseEnv):
         return state
 
     def load_office_1000(self):
-        url = "https://pan.dm-ai.com/s/QeWoo4tzagiNqgS"
-        password = "12345678"
-        office1000_parent_folder = os.path.join(get_project_path(), "data/office_1000")
-        warning = "Please download data from url:{}; password:{}; and put it in your project_folder/data; Your folder structure should be like project_folder/data/office_1000/geodesic_distance".format(
-            url, password)
-        assert os.path.exists(office1000_parent_folder), warning
-
+        check_office1000_folder()
         occ_map, geodesic_distance_list, wall_ids, agent_starts, agent_goals = load_office1000_scene(p=self.p,
                                                                                                      running_config=self.running_config,
                                                                                                      worlds_config=self.worlds_config)
@@ -224,17 +221,23 @@ class EnvironmentBullet(PybulletBaseEnv):
         # plot stored information
         return state, reward, done, step_info, episode_info
 
-    def get_geodesic_distance(self, robot_index, cur_position):
+    def compute_geodesic_distance(self, robot_index, cur_position):
         occ_pos = cvt_to_om(cur_position, self.grid_res)
         occ_pos = tuple(occ_pos)
         geodesic_distance_map = self.geodesic_distance_list[robot_index]
-        geodesic_distance = geodesic_distance_map[occ_pos]
+        if occ_pos in geodesic_distance_map.keys():
+            geodesic_distance = geodesic_distance_map[occ_pos]
+        else:
+            geodesic_distance = 100
         geodesic_distance = geodesic_distance * self.grid_res
         return geodesic_distance
 
     def get_reward(self, reach_goal, collision):
         if self.last_distance is None:
             self.last_distance = compute_distance(self.agent_goals[0], self.agent_starts)
+
+            self.last_geodesic_distance = self.compute_geodesic_distance(robot_index=0, cur_position=self.agent_robots[
+                0].get_position())
         reward = 0
         collision_reward = 0
         reach_goal_reward = 0
@@ -254,7 +257,15 @@ class EnvironmentBullet(PybulletBaseEnv):
         self.last_distance = distance
         reward += delta_distance_reward
 
-        geodesic_distance = self.get_geodesic_distance(robot_index=0, cur_position=self.agent_robots[0].get_position())
+        """================delta geodesic distance reward=================="""
+
+        geodesic_distance = self.compute_geodesic_distance(robot_index=0,
+                                                           cur_position=self.agent_robots[0].get_position())
+        delta_distance_reward = (self.last_geodesic_distance - geodesic_distance) * self.reward_config[
+            "delta_geodesic_distance"]
+        self.last_geodesic_distance = geodesic_distance
+        reward += delta_distance_reward
+
         """================reach goal reward=================="""
 
         if reach_goal:
@@ -488,6 +499,7 @@ class EnvironmentBullet(PybulletBaseEnv):
             self.npc_group.clear()
             self.npc_group = None
         self.last_distance = None
+        self.last_geodesic_distance = None
         self.wall_ids = []
 
         self.ma_images_deque = [deque(maxlen=self.image_seq_len) for i in range(self.num_agents)]
