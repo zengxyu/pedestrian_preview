@@ -25,7 +25,7 @@ def compute_and_save_geodesic_distance(start_index, end_index):
     print('Task from {} to {} runs {} seconds.'.format(start_index, end_index, end - start))
 
 
-if __name__ == '__main__':
+def multi_process():
     env_parent_folder = '../data/office_1000/random_envs'
     geodesic_distance_parent_folder = '../data/office_1000/geodesic_distance'
     if not os.path.exists(geodesic_distance_parent_folder):
@@ -48,3 +48,8 @@ if __name__ == '__main__':
     p.close()
     p.join()
     print('All subprocesses done.')
+    return
+
+
+if __name__ == '__main__':
+    multi_process()

@@ -24,6 +24,9 @@ agent_sg_opposite_baffle_sampler2:
   sampler_name: sg_opposite_baffle_sampler2
   sampler_params: {}
 
+agent_sg_exit_sampler:
+  sampler_name: sg_exit_sampler
+
 npc_sg_sampler1:
   sampler_name: sg_in_distance_sampler
   sampler_params:
