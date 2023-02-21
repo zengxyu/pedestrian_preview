@@ -6,14 +6,13 @@ from typing import Dict, List
 import numpy as np
 
 from environment.gen_scene.build_office_world import drop_world_walls
-from environment.gen_scene.compute_door import compute_door
 from environment.gen_scene.world_generator import get_world_config
 from environment.nav_utilities.coordinates_converter import cvt_to_bu
 from utils.fo_utility import get_project_path
 
 
-def check_office1000_folder_structure():
-    url = "https://pan.dm-ai.com/s/QeWoo4tzagiNqgS"
+def check_office1000_folder():
+    url = "https://pan.dm-ai.com/s/AsHXrJGKe4NLsKH"
     password = "12345678"
     office1000_parent_folder = os.path.join(get_project_path(), "data/office_1000")
     folder_structure = "\n-data\n\t-office_1000\n\t\t-geodesic_distance\n\t\t-random_envs\n\t\t-random_envs_images"
