@@ -126,6 +126,7 @@ class EnvironmentBullet(PybulletBaseEnv):
 
         if self.args.env == EnvTypes.OFFICE1000:
             self.load_office_1000()
+            self.randomize_human_npc()
         elif self.args.env == EnvTypes.P2V:
             assert self.args.load_map_from is not None and self.args.load_map_from != "", "args.load_map_from is None and args.load_map_from == ''"
             self.load_env()
@@ -245,6 +246,8 @@ class EnvironmentBullet(PybulletBaseEnv):
         reward += delta_distance_reward
 
         geodesic_distance = self.get_geodesic_distance(robot_index=0, cur_position=self.agent_robots[0].get_position())
+
+
         """================reach goal reward=================="""
 
         if reach_goal:

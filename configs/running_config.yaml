@@ -37,7 +37,7 @@ num_agents: 1
 npc_robot_name: object_robot
 #  pedestrian speed
 npc_speed_range: [ 0.8, 1.2 ]
-num_npc: 0
+num_npc: 2
 
 # choose from agent_sg_sampler1, agent_sg_corner_sampler1
 agent_sg_sampler: agent_sg_opposite_baffle_sampler2
