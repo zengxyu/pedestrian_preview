@@ -76,9 +76,9 @@ def generate_n_envs(num_envs, num_starts, parent_folder, image_save_folder):
     save_name_template = "env_{}.pkl"
     image_save_name_template = "env_{}.png"
     envs = []
-    indexes = [303, 553, 678]
     i = 0
-    while i < num_envs:
+    indexes = [a for a in range(num_envs)]
+    while i < len(indexes):
         index = indexes[i]
         save_file_name = save_name_template.format(index)
         image_save_file_name = image_save_name_template.format(index)
@@ -145,9 +145,9 @@ def run_read_envs():
 def run_store_envs():
     # occupancy_map, starts, ends = generate_env(num_starts=20)
     # envs = generate_n_envs(num_envs=1000, num_starts=20)
-    parent_folder = os.path.join(get_project_path(), "data", "office_1000", "random_envs")
-    image_save_parent_folder = os.path.join(get_project_path(), "data", "office_1000", "random_envs_images")
-    generate_n_envs(num_envs=3, num_starts=20, parent_folder=parent_folder,
+    parent_folder = os.path.join(get_project_path(), "data", "office_1000", "test", "random_envs")
+    image_save_parent_folder = os.path.join(get_project_path(), "data", "office_1000", "test", "random_envs_images")
+    generate_n_envs(num_envs=200, num_starts=20, parent_folder=parent_folder,
                     image_save_folder=image_save_parent_folder)
 
     # store_envs(envs, parent_folder)

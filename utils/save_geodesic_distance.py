@@ -26,8 +26,8 @@ def compute_and_save_geodesic_distance(start_index, end_index):
 
 
 if __name__ == '__main__':
-    env_parent_folder = '../data/office_1000/random_envs'
-    geodesic_distance_parent_folder = '../data/office_1000/geodesic_distance'
+    env_parent_folder = '../data/office_1000/test/random_envs'
+    geodesic_distance_parent_folder = '../data/office_1000/test/geodesic_distance'
     if not os.path.exists(geodesic_distance_parent_folder):
         os.makedirs(geodesic_distance_parent_folder)
 
@@ -39,7 +39,7 @@ if __name__ == '__main__':
 
     p = Pool(num_process)
 
-    env_indexes = [0, 400]
+    env_indexes = [0, 200]
     part = int((env_indexes[1] - env_indexes[0]) / num_process)
     split_env_indexes = [[env_indexes[0] + i * part, env_indexes[0] + (i + 1) * part] for i in range(num_process)]
     for start_index, end_index in split_env_indexes:
