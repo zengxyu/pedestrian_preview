@@ -232,6 +232,7 @@ class EnvironmentBullet(PybulletBaseEnv):
         else:
             geodesic_distance = 100
         geodesic_distance = geodesic_distance * self.grid_res
+        # print("geodesic_distance:{}".format(geodesic_distance))
         return geodesic_distance
 
     def get_reward(self, reach_goal, collision):
@@ -373,8 +374,8 @@ class EnvironmentBullet(PybulletBaseEnv):
                     robot.small_step(0, 0)
                 else:
                     robot.small_step(planned_v, planned_w)
-                    if not self.args.train:
-                        print("robot {} not reached goal".format(i))
+                    # if not self.args.train:
+                    #     print("robot {} not reached goal".format(i))
 
                 if self.render:
                     robot_direction_id = plot_robot_direction_line(self.p, self.robot_direction_ids[i],

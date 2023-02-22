@@ -41,6 +41,7 @@ def load_office1000_scene(p, running_config, worlds_config):
 
     file_names = os.listdir(geodesic_distance_parent_folder)
     file_name = np.random.choice(file_names)
+    print("scene file name:{}".format(file_name))
     si = file_name.index("_") + 1
     ei = file_name.index(".")
     scene_index = int(file_name[si:ei])
