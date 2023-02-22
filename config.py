@@ -32,7 +32,7 @@ def process_args():
     parser.add_argument("--num_npc", type=int)
     parser.add_argument("--num_agents", type=int)
     parser.add_argument("--prm", action="store_true", default=False)
-    parser.add_argument("--env", type=str, help="random; p2v; office_1000", default="office_1000")
+    parser.add_argument("--env", type=str, help="random; p2v; office_1000; office_1000_door", default="office_1000")
 
     parser_args = parser.parse_args()
     parser_args.out_folder = os.path.join(get_project_path(), "output", parser_args.out_folder)

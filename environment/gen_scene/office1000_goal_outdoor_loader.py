@@ -12,10 +12,10 @@ from utils.fo_utility import get_project_path
 
 
 def check_office1000_goal_outdoor_folder_structure():
-    url = "https://pan.dm-ai.com/s/AsHXrJGKe4NLsKH"
+    url = "https://pan.dm-ai.com/s/BgxDACLPNb8nQ5f"
     password = "12345678"
-    office1000_parent_folder = os.path.join(get_project_path(), "data/office_1000")
-    folder_structure = "\n-data\n\t-office_1000\n\t\t-geodesic_distance\n\t\t-random_envs\n\t\t-random_envs_images"
+    office1000_parent_folder = os.path.join(get_project_path(), "data/office_1000_goal_outdoor")
+    folder_structure = "\n-data\n\t-office_1000_goal_outdoor\n\t\t-geodesic_distance\n\t\t-random_envs\n\t\t-random_envs_images"
     warning = "Please download data from url:{}; password:{}; and put it in your project_folder/data; \nYour folder structure should be like : {}".format(
         url, password, folder_structure)
     assert os.path.exists(office1000_parent_folder), warning
@@ -36,8 +36,8 @@ def load_office1000_goal_outdoor(p, running_config, worlds_config):
 
     # scene_index = np.random.randint(0, 1000)
     # logging.error("Choose scene index:{}".format(scene_index))
-    scene_parent_folder = os.path.join(get_project_path(), "data", "office_1000", "random_envs")
-    geodesic_distance_parent_folder = os.path.join(get_project_path(), "data", "office_1000", "geodesic_distance")
+    scene_parent_folder = os.path.join(get_project_path(), "data", "office_1000_goal_outdoor", "random_envs")
+    geodesic_distance_parent_folder = os.path.join(get_project_path(), "data", "office_1000_goal_outdoor", "geodesic_distance")
 
     file_names = os.listdir(geodesic_distance_parent_folder)
     file_name = np.random.choice(file_names)
@@ -65,7 +65,7 @@ def load_office1000_goal_outdoor(p, running_config, worlds_config):
     geodesic_distance_list: List[Dict] = []
     for i in indexes:
         start = starts[i]
-        end = ends[i]
+        end = ends[0]
         geodesic_distance_list.append(geodesic_distance_dict_dict[tuple(end)])
         # geodesic_distance_dict[]
         # sample start position and goal position

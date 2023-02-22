@@ -134,6 +134,9 @@ class EnvironmentBullet(PybulletBaseEnv):
         elif self.args.env == EnvTypes.P2V:
             assert self.args.load_map_from is not None and self.args.load_map_from != "", "args.load_map_from is None and args.load_map_from == ''"
             self.load_env()
+        elif self.args.env == EnvTypes.OFFICE1000DOOR:
+            self.load_office_1000_goal_outdoor()
+            self.randomize_human_npc()
         else:
             # randomize environment
             self.randomize_env()
@@ -182,7 +185,6 @@ class EnvironmentBullet(PybulletBaseEnv):
         logging.debug("Create the environment, Done...")
         self.agent_robots = self.init_robots()
         self.geodesic_distance_list = geodesic_distance_list
-        return
 
     def visualize_goals(self, bu_goals, colors):
         thetas = np.linspace(0, np.pi * 2, 10)

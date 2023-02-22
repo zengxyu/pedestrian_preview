@@ -56,7 +56,7 @@ def generate_env(num_starts):
 def display_and_save(occupancy_map, starts, ends, save, save_path):
     plt.imshow(occupancy_map)
     plt.scatter(starts[:, 1], starts[:, 0], c='g')
-    plt.scatter(ends[:, 1], ends[:, 0], c='g')
+    plt.scatter(ends[:, 1], ends[:, 0], c='r')
     for s, e in zip(starts, ends):
         plt.plot([s[1], e[1]], [s[0], e[0]])
 
