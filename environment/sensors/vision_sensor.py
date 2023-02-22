@@ -1,5 +1,7 @@
 import math
 
+import matplotlib.pyplot as plt
+import numpy as np
 import pybullet as p
 
 
@@ -48,4 +50,6 @@ class VisionSensor:
                                                                             view_matrix,
                                                                             projection_matrix, self.shadow,
                                                                             renderer=p.ER_BULLET_HARDWARE_OPENGL)
-        return width, height, rgb_image, depth_image, seg_image
+
+        depth = self.farVal * self.nearVal / (self.farVal - (self.farVal - self.nearVal) * depth_image)
+        return width, height, rgb_image, depth, seg_image

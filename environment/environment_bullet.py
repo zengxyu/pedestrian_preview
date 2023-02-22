@@ -261,10 +261,10 @@ class EnvironmentBullet(PybulletBaseEnv):
         geodesic_distance = self.compute_geodesic_distance(robot_index=0,
                                                            cur_position=self.agent_robots[0].get_position())
 
-        delta_distance_reward = (self.last_geodesic_distance - geodesic_distance) * self.reward_config[
+        delta_geo_distance_reward = (self.last_geodesic_distance - geodesic_distance) * self.reward_config[
             "delta_geodesic_distance"]
         self.last_geodesic_distance = geodesic_distance
-        reward += delta_distance_reward
+        reward += delta_geo_distance_reward
 
         """================reach goal reward=================="""
 
@@ -274,6 +274,7 @@ class EnvironmentBullet(PybulletBaseEnv):
 
         reward_info = {"reward/reward_collision": collision_reward,
                        "reward/reward_delta_distance": delta_distance_reward,
+                       "reward/reward_delta_geo_distance": delta_geo_distance_reward,
                        "reward/distance": distance,
                        "reward/reward_reach_goal": reach_goal_reward,
                        "reward/reward": reward
@@ -293,8 +294,8 @@ class EnvironmentBullet(PybulletBaseEnv):
         for i, rt in enumerate(self.agent_robots):
             width, height, rgba_image, depth_image, seg_image = rt.sensor.get_obs()
             rgba_image = rgba_image
-            depth_image = (depth_image - 0.75) / 0.25
-            relative_pose = cvt_positions_to_reference(self.agent_goals, rt.get_position(), rt.get_yaw())
+            depth_image = depth_image / rt.sensor.farVal
+            relative_pose = cvt_positions_to_reference([self.agent_goals[i]], rt.get_position(), rt.get_yaw())
             w = self.input_config["image_w"]
             h = self.input_config["image_h"]
             if self.input_config["image_mode"] == ImageMode.ROW:
