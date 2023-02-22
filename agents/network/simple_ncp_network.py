@@ -39,6 +39,8 @@ class SimpleCnnNcpActor(BaseModel):
     def __init__(self, agent_type, action_space, **kwargs):
         super().__init__(**kwargs)
         self.n_actions = len(action_space.low)
+        self.image_h = kwargs["image_h"]
+        self.image_w = kwargs["image_w"]
         if self.image_h == 40:
             self.cnn_dims = model_params["cnn"]
             self.kernel_sizes = model_params["kernel_sizes"]
