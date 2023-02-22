@@ -22,6 +22,8 @@ import cv2
 from matplotlib import pyplot as plt
 
 from environment.env_types import EnvTypes
+from environment.gen_scene.office1000_goal_outdoor_loader import check_office1000_goal_outdoor_folder_structure, \
+    load_office1000_goal_outdoor
 from environment.gen_scene.office1000_loader import load_office1000_scene, check_office1000_folder_structure
 from environment.gen_scene.world_loader import load_scene
 from environment.human_npc_generator import generate_human_npc
@@ -163,6 +165,24 @@ class EnvironmentBullet(PybulletBaseEnv):
         logging.debug("Create the environment, Done...")
         self.agent_robots = self.init_robots()
         self.geodesic_distance_list = geodesic_distance_list
+
+    def load_office_1000_goal_outdoor(self):
+        check_office1000_goal_outdoor_folder_structure()
+        occ_map, geodesic_distance_list, wall_ids, agent_starts, agent_goals = load_office1000_goal_outdoor(p=self.p,
+                                                                                                            running_config=self.running_config,
+                                                                                                            worlds_config=self.worlds_config)
+
+        # sample start pose and goal pose
+        self.wall_ids = wall_ids
+        self.occ_map = occ_map
+        self.agent_starts = agent_starts
+        # 如果有多个agent，去往同一个目标
+        self.agent_goals = [agent_goals[0] for i in range(self.num_agents)]
+        # initialize robot
+        logging.debug("Create the environment, Done...")
+        self.agent_robots = self.init_robots()
+        self.geodesic_distance_list = geodesic_distance_list
+        return
 
     def visualize_goals(self, bu_goals, colors):
         thetas = np.linspace(0, np.pi * 2, 10)
