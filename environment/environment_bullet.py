@@ -224,12 +224,15 @@ class EnvironmentBullet(PybulletBaseEnv):
     def compute_geodesic_distance(self, robot_index, cur_position):
         occ_pos = cvt_to_om(cur_position, self.grid_res)
         occ_pos = tuple(occ_pos)
+        if self.geodesic_distance_list is None:
+            return 0
         geodesic_distance_map = self.geodesic_distance_list[robot_index]
         if occ_pos in geodesic_distance_map.keys():
             geodesic_distance = geodesic_distance_map[occ_pos]
         else:
             geodesic_distance = 100
         geodesic_distance = geodesic_distance * self.grid_res
+        # print("geodesic_distance:{}".format(geodesic_distance))
         return geodesic_distance
 
     def get_reward(self, reach_goal, collision):
@@ -257,10 +260,11 @@ class EnvironmentBullet(PybulletBaseEnv):
 
         geodesic_distance = self.compute_geodesic_distance(robot_index=0,
                                                            cur_position=self.agent_robots[0].get_position())
-        delta_distance_reward = (self.last_geodesic_distance - geodesic_distance) * self.reward_config[
+
+        delta_geo_distance_reward = (self.last_geodesic_distance - geodesic_distance) * self.reward_config[
             "delta_geodesic_distance"]
         self.last_geodesic_distance = geodesic_distance
-        reward += delta_distance_reward
+        reward += delta_geo_distance_reward
 
         """================reach goal reward=================="""
 
@@ -270,6 +274,7 @@ class EnvironmentBullet(PybulletBaseEnv):
 
         reward_info = {"reward/reward_collision": collision_reward,
                        "reward/reward_delta_distance": delta_distance_reward,
+                       "reward/reward_delta_geo_distance": delta_geo_distance_reward,
                        "reward/distance": distance,
                        "reward/reward_reach_goal": reach_goal_reward,
                        "reward/reward": reward
@@ -288,9 +293,9 @@ class EnvironmentBullet(PybulletBaseEnv):
         h = 0
         for i, rt in enumerate(self.agent_robots):
             width, height, rgba_image, depth_image, seg_image = rt.sensor.get_obs()
-            rgba_image = rgba_image / 255
-            depth_image = (depth_image - 0.75) / 0.25
-            relative_pose = cvt_positions_to_reference(self.agent_goals, rt.get_position(), rt.get_yaw())
+            rgba_image = rgba_image
+            depth_image = depth_image / rt.sensor.farVal
+            relative_pose = cvt_positions_to_reference([self.agent_goals[i]], rt.get_position(), rt.get_yaw())
             w = self.input_config["image_w"]
             h = self.input_config["image_h"]
             if self.input_config["image_mode"] == ImageMode.ROW:
@@ -305,10 +310,18 @@ class EnvironmentBullet(PybulletBaseEnv):
                 # plt.show()
             elif self.input_config["image_mode"] == ImageMode.DEPTH:
                 image = cv2.resize(depth_image, (w, h))
+            elif self.input_config["image_mode"] == ImageMode.GD:
+                depth_image = cv2.resize(depth_image, (w, h))
+                rgb_image = cv2.resize(rgba_image[:, :, :3], (w, h))
+                gray_image = cv2.cvtColor(rgb_image, cv2.COLOR_RGB2GRAY)
+                gray_image = gray_image / 255
+                image = np.array([depth_image, gray_image])
             elif self.input_config["image_mode"] == ImageMode.RGB:
+                rgba_image = rgba_image / 255
                 image = cv2.resize(rgba_image[:, :, :3], (w, h))
                 image = np.transpose(image, (2, 0, 1))
             elif self.input_config["image_mode"] == ImageMode.RGBD:
+                rgba_image = rgba_image / 255
                 image = np.append(rgba_image[:, :, :3], depth_image[:, :, np.newaxis], axis=-1)
                 image = cv2.resize(image, (w, h))
                 image = np.transpose(image, (2, 0, 1))
@@ -362,8 +375,8 @@ class EnvironmentBullet(PybulletBaseEnv):
                     robot.small_step(0, 0)
                 else:
                     robot.small_step(planned_v, planned_w)
-                    if not self.args.train:
-                        print("robot {} not reached goal".format(i))
+                    # if not self.args.train:
+                    #     print("robot {} not reached goal".format(i))
 
                 if self.render:
                     robot_direction_id = plot_robot_direction_line(self.p, self.robot_direction_ids[i],
