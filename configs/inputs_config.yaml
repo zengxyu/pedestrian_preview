@@ -58,7 +58,18 @@ input_row_mlp:
   # choose from {row, depth, rgbd, rgb}
   image_mode: row
 
-input_rgb_ncp:
+input_rgb_40x60_ncp:
+  image_seq_len: 4
+  image_depth: 3
+  image_h: 40
+  image_w: 80
+  pose_seq_len: 4
+  # choose from network configs CNN, MLP
+  network: NCP
+  # choose from {row, depth, rgbd, rgb}
+  image_mode: rgb
+
+input_rgb_80x120_ncp:
   image_seq_len: 4
   image_depth: 3
   image_h: 80
@@ -81,11 +92,22 @@ input_rgbd_ncp:
   # choose from {row, depth, rgbd, rgb}
   image_mode: rgbd
 
-input_depth_ncp:
+input_depth_40x60_ncp:
   image_seq_len: 4
   image_depth: 1
   image_h: 40
   image_w: 60
+  pose_seq_len: 4
+  # choose from network configs CNN, MLP
+  network: NCP
+  # choose from {row, depth, rgbd, rgb}
+  image_mode: depth
+
+input_depth_80x120_ncp:
+  image_seq_len: 4
+  image_depth: 1
+  image_h: 80
+  image_w: 120
   pose_seq_len: 4
   # choose from network configs CNN, MLP
   network: NCP
