@@ -11,12 +11,12 @@ from utils.office_1000_generator import display_and_save
 
 
 def convert_office_1000_goal_outdoor():
-    office_1000_parent_folder = os.path.join(get_project_path(), "data", "office_1000")
+    office_1000_parent_folder = os.path.join(get_project_path(), "data", "office_1000", "test")
     office_1000_geodesic_distance_folder = os.path.join(office_1000_parent_folder, "geodesic_distance")
     office_1000_random_envs_folder = os.path.join(office_1000_parent_folder, "random_envs")
     office_1000_random_envs_images_folder = os.path.join(office_1000_parent_folder, "random_envs_images")
 
-    out_office_1000_goal_outdoor = os.path.join(get_project_path(), "data", "office_1000_goal_outdoor")
+    out_office_1000_goal_outdoor = os.path.join(get_project_path(), "data", "office_1000_goal_outdoor", "test")
     out_office_1000_goal_outdoor_envs_folder = os.path.join(out_office_1000_goal_outdoor, "random_envs")
     out_office_1000_goal_outdoor_images_folder = os.path.join(out_office_1000_goal_outdoor, "random_envs_images")
 

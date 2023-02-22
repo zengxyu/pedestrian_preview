@@ -154,9 +154,11 @@ class EnvironmentBullet(PybulletBaseEnv):
 
     def load_office_1000(self):
         check_office1000_folder_structure()
+        phase = "train" if self.args.train else "test"
         occ_map, geodesic_distance_list, wall_ids, agent_starts, agent_goals = load_office1000_scene(p=self.p,
                                                                                                      running_config=self.running_config,
-                                                                                                     worlds_config=self.worlds_config)
+                                                                                                     worlds_config=self.worlds_config,
+                                                                                                     phase=phase)
 
         # sample start pose and goal pose
         self.wall_ids = wall_ids
@@ -171,9 +173,11 @@ class EnvironmentBullet(PybulletBaseEnv):
 
     def load_office_1000_goal_outdoor(self):
         check_office1000_goal_outdoor_folder_structure()
+        phase = "train" if self.args.train else "test"
         occ_map, geodesic_distance_list, wall_ids, agent_starts, agent_goals = load_office1000_goal_outdoor(p=self.p,
                                                                                                             running_config=self.running_config,
-                                                                                                            worlds_config=self.worlds_config)
+                                                                                                            worlds_config=self.worlds_config,
+                                                                                                            phase=phase)
 
         # sample start pose and goal pose
         self.wall_ids = wall_ids
@@ -254,7 +258,7 @@ class EnvironmentBullet(PybulletBaseEnv):
         else:
             geodesic_distance = 100
         geodesic_distance = geodesic_distance * self.grid_res
-        # print("geodesic_distance:{}".format(geodesic_distance))
+        print("geodesic_distance:{}".format(geodesic_distance))
         return geodesic_distance
 
     def get_reward(self, reach_goal, collision):

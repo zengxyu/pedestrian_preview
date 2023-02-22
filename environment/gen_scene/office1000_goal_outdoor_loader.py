@@ -15,29 +15,31 @@ def check_office1000_goal_outdoor_folder_structure():
     url = "https://pan.dm-ai.com/s/BgxDACLPNb8nQ5f"
     password = "12345678"
     office1000_parent_folder = os.path.join(get_project_path(), "data/office_1000_goal_outdoor")
-    folder_structure = "\n-data\n\t-office_1000_goal_outdoor\n\t\t-geodesic_distance\n\t\t-random_envs\n\t\t-random_envs_images"
+    folder_structure = "\n-data\n\t-office_1000_goal_outdoor\n\t\t-train\n\t\t\t\t-geodesic_distance\n\t\t\t\t-random_envs\n\t\t\t\t-random_envs_images\n\t\t-test\n\t\t\t\t-geodesic_distance\n\t\t\t\t-random_envs\n\t\t\t\t-random_envs_images"
     warning = "Please download data from url:{}; password:{}; and put it in your project_folder/data; \nYour folder structure should be like : {}".format(
         url, password, folder_structure)
     assert os.path.exists(office1000_parent_folder), warning
 
-    geodesic_distance_folder = os.path.join(office1000_parent_folder, "geodesic_distance")
-    random_env_folder = os.path.join(office1000_parent_folder, "random_envs")
-    random_envs_images_folder = os.path.join(office1000_parent_folder, "random_envs_images")
+    for phase in ["train", "test"]:
+        geodesic_distance_folder = os.path.join(office1000_parent_folder, phase, "geodesic_distance")
+        random_env_folder = os.path.join(office1000_parent_folder, phase, "random_envs")
+        random_envs_images_folder = os.path.join(office1000_parent_folder, phase, "random_envs_images")
 
     assert os.path.exists(geodesic_distance_folder), warning
     assert os.path.exists(random_env_folder), warning
     assert os.path.exists(random_envs_images_folder), warning
 
 
-def load_office1000_goal_outdoor(p, running_config, worlds_config):
+def load_office1000_goal_outdoor(p, running_config, worlds_config, phase):
     """
     load scene from map path and trajectory path
     """
 
     # scene_index = np.random.randint(0, 1000)
     # logging.error("Choose scene index:{}".format(scene_index))
-    scene_parent_folder = os.path.join(get_project_path(), "data", "office_1000_goal_outdoor", "random_envs")
-    geodesic_distance_parent_folder = os.path.join(get_project_path(), "data", "office_1000_goal_outdoor", "geodesic_distance")
+    scene_parent_folder = os.path.join(get_project_path(), "data", "office_1000_goal_outdoor", phase, "random_envs")
+    geodesic_distance_parent_folder = os.path.join(get_project_path(), "data", "office_1000_goal_outdoor", phase,
+                                                   "geodesic_distance")
 
     file_names = os.listdir(geodesic_distance_parent_folder)
     file_name = np.random.choice(file_names)
