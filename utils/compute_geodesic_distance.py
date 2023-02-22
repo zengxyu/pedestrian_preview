@@ -128,7 +128,6 @@ def compute_geodesic_distance(file_name):
     return position_dict
 
 
-
 if __name__ == '__main__':
     env_parent_folder = '../data/office_1000/random_envs'
     geodesic_distance_parent_folder = '../data/office_1000/geodesic_distance'
@@ -138,7 +137,8 @@ if __name__ == '__main__':
     env_names = os.listdir(env_parent_folder)
     length = len(env_names)
     template = "env_{}.pkl"
-    for i in range(length):
+    indexes = [303, 553, 678]
+    for i in indexes:
         env_name = template.format(i)
         env_path = os.path.join(env_parent_folder, env_name)
         print("Computing geodesic distance for {}...".format(env_name))

@@ -12,7 +12,7 @@ from utils.fo_utility import get_project_path
 
 
 def check_office1000_folder():
-    url = "https://pan.dm-ai.com/s/QeWoo4tzagiNqgS"
+    url = "https://pan.dm-ai.com/s/AsHXrJGKe4NLsKH"
     password = "12345678"
     office1000_parent_folder = os.path.join(get_project_path(), "data/office_1000")
     folder_structure = "\n-data\n\t-office_1000\n\t\t-geodesic_distance\n\t\t-random_envs\n\t\t-random_envs_images"
@@ -41,7 +41,7 @@ def load_office1000_scene(p, running_config, worlds_config):
 
     file_names = os.listdir(geodesic_distance_parent_folder)
     file_name = np.random.choice(file_names)
-    print("map file name :", file_name)
+    print("scene file name:{}".format(file_name))
     si = file_name.index("_") + 1
     ei = file_name.index(".")
     scene_index = int(file_name[si:ei])

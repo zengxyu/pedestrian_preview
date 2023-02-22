@@ -77,12 +77,14 @@ def generate_n_envs(num_envs, num_starts, parent_folder, image_save_folder):
     image_save_name_template = "env_{}.png"
     envs = []
     i = 0
-    while i < num_envs:
-        save_file_name = save_name_template.format(i)
-        image_save_file_name = image_save_name_template.format(i)
+    indexes = [a for a in range(num_envs)]
+    while i < len(indexes):
+        index = indexes[i]
+        save_file_name = save_name_template.format(index)
+        image_save_file_name = image_save_name_template.format(index)
         save_path = os.path.join(parent_folder, save_file_name)
         image_save_path = os.path.join(image_save_folder, image_save_file_name)
-        print("Generating {}-th office...".format(i))
+        print("Generating {}-th office...".format(index))
         occupancy_map, starts, ends, sample_success = generate_env(num_starts=num_starts)
         if sample_success:
             env = [occupancy_map, starts, ends]
@@ -134,22 +136,23 @@ def read_envs(parent_folder):
     return envs
 
 
-def test_read_envs():
+def run_read_envs():
     parent_folder = os.path.join(get_project_path(), "data", "random_envs")
     envs = read_envs(parent_folder)
     display_and_save(*envs[0])
 
 
-def test_store_envs():
+def run_store_envs():
     # occupancy_map, starts, ends = generate_env(num_starts=20)
     # envs = generate_n_envs(num_envs=1000, num_starts=20)
-    parent_folder = os.path.join(get_project_path(), "data", "random_envs")
-    image_save_parent_folder = os.path.join(get_project_path(), "data", "random_envs_images")
-    generate_n_envs(num_envs=1000, num_starts=20, parent_folder=parent_folder, image_save_folder=image_save_parent_folder)
+    parent_folder = os.path.join(get_project_path(), "data", "office_1000", "test", "random_envs")
+    image_save_parent_folder = os.path.join(get_project_path(), "data", "office_1000", "test", "random_envs_images")
+    generate_n_envs(num_envs=200, num_starts=20, parent_folder=parent_folder,
+                    image_save_folder=image_save_parent_folder)
 
     # store_envs(envs, parent_folder)
 
 
 if __name__ == '__main__':
     # test_read_envs()
-    test_store_envs()
+    run_store_envs()
