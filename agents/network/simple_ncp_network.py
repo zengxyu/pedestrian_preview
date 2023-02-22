@@ -125,10 +125,16 @@ class SimpleCnnNcpCritic(BaseModel):
         super().__init__(**kwargs)
         self.n_actions = len(action_space.low)
 
-        self.cnn_dims = model1_params["cnn"]
-        self.kernel_sizes = model1_params["kernel_sizes"]
-        self.strides = model1_params["strides"]
-        mlp_values_dims = model1_params["mlp_values"]
+        if self.image_h == 40:
+            self.cnn_dims = model_params["cnn"]
+            self.kernel_sizes = model_params["kernel_sizes"]
+            self.strides = model_params["strides"]
+            mlp_values_dims = model_params["mlp_values"]
+        elif self.image_h == 80:
+            self.cnn_dims = model1_params["cnn"]
+            self.kernel_sizes = model1_params["kernel_sizes"]
+            self.strides = model1_params["strides"]
+            mlp_values_dims = model1_params["mlp_values"]
 
         self.cnn = build_cnns_2d(self.image_depth*self.seq_len, self.cnn_dims, self.kernel_sizes, self.strides)
         self.mlp_value = build_mlp(1280 + 3 * self.seq_len + self.n_actions,

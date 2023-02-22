@@ -17,7 +17,7 @@ evaluate_n_times: 100
 reward_config_name: reward_config2
 
 # choose from  inputs_config.yaml: input_multi_row_multi_sensor, input_multi_row_cnn
-input_config_name: input_depth_80x120_ncp
+input_config_name: input_rgb_80x120_ncp
 
 # choose from worlds_config.yaml: "corridor","cross","office","empty"
 world_name: office

@@ -62,7 +62,7 @@ input_rgb_40x60_ncp:
   image_seq_len: 4
   image_depth: 3
   image_h: 40
-  image_w: 80
+  image_w: 60
   pose_seq_len: 4
   # choose from network configs CNN, MLP
   network: NCP
