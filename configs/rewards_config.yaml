@@ -7,10 +7,12 @@ reward_config1:
   delta_geodesic_distance: 5
 
 reward_config2:
-  collision_reset: False
-  geodesic_distance: True
-  collision: -0.5
-  reach_goal: 100
-  delta_distance: 5
-  delta_geodesic_distance: 5
+  collision_reset: False    #碰撞是否reset
+  geodesic_distance: True   #测地距离奖励
+  collision_model: {"1": 2}        #测地距离计算方式（"0"：固定惩罚值； "1"：动态计算，值为碰撞系数，考虑连续4步测地距离；）
+#  collision: -0.5           #碰撞固定惩罚值
+  reach_goal: 100           #到达目标点奖励
+  delta_distance: 5         #欧式距离奖励系数
+  delta_geodesic_distance: 5 #测地距离奖励系数
+
 

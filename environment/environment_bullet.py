@@ -111,6 +111,9 @@ class EnvironmentBullet(PybulletBaseEnv):
         self.robot_direction_ids = [None] * self.num_agents
         self.geodesic_distance_list: List[Dict] = None
 
+        self.geodesic_distance_deque = None
+        self.collision_model = self.reward_config["collision_model"]
+
     def render(self, mode="human"):
         width, height, rgb_image, depth_image, seg_image = self.agent_robots[0].sensor.get_obs()
         image = cv2.resize(depth_image, (40, 60))
@@ -239,32 +242,45 @@ class EnvironmentBullet(PybulletBaseEnv):
                                                                              cur_position=self.agent_robots[
                                                                                  0].get_position())
                 self.last_distance = min(self.last_distance, 10)
+                for i in range(self.image_seq_len-1):
+                    self.geodesic_distance_deque.append(self.last_distance)
             else:
                 self.last_distance = compute_distance(self.agent_goals[0], self.agent_starts)
 
         reward = 0
         collision_reward = 0
         reach_goal_reward = 0
-        """================collision reward=================="""
-        if self.reward_config["collision_reset"]:
-            if collision == CollisionType.CollisionWithWall:
-                collision_reward = self.reward_config["collision"]
-                reward += collision_reward
-        else:
-            if collision == CollisionType.CollisionWithWall or collision == CollisionType.CollisionWithPedestrian:
-                collision_reward = self.reward_config["collision"]
-                reward += collision_reward
-
         if self.reward_config["geodesic_distance"]:
             """================delta geodesic distance reward=================="""
             distance = self.compute_geodesic_distance(robot_index=0,
                                                                cur_position=self.agent_robots[0].get_position())
             distance = min(distance, 10)
             delta_distance_reward = (self.last_distance - distance) * self.reward_config["delta_geodesic_distance"]
+            self.geodesic_distance_deque.append(distance)
         else:
             """================delta distance reward=================="""
             distance = compute_distance(self.agent_goals[0], self.agent_robots[0].get_position())
             delta_distance_reward = (self.last_distance - distance) * self.reward_config["delta_distance"]
+
+        """================collision reward=================="""
+        if self.reward_config["collision_reset"]:
+            if collision == CollisionType.CollisionWithWall:
+                if list(self.collision_model.keys())[0] == "0":
+                    collision_reward = self.collision_model["0"]
+                elif list(self.collision_model.keys())[0] == "1" and self.reward_config["geodesic_distance"]:
+                    collision_reward = -(abs(self.geodesic_distance_deque[0] - self.geodesic_distance_deque[-1]) * 2 * self.collision_model["1"])
+
+                reward += collision_reward
+
+        else:
+            if collision == CollisionType.CollisionWithWall or collision == CollisionType.CollisionWithPedestrian:
+                if list(self.collision_model.keys())[0] == "0":
+                    collision_reward = self.collision_model["0"]
+                elif list(self.collision_model.keys())[0] == "1" and self.reward_config["geodesic_distance"]:
+                    collision_reward = -(abs(self.geodesic_distance_deque[0] - self.geodesic_distance_deque[-1]) * 2 * \
+                                    self.collision_model["1"])
+                print("collision_reward = ", collision_reward)
+                reward += collision_reward
 
         self.last_distance = distance
         reward += delta_distance_reward
@@ -518,6 +534,7 @@ class EnvironmentBullet(PybulletBaseEnv):
         self.agent_starts, self.agent_goals = [None] * 2
         self.agent_sub_goals = None
         self.paths = None
+        self.geodesic_distance_deque = deque(maxlen=self.image_seq_len)
 
     def logging_action(self, action):
         logging_str = ""

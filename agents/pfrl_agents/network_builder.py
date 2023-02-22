@@ -21,6 +21,7 @@ actor_critic_model_mapping = {
     'NCP': (SimpleCnnNcpActor, SimpleCnnNcpCritic),
     "MultiBranchCnn": (MultiBranchCnnActor, MultiBranchCnnCritic),
     "CnnMlpNcp": (SimpleCnnMlpNcpActor, SimpleCnnNcpCritic),
+
 }
 
 

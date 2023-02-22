@@ -10,7 +10,13 @@ model_params = {
     'mlp_values': [256, 64],
 
 }
-
+model1_params = {
+    'cnn': [32, 64, 64, 32],
+    'kernel_sizes': [3, 3, 3, 3],
+    'strides': [2, 2, 2, 2],
+    'mlp_waypoints': [64, 40, 30],
+    'mlp_values': [256, 64],
+}
 
 class BaseModel(nn.Module):
     def __init__(self, **kwargs):
@@ -33,6 +39,10 @@ class SimpleCnnNcpActor(BaseModel):
     def __init__(self, agent_type, action_space, **kwargs):
         super().__init__(**kwargs)
         self.n_actions = len(action_space.low)
+
+        self.cnn_dims = model1_params["cnn"]
+        self.kernel_sizes = model1_params["kernel_sizes"]
+        self.strides = model1_params["strides"]
 
         self.head = build_head(agent_type, action_space)
         self.cnn = build_cnns_2d(self.image_depth, self.cnn_dims, self.kernel_sizes, self.strides)
@@ -108,7 +118,12 @@ class SimpleCnnNcpCritic(BaseModel):
     def __init__(self, agent_type, action_space, **kwargs):
         super().__init__(**kwargs)
         self.n_actions = len(action_space.low)
-        mlp_values_dims = model_params["mlp_values"]
+
+        self.cnn_dims = model1_params["cnn"]
+        self.kernel_sizes = model1_params["kernel_sizes"]
+        self.strides = model1_params["strides"]
+        mlp_values_dims = model1_params["mlp_values"]
+
         self.cnn = build_cnns_2d(self.image_depth*self.seq_len, self.cnn_dims, self.kernel_sizes, self.strides)
         self.mlp_value = build_mlp(1280 + 3 * self.seq_len + self.n_actions,
                                    mlp_values_dims + [1],
