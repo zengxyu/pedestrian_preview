@@ -4,3 +4,4 @@ reward_config1:
   reach_goal: 100
   delta_distance: 10
   delta_geodesic_distance: 0
+  step_count: -0.1

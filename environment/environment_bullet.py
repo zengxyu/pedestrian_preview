@@ -273,16 +273,25 @@ class EnvironmentBullet(PybulletBaseEnv):
         reach_goal_reward = self.compute_reach_goal_reward(reach_goal)
         reward += reach_goal_reward
 
+        """================reach step count reward=================="""
+        step_count_reward = self.compute_step_count_reward()
+        reward += step_count_reward
+
         """=================obstacle distance reward==============="""
         reward_info = {"reward/reward_collision": collision_reward,
                        "reward/reward_obstacle_distance": obstacle_distance_reward,
                        "reward/reward_delta_distance": delta_distance_reward,
                        "reward/reward_delta_geo_distance": geo_distance_reward,
                        "reward/reward_reach_goal": reach_goal_reward,
+                       "reward/reward_step_count": step_count_reward,
                        "reward/reward": reward
                        }
 
         return reward, reward_info
+
+    def compute_step_count_reward(self):
+        step_count_reward = np.log(self.step_count.value) * self.reward_config["step_count"]
+        return step_count_reward
 
     def compute_delta_euclidean_distance_reward(self):
         if self.last_distance is None:
