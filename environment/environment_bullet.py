@@ -235,7 +235,7 @@ class EnvironmentBullet(PybulletBaseEnv):
         else:
             geodesic_distance = 100
         geodesic_distance = geodesic_distance * self.grid_res
-        print("geodesic_distance:{}".format(geodesic_distance))
+        # print("geodesic_distance:{}".format(geodesic_distance))
         return geodesic_distance
 
     def get_reward(self, reach_goal, collision):
