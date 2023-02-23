@@ -23,7 +23,7 @@ input_config_name: input_lidar_mlp
 world_name: office
 
 # choose from ddqn, ddqn_recurrent, ddpg, ddpg_recurrent, td3, td3_recurrent, sac
-agent: ddpg
+agent: sac
 
 action_space: ContinuousVWActionSpace
 
