@@ -335,8 +335,8 @@ class EnvironmentBullet(PybulletBaseEnv):
         for i, rt in enumerate(self.agent_robots):
             thetas, hit_fractions = rt.sensor.get_obs()
             relative_pose = cvt_positions_to_reference([self.agent_goals[i]], rt.get_position(), rt.get_yaw())
-            state = np.array([hit_fractions, relative_pose]).flatten()
-            res.append(state)
+            state = np.concatenate([hit_fractions, relative_pose.flatten()], axis=0).flatten()
+            res.append(state.astype(float))
 
         return res
 
