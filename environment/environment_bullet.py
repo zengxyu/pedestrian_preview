@@ -91,8 +91,8 @@ class EnvironmentBullet(PybulletBaseEnv):
         self.last_distance = None
         self.last_geodesic_distance = None
 
-        self.image_seq_len = self.args.inputs_config[self.running_config['input_config_name']]["image_seq_len"]
-        self.pose_seq_len = self.args.inputs_config[self.running_config['input_config_name']]["pose_seq_len"]
+        self.image_seq_len = self.input_config["image_seq_len"] if "image_seq_len" in self.input_config.keys() else 0
+        self.pose_seq_len = self.input_config["pose_seq_len"] if "pose_seq_len" in self.input_config.keys() else 0
 
         self.ma_relative_poses_deque = []
         self.ma_images_deque = None
@@ -325,7 +325,20 @@ class EnvironmentBullet(PybulletBaseEnv):
         return reach_goal_reward
 
     def get_state(self):
-        return self.get_state1()
+        if self.sensor_name == SensorTypes.LidarSensor:
+            return self.get_state2()
+        else:
+            return self.get_state1()
+
+    def get_state2(self):
+        res = []
+        for i, rt in enumerate(self.agent_robots):
+            thetas, hit_fractions = rt.sensor.get_obs()
+            relative_pose = cvt_positions_to_reference([self.agent_goals[i]], rt.get_position(), rt.get_yaw())
+            state = np.array([hit_fractions, relative_pose]).flatten()
+            res.append(state)
+
+        return res
 
     def get_state1(self):
         # compute depth image

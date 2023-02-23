@@ -17,7 +17,7 @@ evaluate_n_times: 100
 reward_config_name: reward_config1
 
 # choose from  inputs_config.yaml: input_multi_row_multi_sensor, input_multi_row_cnn
-input_config_name: input_cnn
+input_config_name: input_lidar_mlp
 
 # choose from worlds_config.yaml: "corridor","cross","office","empty"
 world_name: office
@@ -28,7 +28,7 @@ agent: sac
 action_space: ContinuousVWActionSpace
 
 # choose from lidar, vision, multi_vision
-sensor_name: vision
+sensor_name: lidar
 
 # choose from [race_car, turtlebot, object_robot]
 agent_robot_name: race_car

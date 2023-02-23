@@ -57,3 +57,8 @@ input_row_mlp:
   network: MLP
   # choose from {row, depth, rgbd, rgb}
   image_mode: row
+
+input_lidar_mlp:
+  # choose from network configs CNN, MLP
+  seq_len: 1
+  network: LidarMLP
