@@ -9,7 +9,7 @@ goal_reached_thresh: 0.5
 # train
 save_result_n: 1000
 max_steps: 100
-inference_duration: 0.4 # [s]
+inference_duration: 0.2 # [s]
 
 evaluate_every_n_training: 1000
 evaluate_n_times: 100
@@ -23,7 +23,7 @@ input_config_name: input_lidar_mlp
 world_name: office
 
 # choose from ddqn, ddqn_recurrent, ddpg, ddpg_recurrent, td3, td3_recurrent, sac
-agent: sac
+agent: ddpg
 
 action_space: ContinuousVWActionSpace
 

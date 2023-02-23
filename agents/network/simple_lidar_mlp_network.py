@@ -4,8 +4,8 @@ from torch import distributions, nn
 from agents.network.network_head import build_head
 
 model_params = {
-    'dim_mlp': [80, 128, 256],
-    'mlp_values': [64, 32, 16],
+    'dim_mlp': [64, 128, 256],
+    'mlp_values': [128, 64, 32],
 
 }
 
@@ -32,7 +32,7 @@ class SimpleLidarMlpActor(BaseModel):
         self.head = build_head(agent_type, action_space)
 
         self.mlp_action = build_mlp(self.dim_mlp[-1],
-                                    mlp_values_dims + [self.n_actions * 2],
+                                    mlp_values_dims + [self.n_actions],
                                     activate_last_layer=False,
                                     )
 
