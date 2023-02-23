@@ -71,7 +71,7 @@ class EnvironmentBullet(PybulletBaseEnv):
         self.action_space: AbstractActionSpace = action_space
 
         self.occ_map = None
-
+        self.obstacle_distance_map = None
         self.agent_starts, self.agent_goals = [None] * 2
         self.agent_robots = None
         self.agent_robot_ids = []
@@ -151,14 +151,16 @@ class EnvironmentBullet(PybulletBaseEnv):
         check_office1000_folder_structure()
         phase = "train" if self.args.train else "test"
         phase = "train"
-        occ_map, geodesic_distance_list, wall_ids, agent_starts, agent_goals = load_office1000_scene(p=self.p,
-                                                                                                     running_config=self.running_config,
-                                                                                                     worlds_config=self.worlds_config,
-                                                                                                     phase=phase)
+        occ_map, geodesic_distance_list, obstacle_distance_map, wall_ids, agent_starts, agent_goals = load_office1000_scene(
+            p=self.p,
+            running_config=self.running_config,
+            worlds_config=self.worlds_config,
+            phase=phase)
 
         # sample start pose and goal pose
         self.wall_ids = wall_ids
         self.occ_map = occ_map
+        self.obstacle_distance_map = obstacle_distance_map
         self.agent_starts = agent_starts
         # 如果有多个agent，去往同一个目标
         self.agent_goals = [agent_goals[0] for i in range(self.num_agents)]
@@ -238,51 +240,87 @@ class EnvironmentBullet(PybulletBaseEnv):
         # print("geodesic_distance:{}".format(geodesic_distance))
         return geodesic_distance
 
-    def get_reward(self, reach_goal, collision):
-        if self.last_distance is None:
-            self.last_distance = compute_distance(self.agent_goals[0], self.agent_starts)
+    def compute_obstacle_distance(self, cur_position):
+        occ_pos = cvt_to_om(cur_position, self.grid_res)
+        occ_pos = tuple(occ_pos)
+        obstacle_distance = self.obstacle_distance_map[occ_pos[0], occ_pos[1]]
+        print("obstacle distance:{}".format(obstacle_distance))
+        obstacle_distance = obstacle_distance * self.grid_res
+        return obstacle_distance
 
-            self.last_geodesic_distance = self.compute_geodesic_distance(robot_index=0, cur_position=self.agent_robots[
-                0].get_position())
+    def get_reward(self, reach_goal, collision):
         reward = 0
-        collision_reward = 0
-        reach_goal_reward = 0
         """================collision reward=================="""
-        if collision == CollisionType.CollisionWithWall:
-            collision_reward = self.reward_config["collision"]
-            reward += collision_reward
+        collision_reward = self.compute_collision_reward(collision)
+        reward += collision_reward
+
+        """================obstacle distance reward"""
+        obstacle_distance_reward = self.compute_obstacle_distance_reward()
+        reward += obstacle_distance_reward
 
         """================delta distance reward=================="""
         # compute distance from current to goal
-        distance = compute_distance(self.agent_goals[0], self.agent_robots[0].get_position())
-        delta_distance_reward = (self.last_distance - distance) * self.reward_config["delta_distance"]
-        self.last_distance = distance
+        delta_distance_reward = self.compute_delta_euclidean_distance_reward()
         reward += delta_distance_reward
 
         """================delta geodesic distance reward=================="""
-
-        geodesic_distance = self.compute_geodesic_distance(robot_index=0,
-                                                           cur_position=self.agent_robots[0].get_position())
-
-        delta_geo_distance_reward = (self.last_geodesic_distance - geodesic_distance) * self.reward_config[
-            "delta_geodesic_distance"]
-        self.last_geodesic_distance = geodesic_distance
-        reward += delta_geo_distance_reward
+        geo_distance_reward = self.compute_delta_geodesic_distance_reward()
+        reward += geo_distance_reward
 
         """================reach goal reward=================="""
+        reach_goal_reward = self.compute_reach_goal_reward(reach_goal)
+        reward += reach_goal_reward
 
-        if reach_goal:
-            reach_goal_reward = self.reward_config["reach_goal"]
-            reward += reach_goal_reward
-
+        """=================obstacle distance reward==============="""
         reward_info = {"reward/reward_collision": collision_reward,
+                       "reward/reward_obstacle_distance": obstacle_distance_reward,
                        "reward/reward_delta_distance": delta_distance_reward,
-                       "reward/reward_delta_geo_distance": delta_geo_distance_reward,
-                       "reward/distance": distance,
+                       "reward/reward_delta_geo_distance": geo_distance_reward,
                        "reward/reward_reach_goal": reach_goal_reward,
                        "reward/reward": reward
                        }
+
         return reward, reward_info
+
+    def compute_delta_euclidean_distance_reward(self):
+        if self.last_distance is None:
+            self.last_distance = compute_distance(self.agent_goals[0], self.agent_starts)
+
+        distance = compute_distance(self.agent_goals[0], self.agent_robots[0].get_position())
+        delta_distance_reward = (self.last_distance - distance) * self.reward_config["delta_distance"]
+        self.last_distance = distance
+        return delta_distance_reward
+
+    def compute_delta_geodesic_distance_reward(self):
+        if self.last_geodesic_distance is None:
+            self.last_geodesic_distance = self.compute_geodesic_distance(robot_index=0, cur_position=self.agent_robots[
+                0].get_position())
+        geodesic_distance = self.compute_geodesic_distance(robot_index=0,
+                                                           cur_position=self.agent_robots[0].get_position())
+
+        geo_distance_reward = (self.last_geodesic_distance - geodesic_distance) * self.reward_config[
+            "delta_geodesic_distance"]
+        self.last_geodesic_distance = geodesic_distance
+        return geo_distance_reward
+
+    def compute_collision_reward(self, collision):
+        collision_reward = 0
+        if collision == CollisionType.CollisionWithWall:
+            collision_reward = self.reward_config["collision"]
+        return collision_reward
+
+    def compute_obstacle_distance_reward(self):
+        obstacle_distance = self.compute_obstacle_distance(cur_position=self.agent_robots[0].get_position())
+        distance_thresh = 0.5
+        min_distance = min(obstacle_distance, distance_thresh)
+        obstacle_distance_reward = (distance_thresh - min_distance) * self.reward_config["obstacle_distance"]
+        return obstacle_distance_reward
+
+    def compute_reach_goal_reward(self, reach_goal):
+        reach_goal_reward = 0
+        if reach_goal:
+            reach_goal_reward = self.reward_config["reach_goal"]
+        return reach_goal_reward
 
     def get_state(self):
         return self.get_state1()
@@ -504,6 +542,7 @@ class EnvironmentBullet(PybulletBaseEnv):
     def clear_variables(self):
         self.step_count = Counter()
         self.occ_map = None
+        self.obstacle_distance_map = None
         if self.npc_group is not None:
             self.npc_group.clear()
             self.npc_group = None

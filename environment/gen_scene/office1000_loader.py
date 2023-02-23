@@ -39,6 +39,8 @@ def load_office1000_scene(p, running_config, worlds_config, phase):
     scene_parent_folder = os.path.join(get_project_path(), "data", "office_1000", phase, "random_envs")
     geodesic_distance_parent_folder = os.path.join(get_project_path(), "data", "office_1000", phase,
                                                    "geodesic_distance")
+    obstacle_distance_parent_folder = os.path.join(get_project_path(), "data", "office_1000", phase,
+                                                   "obstacle_distance")
 
     file_names = os.listdir(geodesic_distance_parent_folder)
     file_name = np.random.choice(file_names)
@@ -48,10 +50,13 @@ def load_office1000_scene(p, running_config, worlds_config, phase):
     scene_index = int(file_name[si:ei])
     scene_path = os.path.join(scene_parent_folder, "env_{}.pkl".format(scene_index))
 
+    obstacle_distance_path = os.path.join(obstacle_distance_parent_folder, "env_{}.pkl".format(scene_index))
     geodesic_distance_dict_path = os.path.join(geodesic_distance_parent_folder, "env_{}.pkl".format(scene_index))
 
     # Read occupancy map, starts and ends
     occupancy_map, starts, ends = pickle.load(open(scene_path, 'rb'))
+    # read obstacle distance map
+    obstacle_distance_map = pickle.load(open(obstacle_distance_path, 'rb'))
     # read geodesic_distance_map
     geodesic_distance_dict_dict = pickle.load(open(geodesic_distance_dict_path, 'rb'))
 
@@ -78,4 +83,4 @@ def load_office1000_scene(p, running_config, worlds_config, phase):
     obstacle_ids = drop_world_walls(p, occupancy_map.copy(), running_config["grid_res"], world_config)
 
     # maps, obstacle_ids, bu_starts, bu_goals
-    return occupancy_map, geodesic_distance_list, obstacle_ids, bu_starts, bu_ends
+    return occupancy_map, geodesic_distance_list, obstacle_distance_map, obstacle_ids, bu_starts, bu_ends
