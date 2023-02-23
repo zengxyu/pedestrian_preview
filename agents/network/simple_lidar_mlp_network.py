@@ -31,10 +31,16 @@ class SimpleLidarMlpActor(BaseModel):
 
         self.head = build_head(agent_type, action_space)
 
-        self.mlp_action = build_mlp(self.dim_mlp[-1],
-                                    mlp_values_dims + [self.n_actions],
-                                    activate_last_layer=False,
-                                    )
+        if agent_type == "sac":
+            self.mlp_action = build_mlp(self.dim_mlp[-1],
+                                        mlp_values_dims + [self.n_actions * 2],
+                                        activate_last_layer=False,
+                                        )
+        else:
+            self.mlp_action = build_mlp(self.dim_mlp[-1],
+                                        mlp_values_dims + [self.n_actions],
+                                        activate_last_layer=False,
+                                        )
 
     def forward(self, x):
         x = x.float()
