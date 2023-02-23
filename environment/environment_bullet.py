@@ -244,7 +244,7 @@ class EnvironmentBullet(PybulletBaseEnv):
         occ_pos = cvt_to_om(cur_position, self.grid_res)
         occ_pos = tuple(occ_pos)
         obstacle_distance = self.obstacle_distance_map[occ_pos[0], occ_pos[1]]
-        print("obstacle distance:{}".format(obstacle_distance))
+        # print("obstacle distance:{}".format(obstacle_distance))
         obstacle_distance = obstacle_distance * self.grid_res
         return obstacle_distance
 

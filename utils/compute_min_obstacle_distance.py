@@ -25,16 +25,33 @@ def compute_min_obstacle_distance(file_name):
     return obstacle_distance_map
 
 
+def display_and_save(obstacle_distance_map, save, save_path):
+    plt.imshow(obstacle_distance_map)
+
+    if save:
+        plt.savefig(save_path)
+        plt.clf()
+    else:
+        plt.show()
+
+
 if __name__ == '__main__':
-    env_parent_folder = os.path.join(get_project_path(), "data", "office_1000", "test", "random_envs")
-    obstacle_distance_parent_folder = os.path.join(get_project_path(), "data", "office_1000", "test",
+    phase = "train"
+    env_parent_folder = os.path.join(get_project_path(), "data", "office_1000", phase, "random_envs")
+    obstacle_distance_parent_folder = os.path.join(get_project_path(), "data", "office_1000", phase,
                                                    "obstacle_distance")
+    image_save_folder = os.path.join(get_project_path(), "data", "office_1000", phase,
+                                     "obstacle_distance_images")
     if not os.path.exists(obstacle_distance_parent_folder):
         os.makedirs(obstacle_distance_parent_folder)
+    if not os.path.exists(image_save_folder):
+        os.makedirs(image_save_folder)
 
     env_names = os.listdir(env_parent_folder)
     length = len(env_names)
     template = "env_{}.pkl"
+    image_save_name_template = "env_{}.png"
+
     indexes = [a for a in range(1000)]
     for i in indexes:
         env_name = template.format(i)
@@ -43,5 +60,9 @@ if __name__ == '__main__':
         out = compute_min_obstacle_distance(file_name=env_path)
         out_path = os.path.join(obstacle_distance_parent_folder, env_name)
         pickle.dump(out, open(out_path, 'wb'))
+
+        image_save_file_name = image_save_name_template.format(i)
+        image_save_path = os.path.join(image_save_folder, image_save_file_name)
+        display_and_save(out, save=True, save_path=image_save_path)
         print("Save to {}!".format(out_path))
     print("Done!")
