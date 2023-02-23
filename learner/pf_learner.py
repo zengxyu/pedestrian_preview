@@ -120,7 +120,6 @@ class PFLearner:
                     infos_for_sum.append(info_for_sum)
                     infos_for_last.append(info_for_last)
                 except Exception as e:
-                    logging.error("state has nan: ", np.isnan(state).any())
                     logging.error("Exception:{}".format(e))
 
                     done = True
