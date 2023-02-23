@@ -111,6 +111,9 @@ class EnvironmentBullet(PybulletBaseEnv):
         self.robot_direction_ids = [None] * self.num_agents
         self.geodesic_distance_list: List[Dict] = None
 
+        self.collision_count = 0
+        self.max_collision_count = 5
+
     def render(self, mode="human"):
         width, height, rgb_image, depth_image, seg_image = self.agent_robots[0].sensor.get_obs()
         image = cv2.resize(depth_image, (40, 60))
@@ -206,9 +209,14 @@ class EnvironmentBullet(PybulletBaseEnv):
         reward, reward_info = self.get_reward(reach_goal=reach_goal, collision=collision)
         over_max_step = self.step_count >= self.max_step
 
+        if collision == CollisionType.CollisionWithWall:
+            self.collision_count += 1
+        else:
+            self.collision_count = 0
+
         # whether done
         if self.args.train:
-            done = (collision == CollisionType.CollisionWithWall) or reach_goal or over_max_step
+            done = self.collision_count >= self.max_collision_count or reach_goal or over_max_step
         else:
             done = reach_goal or over_max_step
         # done = reach_goal or over_max_step
@@ -575,6 +583,7 @@ class EnvironmentBullet(PybulletBaseEnv):
         self.last_distance = None
         self.last_geodesic_distance = None
         self.wall_ids = []
+        self.collision_count = 0
 
         self.ma_images_deque = [deque(maxlen=self.image_seq_len) for i in range(self.num_agents)]
         self.ma_relative_poses_deque = [deque(maxlen=self.pose_seq_len) for i in range(self.num_agents)]
