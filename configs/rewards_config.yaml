@@ -1,6 +1,6 @@
 reward_config1:
-  collision: -50
-  obstacle_distance: -10
+  collision: -100
+  obstacle_distance: 0
   reach_goal: 100
-  delta_distance: 0
-  delta_geodesic_distance: 10
+  delta_distance: 10
+  delta_geodesic_distance: 0
