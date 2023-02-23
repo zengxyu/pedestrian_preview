@@ -310,6 +310,7 @@ class EnvironmentBullet(PybulletBaseEnv):
                 # plt.show()
             elif self.input_config["image_mode"] == ImageMode.DEPTH:
                 image = cv2.resize(depth_image, (w, h))
+                image[np.isnan(image)] = 1
             elif self.input_config["image_mode"] == ImageMode.GD:
                 depth_image = cv2.resize(depth_image, (w, h))
                 rgb_image = cv2.resize(rgba_image[:, :, :3], (w, h))
