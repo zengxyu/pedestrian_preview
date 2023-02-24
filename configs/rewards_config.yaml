@@ -1,5 +1,5 @@
 reward_config1:
-  collision: -1
+  collision: -3
   obstacle_distance: -3
   reach_goal: 100
   delta_distance: 0
