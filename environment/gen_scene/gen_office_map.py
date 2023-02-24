@@ -7,6 +7,61 @@ from environment.gen_scene.gen_map_util import *
 from environment.gen_scene.common_sampler import *
 
 
+def create_u_tunnel_in_office_map():
+    grid_resolution = 0.1
+
+    # random_index = np.random.randint(0, len(configs["outer_limit"]))
+    # outer_limit = configs["outer_limit"][random_index]
+    outer_limit = 7
+    min_wall_length = 30
+    max_wall_length = 50
+
+    min_hall_width = 16
+    max_hall_width = 28
+
+    building_size = 7
+    map_size = [70, 70]
+
+    min_thick = 1
+    max_thick = 5
+    thick = np.random.randint(min_thick, max_thick)
+    wall_length = np.random.randint(min_wall_length, max_wall_length)
+    occupancy_map = np.zeros(
+        (
+            int(building_size / grid_resolution),
+            int(building_size / grid_resolution),
+        ),
+        dtype=bool,
+    )
+
+    direction = np.random.choice([0, 1, 2, 3])
+
+    ind_xy1 = np.random.randint(thick, map_size[0] - thick)
+    ind_xy2 = np.random.randint(thick, map_size[0] - thick)
+
+    while not min_hall_width < abs(ind_xy1 - ind_xy2) < max_hall_width:
+        ind_xy1 = np.random.randint(thick, map_size[0] - thick)
+        ind_xy2 = np.random.randint(thick, map_size[0] - thick)
+
+    half_thick = int(thick / 2)
+
+    if direction == 0:
+        occupancy_map[ind_xy1 - half_thick:ind_xy1 + half_thick + 1, :wall_length] = True
+        occupancy_map[ind_xy2 - half_thick:ind_xy2 + half_thick + 1, :wall_length] = True
+    elif direction == 2:
+        occupancy_map[ind_xy1 - half_thick:ind_xy1 + half_thick + 1, -wall_length:] = True
+        occupancy_map[ind_xy2 - half_thick:ind_xy2 + half_thick + 1, -wall_length:] = True
+    elif direction == 1:
+        occupancy_map[:wall_length, ind_xy1 - half_thick:ind_xy1 + half_thick + 1] = True
+        occupancy_map[:wall_length, ind_xy2 - half_thick:ind_xy2 + half_thick + 1] = True
+    else:
+        occupancy_map[-wall_length:, ind_xy1 - half_thick:ind_xy1 + half_thick + 1] = True
+        occupancy_map[-wall_length:, ind_xy2 - half_thick:ind_xy2 + half_thick + 1] = True
+    occupancy_map[:, [0, -1]] = True
+    occupancy_map[[0, -1], :] = True
+    return occupancy_map
+
+
 def create_office_map(configs):
     logging.info("creating office map")
     has_no_closed_rooms_in_free_space = True
@@ -167,3 +222,8 @@ def filter_corners_in_same_room(room_map, occ_map, corners):
 def show_image(plt, image):
     plt.imshow(image)
     plt.show()
+
+
+if __name__ == '__main__':
+    for i in range(100):
+        create_u_tunnel_in_office_map()
