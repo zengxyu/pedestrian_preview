@@ -253,6 +253,7 @@ class EnvironmentBullet(PybulletBaseEnv):
         reward = 0
         collision_reward = 0
         reach_goal_reward = 0
+        punish_reward = 0
         if self.reward_config["geodesic_distance"]:
             """================delta geodesic distance reward=================="""
             distance = self.compute_geodesic_distance(robot_index=0,
@@ -292,10 +293,11 @@ class EnvironmentBullet(PybulletBaseEnv):
         """================step punish reward=================="""
         if self.step_count.value <= 0:
             self.step_count.value = 1
-        reward -= np.log(self.step_count.value) * 0.1
+        punish_reward -= np.log(self.step_count.value) * 0.1
+        reward += punish_reward
 
         """================reach goal reward=================="""
-
+        # print("delta_distance_reward = ", delta_distance_reward, "---collision_reward = ", collision_reward, "---punish_reward = ", punish_reward)
         if reach_goal:
             reach_goal_reward = self.reward_config["reach_goal"]
             reward += reach_goal_reward
@@ -306,7 +308,7 @@ class EnvironmentBullet(PybulletBaseEnv):
                        "reward/reward_reach_goal": reach_goal_reward,
                        "reward/reward": reward
                        }
-        # print("distance = ", distance, "---reward = ", reward)
+
         return reward, reward_info
 
     def get_state(self):
@@ -322,11 +324,12 @@ class EnvironmentBullet(PybulletBaseEnv):
         for i, rt in enumerate(self.agent_robots):
             width, height, rgba_image, depth_image, seg_image = rt.sensor.get_obs()
             depth_image = depth_image / rt.sensor.farVal
-            # relative_pose = cvt_positions_to_reference([self.agent_goals[i]], rt.get_position(), rt.get_yaw())
+            a = rt.sensor.farVal
+            relative_pose = cvt_positions_to_reference([self.agent_goals[i]], rt.get_position(), rt.get_yaw())
 
-            relative_position = self.agent_goals[i] - rt.get_position()
-            relative_yaw = rt.get_yaw()
-            relative_pose = np.array([relative_position[0], relative_position[1], relative_yaw])
+            # relative_position = self.agent_goals[i] - rt.get_position()
+            # relative_yaw = rt.get_yaw()
+            # relative_pose = np.array([relative_position[0], relative_position[1], relative_yaw])
 
             w = self.input_config["image_w"]
             h = self.input_config["image_h"]
