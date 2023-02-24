@@ -50,6 +50,6 @@ class VisionSensor:
                                                                             view_matrix,
                                                                             projection_matrix, self.shadow,
                                                                             renderer=p.ER_BULLET_HARDWARE_OPENGL)
-
+        # clip depth image
         depth = self.farVal * self.nearVal / (self.farVal - (self.farVal - self.nearVal) * depth_image)
         return width, height, rgb_image, depth, seg_image

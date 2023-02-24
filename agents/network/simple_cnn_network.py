@@ -112,7 +112,18 @@ class SimpleCnnActor(BaseModel):
         out = torch.cat((out1, relative_position), dim=1)
 
         out = self.mlp_action(out)
-        out = self.head(out)
+        try:
+            out = self.head(out)
+        except Exception as e:
+            logging.error("Exception:{}".format(e))
+            logging.error("depth_image is nan:{}".format(torch.isnan(depth_image)))
+            logging.error("-----depth_image has nan:{}-----".format(torch.isnan(depth_image).any()))
+            logging.error("relative_position is nan:{}".format(torch.isnan(relative_position)))
+            logging.error("-----relative_position has nan:{}-----".format(torch.isnan(relative_position).any()))
+            logging.error("out1 is nan:{}".format(torch.isnan(out1)))
+            logging.error("-----out1 has nan:{}-----".format(torch.isnan(out1).any()))
+            logging.error("out is nan:{}".format(torch.isnan(out)))
+            logging.error("-----out has nan:{}-----".format(torch.isnan(out).any()))
         return out
 
 

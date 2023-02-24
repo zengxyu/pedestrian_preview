@@ -1,4 +1,3 @@
-import logging
 import os
 import pickle
 from typing import Dict, List
@@ -11,33 +10,37 @@ from environment.nav_utilities.coordinates_converter import cvt_to_bu
 from utils.fo_utility import get_project_path
 
 
-def check_office1000_folder():
+def check_office1000_folder_structure():
     url = "https://pan.dm-ai.com/s/AsHXrJGKe4NLsKH"
     password = "12345678"
     office1000_parent_folder = os.path.join(get_project_path(), "data/office_1000")
-    folder_structure = "\n-data\n\t-office_1000\n\t\t-geodesic_distance\n\t\t-random_envs\n\t\t-random_envs_images"
+    folder_structure = "\n-data\n\t-office_1000\n\t\t-train\n\t\t\t\t-geodesic_distance\n\t\t\t\t-random_envs\n\t\t\t\t-random_envs_images\n\t\t-test\n\t\t\t\t-geodesic_distance\n\t\t\t\t-random_envs\n\t\t\t\t-random_envs_images"
     warning = "Please download data from url:{}; password:{}; and put it in your project_folder/data; \nYour folder structure should be like : {}".format(
         url, password, folder_structure)
     assert os.path.exists(office1000_parent_folder), warning
 
-    geodesic_distance_folder = os.path.join(office1000_parent_folder, "geodesic_distance")
-    random_env_folder = os.path.join(office1000_parent_folder, "random_envs")
-    random_envs_images_folder = os.path.join(office1000_parent_folder, "random_envs_images")
+    for phase in ["train", "test"]:
+        geodesic_distance_folder = os.path.join(office1000_parent_folder, phase, "geodesic_distance")
+        random_env_folder = os.path.join(office1000_parent_folder, phase, "random_envs")
+        random_envs_images_folder = os.path.join(office1000_parent_folder, phase, "random_envs_images")
 
     assert os.path.exists(geodesic_distance_folder), warning
     assert os.path.exists(random_env_folder), warning
     assert os.path.exists(random_envs_images_folder), warning
 
 
-def load_office1000_scene(p, running_config, worlds_config):
+def load_office1000_scene(p, running_config, worlds_config, phase):
     """
     load scene from map path and trajectory path
     """
 
     # scene_index = np.random.randint(0, 1000)
     # logging.error("Choose scene index:{}".format(scene_index))
-    scene_parent_folder = os.path.join(get_project_path(), "data", "office_1000", "random_envs")
-    geodesic_distance_parent_folder = os.path.join(get_project_path(), "data", "office_1000", "geodesic_distance")
+    scene_parent_folder = os.path.join(get_project_path(), "data", "office_1000", phase, "random_envs")
+    geodesic_distance_parent_folder = os.path.join(get_project_path(), "data", "office_1000", phase,
+                                                   "geodesic_distance")
+    obstacle_distance_parent_folder = os.path.join(get_project_path(), "data", "office_1000", phase,
+                                                   "obstacle_distance")
 
     file_names = os.listdir(geodesic_distance_parent_folder)
     file_name = np.random.choice(file_names)
@@ -47,10 +50,13 @@ def load_office1000_scene(p, running_config, worlds_config):
     scene_index = int(file_name[si:ei])
     scene_path = os.path.join(scene_parent_folder, "env_{}.pkl".format(scene_index))
 
+    obstacle_distance_path = os.path.join(obstacle_distance_parent_folder, "env_{}.pkl".format(scene_index))
     geodesic_distance_dict_path = os.path.join(geodesic_distance_parent_folder, "env_{}.pkl".format(scene_index))
 
     # Read occupancy map, starts and ends
     occupancy_map, starts, ends = pickle.load(open(scene_path, 'rb'))
+    # read obstacle distance map
+    obstacle_distance_map = pickle.load(open(obstacle_distance_path, 'rb'))
     # read geodesic_distance_map
     geodesic_distance_dict_dict = pickle.load(open(geodesic_distance_dict_path, 'rb'))
 
@@ -77,4 +83,4 @@ def load_office1000_scene(p, running_config, worlds_config):
     obstacle_ids = drop_world_walls(p, occupancy_map.copy(), running_config["grid_res"], world_config)
 
     # maps, obstacle_ids, bu_starts, bu_goals
-    return occupancy_map, geodesic_distance_list, obstacle_ids, bu_starts, bu_ends
+    return occupancy_map, geodesic_distance_list, obstacle_distance_map, obstacle_ids, bu_starts, bu_ends

@@ -22,7 +22,7 @@ import cv2
 from matplotlib import pyplot as plt
 
 from environment.env_types import EnvTypes
-from environment.gen_scene.office1000_loader import load_office1000_scene, check_office1000_folder
+from environment.gen_scene.office1000_loader import load_office1000_scene, check_office1000_folder_structure
 from environment.gen_scene.world_loader import load_scene
 from environment.human_npc_generator import generate_human_npc
 from environment.nav_utilities.coordinates_converter import cvt_to_om, cvt_to_bu, cvt_positions_to_reference
@@ -71,7 +71,7 @@ class EnvironmentBullet(PybulletBaseEnv):
         self.action_space: AbstractActionSpace = action_space
 
         self.occ_map = None
-
+        self.obstacle_distance_map = None
         self.agent_starts, self.agent_goals = [None] * 2
         self.agent_robots = None
         self.agent_robot_ids = []
@@ -110,6 +110,8 @@ class EnvironmentBullet(PybulletBaseEnv):
         self.temp_ids = []
         self.robot_direction_ids = [None] * self.num_agents
         self.geodesic_distance_list: List[Dict] = None
+        self.collision_count = 0
+        self.max_collision_count = 5
 
         self.geodesic_distance_deque = None
         self.collision_model = self.reward_config["collision_model"]
@@ -151,14 +153,19 @@ class EnvironmentBullet(PybulletBaseEnv):
         return state
 
     def load_office_1000(self):
-        check_office1000_folder()
-        occ_map, geodesic_distance_list, wall_ids, agent_starts, agent_goals = load_office1000_scene(p=self.p,
-                                                                                                     running_config=self.running_config,
-                                                                                                     worlds_config=self.worlds_config)
+        check_office1000_folder_structure()
+        phase = "train" if self.args.train else "test"
+        phase = "train"
+        occ_map, geodesic_distance_list, obstacle_distance_map, wall_ids, agent_starts, agent_goals = load_office1000_scene(
+            p=self.p,
+            running_config=self.running_config,
+            worlds_config=self.worlds_config,
+            phase=phase)
 
         # sample start pose and goal pose
         self.wall_ids = wall_ids
         self.occ_map = occ_map
+        self.obstacle_distance_map = obstacle_distance_map
         self.agent_starts = agent_starts
         # 如果有多个agent，去往同一个目标
         self.agent_goals = [agent_goals[0] for i in range(self.num_agents)]
@@ -204,6 +211,11 @@ class EnvironmentBullet(PybulletBaseEnv):
         reward, reward_info = self.get_reward(reach_goal=reach_goal, collision=collision)
         over_max_step = self.step_count >= self.max_step
 
+        if collision == CollisionType.CollisionWithWall:
+            self.collision_count += 1
+        else:
+            self.collision_count = 0
+
         # whether done
         if self.args.train and self.reward_config["collision_reset"]:
             done = (collision == CollisionType.CollisionWithWall) or reach_goal or over_max_step
@@ -237,6 +249,18 @@ class EnvironmentBullet(PybulletBaseEnv):
         geodesic_distance = geodesic_distance * self.grid_res
         # print("geodesic_distance:{}".format(geodesic_distance))
         return geodesic_distance
+
+    def compute_obstacle_distance(self, cur_position):
+        occ_pos = cvt_to_om(cur_position, self.grid_res)
+        if self.obstacle_distance_map is None:
+            return 0
+        x = np.clip(occ_pos[0], 0, self.obstacle_distance_map.shape[0] - 1)
+        y = np.clip(occ_pos[1], 0, self.obstacle_distance_map.shape[1] - 1)
+
+        obstacle_distance = self.obstacle_distance_map[x, y]
+        # print("obstacle distance:{}".format(obstacle_distance))
+        obstacle_distance = obstacle_distance * self.grid_res
+        return obstacle_distance
 
     def get_reward(self, reach_goal, collision):
         if self.last_distance is None:
@@ -324,7 +348,6 @@ class EnvironmentBullet(PybulletBaseEnv):
         for i, rt in enumerate(self.agent_robots):
             width, height, rgba_image, depth_image, seg_image = rt.sensor.get_obs()
             depth_image = depth_image / rt.sensor.farVal
-            a = rt.sensor.farVal
             relative_pose = cvt_positions_to_reference([self.agent_goals[i]], rt.get_position(), rt.get_yaw())
 
             # relative_position = self.agent_goals[i] - rt.get_position()
@@ -345,6 +368,7 @@ class EnvironmentBullet(PybulletBaseEnv):
                 # plt.show()
             elif self.input_config["image_mode"] == ImageMode.DEPTH:
                 image = cv2.resize(depth_image, (w, h))
+                image[np.isnan(image)] = 1
             elif self.input_config["image_mode"] == ImageMode.GD:
                 depth_image = cv2.resize(depth_image, (w, h))
                 rgb_image = cv2.resize(rgba_image[:, :, :3], (w, h))
@@ -535,12 +559,14 @@ class EnvironmentBullet(PybulletBaseEnv):
     def clear_variables(self):
         self.step_count = Counter()
         self.occ_map = None
+        self.obstacle_distance_map = None
         if self.npc_group is not None:
             self.npc_group.clear()
             self.npc_group = None
         self.last_distance = None
         self.last_geodesic_distance = None
         self.wall_ids = []
+        self.collision_count = 0
 
         self.ma_images_deque = [deque(maxlen=self.image_seq_len) for i in range(self.num_agents)]
         self.ma_relative_poses_deque = [deque(maxlen=self.pose_seq_len) for i in range(self.num_agents)]

@@ -121,7 +121,6 @@ class PFLearner:
                     infos_for_last.append(info_for_last)
                 except Exception as e:
                     logging.error("Exception:{}".format(e))
-                    logging.error("State:{}".format(state))
 
                     done = True
         add_statistics_to_collector(infos_episode_for_sum=infos_for_sum,
