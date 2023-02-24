@@ -22,6 +22,7 @@ import cv2
 from matplotlib import pyplot as plt
 
 from environment.env_types import EnvTypes
+from environment.gen_scene.build_office_world import create_cylinder
 from environment.gen_scene.office1000_loader import load_office1000_scene, check_office1000_folder_structure
 from environment.gen_scene.world_loader import load_scene
 from environment.human_npc_generator import generate_human_npc
@@ -166,6 +167,8 @@ class EnvironmentBullet(PybulletBaseEnv):
         self.agent_starts = agent_starts
         # 如果有多个agent，去往同一个目标
         self.agent_goals = [agent_goals[0] for i in range(self.num_agents)]
+
+        create_cylinder(self.p, self.agent_goals[0], with_collision=False, height=3, radius=0.1)
         # initialize robot
         logging.debug("Create the environment, Done...")
         self.agent_robots = self.init_robots()
