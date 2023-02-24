@@ -245,7 +245,7 @@ class EnvironmentBullet(PybulletBaseEnv):
         else:
             geodesic_distance = 100
         geodesic_distance = geodesic_distance * self.grid_res
-        # print("geodesic_distance:{}".format(geodesic_distance))
+        print("geodesic_distance:{}".format(geodesic_distance))
         return geodesic_distance
 
     def compute_obstacle_distance(self, cur_position):
@@ -353,6 +353,9 @@ class EnvironmentBullet(PybulletBaseEnv):
         res = []
         for i, rt in enumerate(self.agent_robots):
             thetas, hit_fractions = rt.sensor.get_obs()
+            if self.step_count.value % 100 ==0:
+                plt.polar(thetas, hit_fractions)
+                plt.show()
             relative_pose = cvt_positions_to_reference([self.agent_goals[i]], rt.get_position(), rt.get_yaw())
             state = np.concatenate([hit_fractions, relative_pose.flatten()], axis=0).flatten()
             res.append(state.astype(float))
