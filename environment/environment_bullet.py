@@ -106,13 +106,12 @@ class EnvironmentBullet(PybulletBaseEnv):
         """
         self.agent_sub_goals = None
         self.agent_sub_goals_indexes = None
-        self.paths = None
-        self.temp_ids = []
         self.robot_direction_ids = [None] * self.num_agents
         self.geodesic_distance_list: List[Dict] = None
 
         self.collision_count = 0
         self.max_collision_count = 5
+        self.visit_map = None
 
     def render(self, mode="human"):
         width, height, rgb_image, depth_image, seg_image = self.agent_robots[0].sensor.get_obs()
@@ -127,7 +126,6 @@ class EnvironmentBullet(PybulletBaseEnv):
         logging.info("\n---------------------------------------reset--------------------------------------------")
         logging.info("Episode : {}".format(self.episode_count))
         self.reset_simulation()
-        self.clear_variables()
 
         if self.args.env == EnvTypes.OFFICE1000:
             self.load_office_1000()
@@ -315,11 +313,11 @@ class EnvironmentBullet(PybulletBaseEnv):
     def compute_delta_geodesic_distance_reward(self):
         if self.last_geodesic_distance is None:
             self.last_geodesic_distance = self.compute_geodesic_distance(robot_index=0, cur_position=self.agent_robots[
-                0].get_position())
+                0].get_position()) ** 2
         geodesic_distance = self.compute_geodesic_distance(robot_index=0,
-                                                           cur_position=self.agent_robots[0].get_position())
+                                                           cur_position=self.agent_robots[0].get_position()) ** 2
 
-        geo_distance_reward = (self.last_geodesic_distance - geodesic_distance) * self.reward_config[
+        geo_distance_reward = (self.last_geodesic_distance - geodesic_distance) * 0.2 * self.reward_config[
             "delta_geodesic_distance"]
         self.last_geodesic_distance = geodesic_distance
         return geo_distance_reward
@@ -348,6 +346,12 @@ class EnvironmentBullet(PybulletBaseEnv):
             return self.get_state2()
         else:
             return self.get_state1()
+
+    def get_state3(self):
+        if self.visit_map is None:
+            self.visit_map = np.zeros_like(self.occ_map)
+
+        return
 
     def get_state2(self):
         res = []
@@ -594,7 +598,7 @@ class EnvironmentBullet(PybulletBaseEnv):
         self.agent_robot_ids = []
         self.agent_starts, self.agent_goals = [None] * 2
         self.agent_sub_goals = None
-        self.paths = None
+        self.visit_map = None
 
     def logging_action(self, action):
         logging_str = ""

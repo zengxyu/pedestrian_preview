@@ -157,7 +157,6 @@ class PFLearner:
                         infos_for_sum.append(info_for_sum)
                         infos_for_last.append(info_for_last)
                     except:
-                        print("state:{}".format(state))
                         done = True
         add_statistics_to_collector(infos_episode_for_sum=infos_for_sum,
                                     infos_episode_for_last=infos_for_last,
