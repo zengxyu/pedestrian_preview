@@ -40,13 +40,13 @@ input_multi_row_cnn:
 
 input_multi_row_multi_sensor:
   image_seq_len: 4
-  image_h: 20
+  image_h: 40
   image_w: 60
   pose_seq_len: 4
   # choose from network configs CNN, MLP
-  network: MultiBranchCnn
+  network: CNN
   # choose from {row, depth, rgbd, rgb}
-  image_mode: multi_row_multi_sensor
+  image_mode: multi_sensor
 
 input_row_mlp:
   image_seq_len: 4

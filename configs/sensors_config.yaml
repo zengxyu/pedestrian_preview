@@ -26,10 +26,10 @@ multi_vision:
   distance: 100000
   image_width: 120
   image_height: 80
-  fov: 90
+  fov: 120
   aspect: 1.5
   near_val: 0.02
   far_val: 10
   shadow: True
-  placement_height: 0.5
+  placement_height: 1.6
   num_camera: 4

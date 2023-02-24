@@ -34,7 +34,7 @@ class VisionSensor:
         agent_pos, agent_orn = p.getBasePositionAndOrientation(self.robot_id)
         yaw = p.getEulerFromQuaternion(agent_orn)[-1]
         x_eye, y_eye, z_eye = agent_pos
-        z_eye += 3  # make the camera a little higher than the robot
+        z_eye += self.placement_height  # make the camera a little higher than the robot
 
         # compute focusing point of the camera
         x_target = x_eye + math.cos(yaw) * self.distance
@@ -42,7 +42,7 @@ class VisionSensor:
         z_target = z_eye
 
         view_matrix = p.computeViewMatrix(cameraEyePosition=[x_eye, y_eye, z_eye],
-                                          cameraTargetPosition=[x_target, y_target, -200],
+                                          cameraTargetPosition=[x_target, y_target, -20],
                                           cameraUpVector=[0, 0, 1])
         #-20
         projection_matrix = p.computeProjectionMatrixFOV(fov=self.fov, aspect=self.aspect, nearVal=self.nearVal,

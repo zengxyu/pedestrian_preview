@@ -9,9 +9,9 @@ from ncps.wirings import AutoNCP
 from utils.convolution_width_utility import compute_conv_out_width
 
 model_params = {
-    'cnn': [32, 64, 32],
-    'kernel_sizes': [3, 3, 3],
-    'strides': [2, 2, 2],
+    'cnn': [128, 64, 64, 32],
+    'kernel_sizes': [3, 3, 3, 3],
+    'strides': [2, 2, 2, 2],
     'mlp_values': [512, 128, 64],
     'mlp_relative_position': [36, 64]
 }
