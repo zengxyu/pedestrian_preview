@@ -249,6 +249,8 @@ class EnvironmentBullet(PybulletBaseEnv):
 
     def compute_obstacle_distance(self, cur_position):
         occ_pos = cvt_to_om(cur_position, self.grid_res)
+        if self.obstacle_distance_map is None:
+            return 0
         x = np.clip(occ_pos[0], 0, self.obstacle_distance_map.shape[0] - 1)
         y = np.clip(occ_pos[1], 0, self.obstacle_distance_map.shape[1] - 1)
 
