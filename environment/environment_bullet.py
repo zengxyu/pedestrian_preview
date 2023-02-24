@@ -168,7 +168,7 @@ class EnvironmentBullet(PybulletBaseEnv):
         # 如果有多个agent，去往同一个目标
         self.agent_goals = [agent_goals[0] for i in range(self.num_agents)]
 
-        create_cylinder(self.p, self.agent_goals[0], with_collision=False, height=3, radius=0.1)
+        # create_cylinder(self.p, self.agent_goals[0], with_collision=False, height=3, radius=0.1)
         # initialize robot
         logging.debug("Create the environment, Done...")
         self.agent_robots = self.init_robots()

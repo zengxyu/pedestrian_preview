@@ -52,7 +52,7 @@ if __name__ == '__main__':
     template = "env_{}.pkl"
     image_save_name_template = "env_{}.png"
 
-    indexes = [a for a in range(1000)]
+    indexes = [a for a in range(1000, 1200)]
     for i in indexes:
         env_name = template.format(i)
         env_path = os.path.join(env_parent_folder, env_name)
