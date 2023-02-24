@@ -422,6 +422,8 @@ class EnvironmentBullet(PybulletBaseEnv):
         while iterate_count < n_step:
             for i, robot in enumerate(self.agent_robots):
                 planned_v, planned_w = self.action_space.to_force(action=actions[i])
+                # print("planned_v:{} planned_w: {}".format(planned_v, planned_w))
+
                 reach_goal = compute_distance(robot.get_position(), self.agent_goals[i]) < self.running_config[
                     "goal_reached_thresh"]
                 if reach_goal:
