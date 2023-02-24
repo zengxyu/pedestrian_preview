@@ -15,7 +15,7 @@ class BaseModel(nn.Module):
         super().__init__()
         self.seq_len = kwargs["seq_len"]
         self.dim_mlp = model_params["dim_mlp"]
-        self.mlp = build_mlp(100 * self.seq_len, self.dim_mlp, activate_last_layer=False)
+        self.mlp = build_mlp(102 * self.seq_len, self.dim_mlp, activate_last_layer=False)
 
 
 class SimpleLidarMlpActor(BaseModel):
@@ -32,7 +32,7 @@ class SimpleLidarMlpActor(BaseModel):
         self.head = build_head(agent_type, action_space)
 
         if agent_type == "sac":
-            self.mlp_action = build_mlp(self.dim_mlp[-1] + 2,
+            self.mlp_action = build_mlp(self.dim_mlp[-1] ,
                                         mlp_values_dims + [self.n_actions * 2],
                                         activate_last_layer=False,
                                         )
@@ -44,10 +44,9 @@ class SimpleLidarMlpActor(BaseModel):
 
     def forward(self, x):
         x = x.float()
-        lidar = x[:, :100]
-        target = x[:, 100:]
-        out = self.mlp(lidar)
-        out = torch.cat((out, target))
+        # lidar = x[:, :100]
+        # target = x[:, 100:]
+        out = self.mlp(x)
         out = self.mlp_action(out)
         out = self.head(out)
         return out
@@ -63,7 +62,7 @@ class SimpleLidarMlpCritic(BaseModel):
         self.n_actions = len(action_space.low)
         mlp_values_dims = model_params["mlp_values"]
 
-        self.mlp_value = build_mlp(self.dim_mlp[-1] + 2 + self.n_actions,
+        self.mlp_value = build_mlp(self.dim_mlp[-1]  + self.n_actions,
                                    mlp_values_dims + [1],
                                    activate_last_layer=False,
                                    )
@@ -71,9 +70,9 @@ class SimpleLidarMlpCritic(BaseModel):
     def forward(self, x):
         x, action = x
         x = x.float()
-        lidar = x[:, :100]
-        target = x[:, 100:]
-        out = self.mlp(lidar)
-        out = torch.cat((out, target, action), dim=1)
+        # lidar = x[:, :100]
+        # target = x[:, 100:]
+        out = self.mlp(x)
+        out = torch.cat((out,  action), dim=1)
 
         return self.mlp_value(out)

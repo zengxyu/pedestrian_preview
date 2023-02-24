@@ -334,7 +334,7 @@ class EnvironmentBullet(PybulletBaseEnv):
         obstacle_distance = self.compute_obstacle_distance(cur_position=self.agent_robots[0].get_position())
         distance_thresh = 0.5
         min_distance = min(obstacle_distance, distance_thresh)
-        obstacle_distance_reward = (distance_thresh - min_distance) * self.reward_config["obstacle_distance"]
+        obstacle_distance_reward = (distance_thresh - min_distance) ** 2 * 10 * self.reward_config["obstacle_distance"]
         return obstacle_distance_reward
 
     def compute_reach_goal_reward(self, reach_goal):
@@ -353,7 +353,7 @@ class EnvironmentBullet(PybulletBaseEnv):
         res = []
         for i, rt in enumerate(self.agent_robots):
             thetas, hit_fractions = rt.sensor.get_obs()
-            # if self.step_count.value % 100 ==0:
+            # if self.step_count.value % 100 == 0:
             #     plt.polar(thetas, hit_fractions)
             #     plt.show()
             relative_pose = cvt_positions_to_reference([self.agent_goals[i]], rt.get_position(), rt.get_yaw())
