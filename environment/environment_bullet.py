@@ -372,7 +372,6 @@ class EnvironmentBullet(PybulletBaseEnv):
         return res
 
     def get_state4(self):
-
         ma_images = []
         ma_relative_poses = []
         res = []
@@ -380,11 +379,10 @@ class EnvironmentBullet(PybulletBaseEnv):
         h = 0
         for i, rt in enumerate(self.agent_robots):
             rt.sensor.register_occupancy_map(self.occ_map, self.grid_res)
-            local_occ_map = rt.sensor.get_obs()
+            image = rt.sensor.get_obs()
             relative_pose = cvt_positions_to_reference([self.agent_goals[i]], rt.get_position(), rt.get_yaw())
             w = self.input_config["image_w"]
             h = self.input_config["image_h"]
-            image = local_occ_map
             if len(self.ma_images_deque[i]) == 0:
                 for j in range(self.image_seq_len - 1):
                     temp = np.zeros_like(image)

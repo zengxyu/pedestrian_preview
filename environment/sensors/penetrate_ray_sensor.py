@@ -50,47 +50,48 @@ class PenetrateRaySensor:
         rayTos = np.array(rayTos)
         cur_position = cur_position[:2]
         # occupancy map
-        obs = self.penetrate_rays(rayTos, cur_position)
+        obs = self.crop_local_map(rayTos, cur_position, cur_yaw)
         # 调用激光探测函数
-        # results = p.rayTestBatch(rayFroms, rayTos)
-        # # plot_lidar_ray(self._bullet_client, results, rayFroms, rayTos, missRayColor, hitRayColor)
-        # results = np.array(results, dtype=object)
-        # hit_fractions = results[:, 2]
-        # # 添加高斯噪声
-        # hit_fractions = hit_fractions + np.random.randn(*hit_fractions.shape) * 0.005
-        # hit_thetas = hit_thetas + np.random.randn(*hit_thetas.shape) * 0.005
-        # # plot_lidar_ray(self._bullet_client, results, rayFroms, rayTos, missRayColor=[1, 0, 0], hitRayColor=[0, 0, 1])
         return obs
 
-    def penetrate_rays(self, corners, center):
-        corner0 = cvt_to_om(corners[0], self.grid_res)
-        corner1 = cvt_to_om(corners[1], self.grid_res)
-        corner2 = cvt_to_om(corners[2], self.grid_res)
-        corner3 = cvt_to_om(corners[3], self.grid_res)
+    def crop_local_map(self, corners, center, cur_yaw):
+        corners = cvt_to_om(corners, self.grid_res)
+        corner0 = corners[0]
+        corner1 = corners[1]
+        corner2 = corners[2]
+        corner3 = corners[3]
 
-        # center = cvt_to_om((corners[0] + corners[2]) / 2, self.grid_res)
         center = cvt_to_om(center, self.grid_res)
         center = np.round(center).astype(int)
+        direction_to = center + 3 * np.array([np.cos(cur_yaw), np.sin(cur_yaw)])
 
         local_occupancy_map = np.zeros((self.image_width, self.image_width))
         points_in_corner_01 = np.array(
             [np.linspace(corner0[0], corner1[0], self.image_width),
              np.linspace(corner0[1], corner1[1], self.image_width)]).transpose((1, 0))
         points_in_corner_23 = np.array(
-            [np.linspace(corner2[0], corner3[0], self.image_width),
-             np.linspace(corner2[1], corner3[1], self.image_width)]).transpose((1, 0))
-        plt.imshow(self.occupancy_map)
-        plt.plot(points_in_corner_01[:, 0], points_in_corner_01[:, 1])
-        plt.plot(points_in_corner_23[:, 0], points_in_corner_23[:, 1])
-
-        plt.show()
+            [np.linspace(corner3[0], corner2[0], self.image_width),
+             np.linspace(corner3[1], corner2[1], self.image_width)]).transpose((1, 0))
+        # plt.imshow(self.occupancy_map)
+        # plt.scatter(corners[:, 1], corners[:, 0])
+        # plt.scatter(center[1], center[0])
+        # plt.plot([center[1], direction_to[1]], [center[0], direction_to[0]])
+        # plt.plot(points_in_corner_01[:, 1], points_in_corner_01[:, 0])
+        # plt.plot(points_in_corner_23[:, 1], points_in_corner_23[:, 0])
+        #
+        # plt.show()
         points_in_corner_01 = np.round(points_in_corner_01).astype(int)
         points_in_corner_23 = np.round(points_in_corner_23).astype(int)
+        new_om = self.occupancy_map.copy()
         for point_left, point_right in zip(points_in_corner_01, points_in_corner_23):
             points_x = np.linspace(point_left[0], point_right[0], self.image_width)
             points_y = np.linspace(point_left[1], point_right[1], self.image_width)
             points_x = np.round(points_x).astype(int)
             points_y = np.round(points_y).astype(int)
+            points_x = np.clip(points_x, 0, self.occupancy_map.shape[0] - 1)
+            points_y = np.clip(points_y, 0, self.occupancy_map.shape[1] - 1)
+            new_om[points_x, points_y] = 2
+
             # points = np.array([points_x, points_y]).transpose((1, 0))
             local_points_x = points_x - center[0]
             local_points_y = points_y - center[1]
@@ -100,17 +101,4 @@ class PenetrateRaySensor:
             local_points_x = np.clip(local_points_x, 0, self.image_width - 1)
             local_points_y = np.clip(local_points_y, 0, self.image_width - 1)
             local_occupancy_map[local_points_x, local_points_y] = self.occupancy_map[points_x, points_y]
-        plt.imshow(local_occupancy_map)
-        plt.show()
-        print()
-        # points_x = np.linspace(rays_from_om[0], rays_to_om[0], radius)
-        # points_y = np.linspace(rays_from_om[1], rays_to_om[1], radius)
-        #
-        # points_x = points_x.astype(int)
-        # points_y = points_y.astype(int)
-        #
-        # image = np.zeros((self.image_width, self.image_height))
-
-        # 求解
-        # frac =
         return local_occupancy_map
