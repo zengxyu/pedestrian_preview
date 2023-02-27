@@ -31,22 +31,8 @@ class BaseModel(nn.Module):
         h_out = compute_conv_out_width(kwargs["image_h"], k=3, s=2, p=1, iter=len(self.cnn_dims))
         w_out = compute_conv_out_width(kwargs["image_w"], k=3, s=2, p=1, iter=len(self.cnn_dims))
         self.dim_cnn_out_flatten = h_out * w_out * self.cnn_dims[-1]
-        if self.image_mode == ImageMode.MULTI_VISION:
-            input_channel = self.image_seq_len * 2
-        elif self.image_mode == ImageMode.MULTI_ROW_MULTI_SENSOR:
-            input_channel = self.image_seq_len * 4
-        elif self.image_mode == ImageMode.MULTI_ROW:
-            input_channel = self.image_seq_len
-        elif self.image_mode == ImageMode.DEPTH:
-            input_channel = self.image_seq_len
-        elif self.image_mode == ImageMode.RGBD:
-            input_channel = 4 * self.image_seq_len
-        elif self.image_mode == ImageMode.RGB:
-            input_channel = 3 * self.image_seq_len
-        elif self.image_mode == ImageMode.GD:
-            input_channel = 2 * self.image_seq_len
-        else:
-            raise NotImplementedError
+        input_channel = kwargs["in_channel"]
+
         self.cnn = build_cnns_2d(input_channel, self.cnn_dims, self.kernel_sizes, self.strides)
         # self.mlp_relative_position = build_mlp(3 * self.pose_seq_len, self.dim_relative_position,
         #                                        activate_last_layer=False)

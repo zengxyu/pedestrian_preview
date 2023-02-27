@@ -347,6 +347,8 @@ class EnvironmentBullet(PybulletBaseEnv):
     def get_state(self):
         if self.sensor_name == SensorTypes.LidarSensor:
             return self.get_state2()
+        elif self.sensor_name == SensorTypes.PenetrateRaySensor:
+            return self.get_state4()
         else:
             return self.get_state1()
 
@@ -369,6 +371,38 @@ class EnvironmentBullet(PybulletBaseEnv):
 
         return res
 
+    def get_state4(self):
+
+        ma_images = []
+        ma_relative_poses = []
+        res = []
+        w = 0
+        h = 0
+        for i, rt in enumerate(self.agent_robots):
+            rt.sensor.register_occupancy_map(self.occ_map, self.grid_res)
+            local_occ_map = rt.sensor.get_obs()
+            relative_pose = cvt_positions_to_reference([self.agent_goals[i]], rt.get_position(), rt.get_yaw())
+            w = self.input_config["image_w"]
+            h = self.input_config["image_h"]
+            image = local_occ_map
+            if len(self.ma_images_deque[i]) == 0:
+                for j in range(self.image_seq_len - 1):
+                    temp = np.zeros_like(image)
+                    self.ma_images_deque[i].append(temp)
+                    temp2 = np.zeros_like(relative_pose)
+                    self.ma_relative_poses_deque[i].append(temp2)
+            # plt.imshow(depth_image)
+            # plt.show()
+            self.ma_images_deque[i].append(image)
+            ma_images.append(np.array(self.ma_images_deque[i]))
+
+            self.ma_relative_poses_deque[i].append(relative_pose)
+            ma_relative_poses.append(np.array([self.ma_relative_poses_deque[i]]).flatten())
+
+        for i in range(len(self.agent_robots)):
+            res.append([ma_images[i].reshape((-1, h, w)), ma_relative_poses[i]])
+        return res
+
     def get_state1(self):
         # compute depth image
         ma_images = []
@@ -377,8 +411,8 @@ class EnvironmentBullet(PybulletBaseEnv):
         w = 0
         h = 0
         for i, rt in enumerate(self.agent_robots):
+
             width, height, rgba_image, depth_image, seg_image = rt.sensor.get_obs()
-            rgba_image = rgba_image
             depth_image = depth_image / rt.sensor.farVal
             relative_pose = cvt_positions_to_reference([self.agent_goals[i]], rt.get_position(), rt.get_yaw())
             w = self.input_config["image_w"]
@@ -584,8 +618,10 @@ class EnvironmentBullet(PybulletBaseEnv):
                                self.physical_step_duration,
                                self.agent_robot_config, self.sensor_name, self.sensor_config, self.agent_starts[i],
                                2 * np.pi * np.random.random())
+
             self.agent_robot_ids.append(robot.robot_id)
             agents.append(robot)
+
         return agents
 
     def clear_variables(self):

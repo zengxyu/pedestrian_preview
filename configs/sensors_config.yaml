@@ -33,3 +33,10 @@ multi_vision:
   shadow: True
   placement_height: 1.6
   num_camera: 2
+
+penetrating_rays:
+  ray_num: 4
+  angle: 360
+  ray_length: 5
+  height: 0.5
+  image_width: 60
