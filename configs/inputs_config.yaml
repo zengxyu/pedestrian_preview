@@ -68,6 +68,7 @@ input_cnn_ncp:
   image_h: 40
   image_w: 60
   pose_seq_len: 4
+  image_depth: 1
   # choose from network configs CNN, MLP
   network: NCP
   # choose from {row, depth, rgbd, rgb}
