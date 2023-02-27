@@ -209,10 +209,9 @@ class EnvironmentBullet(PybulletBaseEnv):
 
     def step(self, actions):
         self.step_count += 1
-        print("actions:{}".format(actions))
+        # print("actions:{}".format(actions))
         reach_goal, collision = self.iterate_steps(actions)
-        print("get_x_y_yaw = ", self.agent_robots[0].get_x_y_yaw())
-        # print("v:{};w:{}".format(*self.robots[0].get_v_w()))
+        # print("v:{};w:{}".format(*self.agent_robots[0].get_x_y_yaw()))
         state = self.get_state()
         reward, reward_info = self.get_reward(reach_goal=reach_goal, collision=collision)
         over_max_step = self.step_count >= self.max_step
@@ -270,10 +269,10 @@ class EnvironmentBullet(PybulletBaseEnv):
     def get_reward(self, reach_goal, collision):
         if self.last_distance is None:
             if self.reward_config["geodesic_distance"]:
-                self.last_distance = self.compute_geodesic_distance(robot_index=0,
+                geodesic_distances = self.compute_geodesic_distance(robot_index=0,
                                                                              cur_position=self.agent_robots[
                                                                                  0].get_position())
-                self.last_distance = min(self.last_distance, 10)
+                self.last_distance = min(geodesic_distances, 10)
                 for i in range(self.image_seq_len-1):
                     self.geodesic_distance_deque.append(self.last_distance)
             else:
@@ -320,10 +319,10 @@ class EnvironmentBullet(PybulletBaseEnv):
 
 
         """================step punish reward=================="""
-        if self.step_count.value <= 0:
-            self.step_count.value = 1
-        punish_reward -= np.log(self.step_count.value) * 0.5
-        reward += punish_reward
+        # if self.step_count.value <= 0:
+        #     self.step_count.value = 1
+        # punish_reward -= np.log(self.step_count.value) * 0.2
+        # reward += punish_reward
 
         """================reach goal reward=================="""
         # print("delta_distance_reward = ", delta_distance_reward, "---collision_reward = ", collision_reward, "---punish_reward = ", punish_reward)
