@@ -124,3 +124,7 @@ input_depth_mlpncp:
   network: CnnMlpNcp
   # choose from {row, depth, rgbd, rgb}
   image_mode: depth
+input_lidar_mlp:
+  # choose from network configs CNN, MLP
+  seq_len: 1
+  network: LidarMLP

@@ -22,6 +22,7 @@ import cv2
 from matplotlib import pyplot as plt
 
 from environment.env_types import EnvTypes
+from environment.gen_scene.build_office_world import create_cylinder
 from environment.gen_scene.office1000_loader import load_office1000_scene, check_office1000_folder_structure
 from environment.gen_scene.world_loader import load_scene
 from environment.human_npc_generator import generate_human_npc
@@ -91,8 +92,8 @@ class EnvironmentBullet(PybulletBaseEnv):
         self.last_distance = None
         self.last_geodesic_distance = None
 
-        self.image_seq_len = self.args.inputs_config[self.running_config['input_config_name']]["image_seq_len"]
-        self.pose_seq_len = self.args.inputs_config[self.running_config['input_config_name']]["pose_seq_len"]
+        self.image_seq_len = self.input_config["image_seq_len"] if "image_seq_len" in self.input_config.keys() else 0
+        self.pose_seq_len = self.input_config["pose_seq_len"] if "pose_seq_len" in self.input_config.keys() else 0
 
         self.ma_relative_poses_deque = []
         self.ma_images_deque = None
@@ -106,8 +107,6 @@ class EnvironmentBullet(PybulletBaseEnv):
         """
         self.agent_sub_goals = None
         self.agent_sub_goals_indexes = None
-        self.paths = None
-        self.temp_ids = []
         self.robot_direction_ids = [None] * self.num_agents
         self.geodesic_distance_list: List[Dict] = None
         self.collision_count = 0
@@ -115,6 +114,10 @@ class EnvironmentBullet(PybulletBaseEnv):
 
         self.geodesic_distance_deque = None
         self.collision_model = self.reward_config["collision_model"]
+
+        self.collision_count = 0
+        self.visit_map = None
+        self.max_collision_count = 5
 
     def render(self, mode="human"):
         width, height, rgb_image, depth_image, seg_image = self.agent_robots[0].sensor.get_obs()
@@ -141,6 +144,7 @@ class EnvironmentBullet(PybulletBaseEnv):
             # randomize environment
             self.randomize_env()
             self.randomize_human_npc()
+        create_cylinder(self.p, self.agent_goals[0], with_collision=False, height=3, radius=0.1)
 
         # # randomize environment
         state = self.get_state()
@@ -169,6 +173,7 @@ class EnvironmentBullet(PybulletBaseEnv):
         self.agent_starts = agent_starts
         # 如果有多个agent，去往同一个目标
         self.agent_goals = [agent_goals[0] for i in range(self.num_agents)]
+
         # initialize robot
         logging.debug("Create the environment, Done...")
         self.agent_robots = self.init_robots()
@@ -211,7 +216,6 @@ class EnvironmentBullet(PybulletBaseEnv):
         state = self.get_state()
         reward, reward_info = self.get_reward(reach_goal=reach_goal, collision=collision)
         over_max_step = self.step_count >= self.max_step
-
         if collision == CollisionType.CollisionWithWall:
             self.collision_count += 1
         else:
@@ -336,8 +340,74 @@ class EnvironmentBullet(PybulletBaseEnv):
 
         return reward, reward_info
 
+    def compute_step_count_reward(self):
+        step_count_reward = np.log(self.step_count.value) * self.reward_config["step_count"]
+        return step_count_reward
+
+    def compute_delta_euclidean_distance_reward(self):
+        if self.last_distance is None:
+            self.last_distance = compute_distance(self.agent_goals[0], self.agent_starts)
+
+        distance = compute_distance(self.agent_goals[0], self.agent_robots[0].get_position())
+        delta_distance_reward = (self.last_distance - distance) * self.reward_config["delta_distance"]
+        self.last_distance = distance
+        return delta_distance_reward
+
+    def compute_delta_geodesic_distance_reward(self):
+        if self.last_geodesic_distance is None:
+            self.last_geodesic_distance = self.compute_geodesic_distance(robot_index=0, cur_position=self.agent_robots[
+                0].get_position())
+        geodesic_distance = self.compute_geodesic_distance(robot_index=0,
+                                                           cur_position=self.agent_robots[0].get_position())
+
+        geo_distance_reward = (self.last_geodesic_distance - geodesic_distance) * self.reward_config[
+            "delta_geodesic_distance"]
+        self.last_geodesic_distance = geodesic_distance
+        return geo_distance_reward
+
+    def compute_collision_reward(self, collision):
+        collision_reward = 0
+        if collision == CollisionType.CollisionWithWall:
+            collision_reward = self.reward_config["collision"]
+        return collision_reward
+
+    def compute_obstacle_distance_reward(self):
+        obstacle_distance = self.compute_obstacle_distance(cur_position=self.agent_robots[0].get_position())
+        distance_thresh = 0.4
+        min_distance = min(obstacle_distance, distance_thresh)
+        obstacle_distance_reward = (distance_thresh - min_distance) * self.reward_config["obstacle_distance"]
+        return obstacle_distance_reward
+
+    def compute_reach_goal_reward(self, reach_goal):
+        reach_goal_reward = 0
+        if reach_goal:
+            reach_goal_reward = self.reward_config["reach_goal"]
+        return reach_goal_reward
+
     def get_state(self):
-        return self.get_state1()
+        if self.sensor_name == SensorTypes.LidarSensor:
+            return self.get_state2()
+        else:
+            return self.get_state1()
+
+    def get_state3(self):
+        if self.visit_map is None:
+            self.visit_map = np.zeros_like(self.occ_map)
+
+        return
+
+    def get_state2(self):
+        res = []
+        for i, rt in enumerate(self.agent_robots):
+            thetas, hit_fractions = rt.sensor.get_obs()
+            # if self.step_count.value % 100 == 0:
+            #     plt.polar(thetas, hit_fractions)
+            #     plt.show()
+            relative_pose = cvt_positions_to_reference([self.agent_goals[i]], rt.get_position(), rt.get_yaw())
+            state = np.concatenate([hit_fractions, relative_pose.flatten()], axis=0).flatten()
+            res.append(state.astype(float))
+
+        return res
 
     def get_state1(self):
         # compute depth image
@@ -575,6 +645,7 @@ class EnvironmentBullet(PybulletBaseEnv):
         self.agent_robot_ids = []
         self.agent_starts, self.agent_goals = [None] * 2
         self.agent_sub_goals = None
+        self.visit_map = None
         self.paths = None
         self.geodesic_distance_deque = deque(maxlen=self.image_seq_len)
 

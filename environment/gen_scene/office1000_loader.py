@@ -48,6 +48,7 @@ def load_office1000_scene(p, running_config, worlds_config, phase):
     si = file_name.index("_") + 1
     ei = file_name.index(".")
     scene_index = int(file_name[si:ei])
+    # scene_index = np.random.randint(1000, 1200)
     scene_path = os.path.join(scene_parent_folder, "env_{}.pkl".format(scene_index))
 
     obstacle_distance_path = os.path.join(obstacle_distance_parent_folder, "env_{}.pkl".format(scene_index))

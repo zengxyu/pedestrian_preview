@@ -5,6 +5,7 @@ import pickle
 import matplotlib.pyplot as plt
 import numpy as np
 
+from environment.gen_scene.gen_office_map import create_u_tunnel_in_office_map
 from environment.gen_scene.sampler_mapping import get_sampler_class
 from environment.gen_scene.world_generator import get_world_config
 from environment.gen_scene.worlds_mapping import get_world_creator_func
@@ -27,8 +28,10 @@ def generate_env(num_starts):
     agent_sg_sampler_params = agent_sampler_config["sampler_params"]
 
     # create world occupancy map
-    create_world = get_world_creator_func(world_name)
-    occupancy_map = create_world(world_config)
+    # create_u_tunnel_in_office_map
+    # create_world = get_world_creator_func(world_name)
+    # occupancy_map = create_world(world_config)
+    occupancy_map = create_u_tunnel_in_office_map()
     # dilate occupancy map
     dilated_occ_map = dilate_image(occupancy_map, dilation_size=5)
 
@@ -77,7 +80,7 @@ def generate_n_envs(num_envs, num_starts, parent_folder, image_save_folder):
     image_save_name_template = "env_{}.png"
     envs = []
     i = 0
-    indexes = [a for a in range(num_envs)]
+    indexes = [a for a in range(1000, 1200)]
     while i < len(indexes):
         index = indexes[i]
         save_file_name = save_name_template.format(index)
@@ -145,8 +148,8 @@ def run_read_envs():
 def run_store_envs():
     # occupancy_map, starts, ends = generate_env(num_starts=20)
     # envs = generate_n_envs(num_envs=1000, num_starts=20)
-    parent_folder = os.path.join(get_project_path(), "data", "office_1000", "test", "random_envs")
-    image_save_parent_folder = os.path.join(get_project_path(), "data", "office_1000", "test", "random_envs_images")
+    parent_folder = os.path.join(get_project_path(), "data", "office_1000", "train", "random_envs")
+    image_save_parent_folder = os.path.join(get_project_path(), "data", "office_1000", "train", "random_envs_images")
     generate_n_envs(num_envs=200, num_starts=20, parent_folder=parent_folder,
                     image_save_folder=image_save_parent_folder)
 
