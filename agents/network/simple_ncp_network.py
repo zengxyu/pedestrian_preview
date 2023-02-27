@@ -1,15 +1,23 @@
 import torch
-
 from agents.network.network_base import *
 from agents.network.network_head import *
 from ncps.wirings import AutoNCP
+import torch.nn.functional as F
+
 model_params = {
     'cnn': [32, 64, 32],
     'kernel_sizes': [3, 3, 3],
     'strides': [2, 2, 2],
     'mlp_waypoints': [64, 40, 30],
-    'mlp_values': [256, 128, 64],
+    'mlp_values': [256, 64],
 
+}
+model1_params = {
+    'cnn': [32, 64, 64, 32],
+    'kernel_sizes': [3, 3, 3, 3],
+    'strides': [2, 2, 2, 2],
+    'mlp_waypoints': [64, 40, 30],
+    'mlp_values': [256, 64],
 }
 
 class BaseModel(nn.Module):
@@ -17,38 +25,147 @@ class BaseModel(nn.Module):
         super().__init__()
 
         self.cnn_dims = model_params["cnn"]
+        self.mlp_dims = model_params["mlp_values"]
         self.kernel_sizes = model_params["kernel_sizes"]
         self.strides = model_params["strides"]
         self.seq_len = kwargs["image_seq_len"]
         self.image_depth = kwargs["image_depth"]
-        self.position_len = 2
+        self.image_h = kwargs["image_h"]
+        self.image_w = kwargs["image_w"]
+        self.position_len = kwargs["pose_seq_len"]
         self.cnn = build_cnns_2d(self.image_depth, self.cnn_dims, self.kernel_sizes, self.strides)
-        # self.mlp_relative_position = build_mlp(3, self.mlp_dims, activate_last_layer=False)
+        self.mlp_net = build_mlp(2, self.mlp_dims, activate_last_layer=True)
+
 
 class SimpleCnnNcpActor(BaseModel):
     def __init__(self, agent_type, action_space, **kwargs):
         super().__init__(**kwargs)
         self.n_actions = len(action_space.low)
+        self.image_h = kwargs["image_h"]
+        self.image_w = kwargs["image_w"]
+        if self.image_h == 40:
+            self.cnn_dims = model_params["cnn"]
+            self.kernel_sizes = model_params["kernel_sizes"]
+            self.strides = model_params["strides"]
+        elif self.image_h == 80:
+            self.cnn_dims = model1_params["cnn"]
+            self.kernel_sizes = model1_params["kernel_sizes"]
+            self.strides = model1_params["strides"]
 
         self.head = build_head(agent_type, action_space)
-
+        self.cnn = build_cnns_2d(self.image_depth, self.cnn_dims, self.kernel_sizes, self.strides)
         self.wirings = AutoNCP(48, 4)
-        self.rnn = build_ncpltc(1283, wirings=self.wirings)
+        self.rnn = build_ncpltc(1282, wirings=self.wirings)
 
     def forward(self, x, hx=None):
         image = x[0].float()
         relative_position = x[1].float()
 
+        image = image.view(-1, self.seq_len, self.image_depth, self.image_h, self.image_w)
+
         batch_size = image.size(0)
         seq_len = image.size(1)
+        image_depth = image.size(2)
 
+        image = image.view(batch_size*seq_len, image_depth, self.image_h, self.image_w)
         relative_position = relative_position.view(batch_size, seq_len, -1)
 
-        image1 = image.view(batch_size*seq_len, *image.shape[2:])
-        out1 = self.cnn(image1)
+        # image1 = image.view(batch_size*seq_len, *image.shape[2:])
+        out1 = self.cnn(image)
         out1 = out1.view(batch_size, seq_len, *out1.shape[1:])
         out1 = out1.reshape(batch_size, seq_len, -1)
         out = torch.cat((out1, relative_position), dim=2)
+
+        out, hx = self.rnn(out, hx)
+        out = out.mean(dim=1)
+        out = self.head(out)
+        return out
+
+class SimpleCnnNcpActor_v1(BaseModel):
+    def __init__(self, agent_type, action_space, **kwargs):
+        super().__init__(**kwargs)
+        self.n_actions = len(action_space.low)
+        self.image_h = kwargs["image_h"]
+        self.image_w = kwargs["image_w"]
+        if self.image_h == 40:
+            self.cnn_dims = model_params["cnn"]
+            self.kernel_sizes = model_params["kernel_sizes"]
+            self.strides = model_params["strides"]
+        elif self.image_h == 80:
+            self.cnn_dims = model1_params["cnn"]
+            self.kernel_sizes = model1_params["kernel_sizes"]
+            self.strides = model1_params["strides"]
+
+        self.head = build_head(agent_type, action_space)
+        self.cnn = build_cnns_2d(self.image_depth, self.cnn_dims, self.kernel_sizes, self.strides)
+        self.wirings = AutoNCP(48, 4)
+        self.rnn = build_ncpltc(1282, wirings=self.wirings)
+
+        self.conv1 = nn.Conv2d(self.image_depth, 32, kernel_size=3, stride=2, padding=1)
+        self.conv2 = nn.Conv2d(32, 64, kernel_size=3, stride=2, padding=1)
+        self.conv3 = nn.Conv2d(64, 64, kernel_size=3, stride=2, padding=1)
+        self.conv4 = nn.Conv2d(64, 32, kernel_size=3, stride=2, padding=1)
+        self.activate = F.relu
+
+    def forward(self, x, hx=None):
+        image = x[0].float()
+        relative_position = x[1].float()
+
+        image = image.view(-1, self.seq_len, self.image_depth, self.image_h, self.image_w)
+
+        batch_size = image.size(0)
+        seq_len = image.size(1)
+        image_depth = image.size(2)
+
+        image = image.view(batch_size*seq_len, image_depth, self.image_h, self.image_w)
+        relative_position = relative_position.view(batch_size, seq_len, -1)
+
+        c1 = self.activate(self.conv1(image))
+        c2 = self.activate(self.conv2(c1))
+        c3 = self.activate(self.conv3(c2))
+        out1 = self.activate(self.conv4(c3))
+
+        out1 = out1.view(batch_size, seq_len, *out1.shape[1:])
+        out1 = out1.reshape(batch_size, seq_len, -1)
+        out = torch.cat((out1, relative_position), dim=2)
+
+        out, hx = self.rnn(out, hx)
+        out = out.mean(dim=1)
+        out = self.head(out)
+        return out
+
+
+class SimpleCnnMlpNcpActor(BaseModel):
+    def __init__(self, agent_type, action_space, **kwargs):
+        super().__init__(**kwargs)
+        self.n_actions = len(action_space.low)
+
+        self.head = build_head(agent_type, action_space)
+        self.cnn = build_cnns_2d(self.image_depth, self.cnn_dims, self.kernel_sizes, self.strides)
+        self.wirings = AutoNCP(48, 4)
+        self.rnn = build_ncpltc(67, wirings=self.wirings)
+        self.mlp_net = build_mlp(1280, self.mlp_dims, activate_last_layer=True)
+
+    def forward(self, x, hx=None):
+        image = x[0].float()
+        relative_position = x[1].float()
+
+        image = image.view(-1, self.seq_len, self.image_depth, self.image_h, self.image_w)
+
+        batch_size = image.size(0)
+        seq_len = image.size(1)
+        image_depth = image.size(2)
+
+        image = image.view(batch_size*seq_len, image_depth, self.image_h, self.image_w)
+        relative_position = relative_position.view(batch_size, seq_len, -1)
+
+        out1 = self.cnn(image)
+        out1 = out1.reshape(batch_size*seq_len, -1)
+        out2 = self.mlp_net(out1)
+
+        out2 = out2.reshape(batch_size, seq_len, -1)
+
+        out = torch.cat((out2, relative_position), dim=2)
 
         out, hx = self.rnn(out, hx)
         out = out.mean(dim=1)
@@ -63,9 +180,20 @@ class SimpleCnnNcpCritic(BaseModel):
     def __init__(self, agent_type, action_space, **kwargs):
         super().__init__(**kwargs)
         self.n_actions = len(action_space.low)
-        mlp_values_dims = model_params["mlp_values"]
+
+        if self.image_h == 40:
+            self.cnn_dims = model_params["cnn"]
+            self.kernel_sizes = model_params["kernel_sizes"]
+            self.strides = model_params["strides"]
+            mlp_values_dims = model_params["mlp_values"]
+        elif self.image_h == 80:
+            self.cnn_dims = model1_params["cnn"]
+            self.kernel_sizes = model1_params["kernel_sizes"]
+            self.strides = model1_params["strides"]
+            mlp_values_dims = model1_params["mlp_values"]
+
         self.cnn = build_cnns_2d(self.image_depth*self.seq_len, self.cnn_dims, self.kernel_sizes, self.strides)
-        self.mlp_value = build_mlp(1280 + 3 * self.seq_len + self.n_actions,
+        self.mlp_value = build_mlp(1280 + 2 * self.seq_len + self.n_actions,
                                    mlp_values_dims + [1],
                                    activate_last_layer=False,
                                    )
@@ -74,6 +202,8 @@ class SimpleCnnNcpCritic(BaseModel):
         x, action = x
         image = x[0].float()
         relative_position = x[1].float()
+
+        image = image.view(-1, self.seq_len, self.image_depth, self.image_h, self.image_w)
 
         batch_size = image.size(0)
         image = image.view(image.size(0), image.size(1)*image.size(2), image.size(3), image.size(4))

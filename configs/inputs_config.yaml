@@ -62,3 +62,13 @@ input_lidar_mlp:
   # choose from network configs CNN, MLP
   seq_len: 1
   network: LidarMLP
+
+input_cnn_ncp:
+  image_seq_len: 4
+  image_h: 40
+  image_w: 60
+  pose_seq_len: 4
+  # choose from network configs CNN, MLP
+  network: NCP
+  # choose from {row, depth, rgbd, rgb}
+  image_mode: depth
