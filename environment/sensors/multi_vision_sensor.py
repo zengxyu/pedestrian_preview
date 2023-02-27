@@ -49,7 +49,7 @@ class MultiVisionSensor:
             z_target = z_eye
 
             view_matrix = p.computeViewMatrix(cameraEyePosition=[x_eye, y_eye, z_eye],
-                                              cameraTargetPosition=[x_target, y_target, z_target],
+                                              cameraTargetPosition=[x_target, y_target, -20],
                                               cameraUpVector=[0, 0, 1.0])
             projection_matrix = p.computeProjectionMatrixFOV(fov=self.fov, aspect=self.aspect, nearVal=self.nearVal,
                                                              farVal=self.farVal)

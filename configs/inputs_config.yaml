@@ -8,16 +8,6 @@ input_cnn:
   # choose from {row, depth, rgbd, rgb}
   image_mode: depth
 
-input_cnn_gd:
-  image_seq_len: 4
-  image_h: 40
-  image_w: 60
-  pose_seq_len: 4
-  # choose from network configs CNN, MLP
-  network: CNN
-  # choose from {row, depth, rgbd, rgb, dg}
-  image_mode: gd
-
 input_depth_seq_1_cnn:
   image_seq_len: 1
   image_h: 40
@@ -27,16 +17,6 @@ input_depth_seq_1_cnn:
   network: CNN
   # choose from {row, depth, rgbd, rgb}
   image_mode: depth
-
-input_multi_row_cnn:
-  image_seq_len: 4
-  image_h: 20
-  image_w: 60
-  pose_seq_len: 4
-  # choose from network configs CNN, MLP
-  network: CNN
-  # choose from {row, depth, rgbd, rgb}
-  image_mode: multi_row
 
 input_multi_row_multi_sensor:
   image_seq_len: 4
@@ -48,15 +28,16 @@ input_multi_row_multi_sensor:
   # choose from {row, depth, rgbd, rgb}
   image_mode: multi_row_multi_sensor
 
-input_row_mlp:
-  image_seq_len: 4
+input_multi_vision:
+  image_seq_len: 1
   image_h: 40
   image_w: 60
-  pose_seq_len: 4
+  pose_seq_len: 1
   # choose from network configs CNN, MLP
-  network: MLP
+  network: CNN
   # choose from {row, depth, rgbd, rgb}
-  image_mode: row
+  image_mode: multi_vision
+
 
 input_lidar_mlp:
   # choose from network configs CNN, MLP

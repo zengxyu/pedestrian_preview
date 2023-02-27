@@ -383,7 +383,12 @@ class EnvironmentBullet(PybulletBaseEnv):
             relative_pose = cvt_positions_to_reference([self.agent_goals[i]], rt.get_position(), rt.get_yaw())
             w = self.input_config["image_w"]
             h = self.input_config["image_h"]
-            if self.input_config["image_mode"] == ImageMode.ROW:
+            if self.input_config["image_mode"] == ImageMode.MULTI_VISION:
+                depth_image = np.transpose(depth_image, (1, 2, 0))
+                image = cv2.resize(depth_image, (w, h))
+                image[np.isnan(image)] = 1
+                image = np.transpose(image, (2, 0, 1))
+            elif self.input_config["image_mode"] == ImageMode.ROW:
                 image = depth_image[25]
                 h = 1
                 w = int(depth_image.shape[1])
