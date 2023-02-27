@@ -1,6 +1,6 @@
 ReplayBuffer:
-  capacity : 50000
-  num_steps : 3
+  capacity : 10000
+  num_steps : 1
 
 PrioritizedReplayBuffer:
   capacity : 50000

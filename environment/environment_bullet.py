@@ -204,8 +204,9 @@ class EnvironmentBullet(PybulletBaseEnv):
 
     def step(self, actions):
         self.step_count += 1
-        # print("actions:{}".format(actions))
+        print("actions:{}".format(actions))
         reach_goal, collision = self.iterate_steps(actions)
+        print("get_x_y_yaw = ", self.agent_robots[0].get_x_y_yaw())
         # print("v:{};w:{}".format(*self.robots[0].get_v_w()))
         state = self.get_state()
         reward, reward_info = self.get_reward(reach_goal=reach_goal, collision=collision)
