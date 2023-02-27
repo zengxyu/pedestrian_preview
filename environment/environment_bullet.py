@@ -218,7 +218,7 @@ class EnvironmentBullet(PybulletBaseEnv):
 
         # whether done
         if self.args.train and self.reward_config["collision_reset"]:
-            done = (collision == CollisionType.CollisionWithWall) or reach_goal or over_max_step
+            done = (collision == CollisionType.CollisionWithWall) or (collision == CollisionType.CollisionWithPedestrian) or reach_goal or over_max_step
         else:
             done = reach_goal or over_max_step
         # done = reach_goal or over_max_step
@@ -295,7 +295,7 @@ class EnvironmentBullet(PybulletBaseEnv):
 
         """================collision reward=================="""
         if self.reward_config["collision_reset"]:
-            if collision == CollisionType.CollisionWithWall:
+            if collision == CollisionType.CollisionWithWall or collision == CollisionType.CollisionWithPedestrian:
                 if list(self.collision_model.keys())[0] == "0":
                     collision_reward = self.collision_model["0"]
                 elif list(self.collision_model.keys())[0] == "1" and self.reward_config["geodesic_distance"]:
@@ -317,7 +317,7 @@ class EnvironmentBullet(PybulletBaseEnv):
         """================step punish reward=================="""
         if self.step_count.value <= 0:
             self.step_count.value = 1
-        punish_reward -= np.log(self.step_count.value) * 0.1
+        punish_reward -= np.log(self.step_count.value) * 0.5
         reward += punish_reward
 
         """================reach goal reward=================="""
