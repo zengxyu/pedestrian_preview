@@ -380,6 +380,8 @@ class EnvironmentBullet(PybulletBaseEnv):
         for i, rt in enumerate(self.agent_robots):
             rt.sensor.register_occupancy_map(self.occ_map, self.grid_res)
             image = rt.sensor.get_obs()
+            plt.imshow(image)
+            plt.show()
             relative_pose = cvt_positions_to_reference([self.agent_goals[i]], rt.get_position(), rt.get_yaw())
             w = self.input_config["image_w"]
             h = self.input_config["image_h"]
