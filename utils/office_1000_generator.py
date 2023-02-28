@@ -70,6 +70,15 @@ def display_and_save(occupancy_map, starts, ends, save, save_path):
         plt.show()
 
 
+def display_and_save_only_env(occupancy_map,  save, save_path):
+    plt.imshow(occupancy_map)
+    if save:
+        plt.savefig(save_path)
+        plt.clf()
+    else:
+        plt.show()
+
+
 def generate_n_envs(num_envs, num_starts, parent_folder, image_save_folder):
     if not os.path.exists(parent_folder):
         os.makedirs(parent_folder)
@@ -154,7 +163,6 @@ def run_store_envs():
                     image_save_folder=image_save_parent_folder)
 
     # store_envs(envs, parent_folder)
-
 
 if __name__ == '__main__':
     # test_read_envs()
