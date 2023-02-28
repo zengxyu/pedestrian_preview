@@ -56,13 +56,12 @@ class EnvironmentBullet(PybulletBaseEnv):
         self.running_config = args.running_config
         self.worlds_config = args.worlds_config
         self.agent_robot_config = args.robots_config[self.running_config["agent_robot_name"]]
-        self.sensor_config = args.sensors_config[self.running_config["sensor_name"]]
         self.input_config = args.inputs_config[args.running_config["input_config_name"]]
         self.agent_sg_sampler_config = args.samplers_config[args.running_config["agent_sg_sampler"]]
         self.npc_sg_sampler_config = args.samplers_config[args.running_config["npc_sg_sampler"]]
         self.reward_config = args.rewards_config[self.running_config["reward_config_name"]]
         self.agent_robot_name = self.running_config["agent_robot_name"]
-        self.sensor_name = self.running_config["sensor_name"]
+        self.sensors_name = self.running_config["sensors_name"]
         self.render = args.render
 
         self.grid_res = self.running_config["grid_res"]
@@ -345,9 +344,11 @@ class EnvironmentBullet(PybulletBaseEnv):
         return reach_goal_reward
 
     def get_state(self):
-        if self.sensor_name == SensorTypes.LidarSensor:
+        if len(self.sensors_name) >= 2:
+            return self.get_state5()
+        elif self.sensors_name[0] == SensorTypes.LidarSensor:
             return self.get_state2()
-        elif self.sensor_name == SensorTypes.PenetrateRaySensor:
+        elif self.sensors_name[0] == SensorTypes.PenetrateRaySensor:
             return self.get_state4()
         else:
             return self.get_state1()
@@ -358,13 +359,47 @@ class EnvironmentBullet(PybulletBaseEnv):
 
         return
 
+    def get_state5(self):
+        # compute depth image
+        ma_images = []
+        ma_relative_poses = []
+        ma_hit_fractions = []
+        res = []
+        w = 0
+        h = 0
+        for i, rt in enumerate(self.agent_robots):
+            thetas, hit_fractions = rt.sensors[0].get_obs()
+            width, height, rgba_image, depth_image, seg_image = rt.sensors[1].get_obs()
+            depth_image = depth_image / rt.sensors[1].farVal
+            relative_pose = cvt_positions_to_reference([self.agent_goals[i]], rt.get_position(), rt.get_yaw())
+            w = self.input_config["image_w"]
+            h = self.input_config["image_h"]
+            image = cv2.resize(depth_image, (w, h))
+            image[np.isnan(image)] = 1
+            if len(self.ma_images_deque[i]) == 0:
+                for j in range(self.image_seq_len - 1):
+                    temp = np.zeros_like(image)
+                    self.ma_images_deque[i].append(temp)
+                    temp2 = np.zeros_like(relative_pose)
+                    self.ma_relative_poses_deque[i].append(temp2)
+            # plt.imshow(depth_image)
+            # plt.show()
+            self.ma_images_deque[i].append(image)
+            ma_images.append(np.array(self.ma_images_deque[i]))
+
+            self.ma_relative_poses_deque[i].append(relative_pose)
+            ma_relative_poses.append(np.array([self.ma_relative_poses_deque[i]]).flatten())
+
+            ma_hit_fractions.append(hit_fractions.flatten().astype(float))
+
+        for i in range(len(self.agent_robots)):
+            res.append([ma_images[i].reshape((-1, h, w)), ma_hit_fractions[i], ma_relative_poses[i]])
+        return res
+
     def get_state2(self):
         res = []
         for i, rt in enumerate(self.agent_robots):
             thetas, hit_fractions = rt.sensor.get_obs()
-            # if self.step_count.value % 100 == 0:
-            #     plt.polar(thetas, hit_fractions)
-            #     plt.show()
             relative_pose = cvt_positions_to_reference([self.agent_goals[i]], rt.get_position(), rt.get_yaw())
             state = np.concatenate([hit_fractions, relative_pose.flatten()], axis=0).flatten()
             res.append(state.astype(float))
@@ -616,7 +651,8 @@ class EnvironmentBullet(PybulletBaseEnv):
         for i in range(self.num_agents):
             robot = init_robot(self.p, self.client_id, self.agent_robot_name, RobotRoles.AGENT,
                                self.physical_step_duration,
-                               self.agent_robot_config, self.sensor_name, self.sensor_config, self.agent_starts[i],
+                               self.agent_robot_config, self.sensors_name, self.args.sensors_config,
+                               self.agent_starts[i],
                                2 * np.pi * np.random.random())
 
             self.agent_robot_ids.append(robot.robot_id)

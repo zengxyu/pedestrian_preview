@@ -9,7 +9,7 @@ from pybullet_utils.bullet_client import BulletClient
 from environment.robots.robot_roles import RobotRoles, get_role_color
 from environment.sensors.lidar_sensor import LidarSensor
 from environment.robots.base_differential_robot import BaseDifferentialRobot
-from environment.sensors.sensor_types import init_sensor
+from environment.sensors.sensor_types import init_sensors
 from environment.sensors.vision_sensor import VisionSensor
 from utils.config_utility import read_yaml
 from utils.fo_utility import get_project_path
@@ -19,11 +19,11 @@ np.set_printoptions(precision=3, suppress=True)
 
 class DifferentialRaceCar(BaseDifferentialRobot):
     def __init__(self, p: BulletClient, client_id: int, robot_role: str, step_duration: float, robot_config: Dict,
-                 sensor_name: str, sensor_config: Dict, start_position, start_yaw):
+                 sensor_names: str, sensors_config: Dict, start_position, start_yaw):
         super().__init__(p, client_id)
         self.lidar_joint_id = None
         self.robot_config = robot_config
-        self.sensor_config = sensor_config
+        self.sensors_config = sensors_config
         self.wheel_base = 0.23
         self.robot_role = robot_role
         self.color = None
@@ -32,7 +32,8 @@ class DifferentialRaceCar(BaseDifferentialRobot):
 
         self.load_urdf(start_position[0], start_position[1], start_yaw)
 
-        self.sensor = init_sensor(robot_id=self.robot_id, sensor_name=sensor_name, sensor_config=self.sensor_config)
+        self.sensors = init_sensors(robot_id=self.robot_id, sensor_names=sensor_names,
+                                    sensors_config=self.sensors_config)
         self.physical_step_duration = step_duration
 
     def convert_v_w_to_wheel_velocities(self, v, w):

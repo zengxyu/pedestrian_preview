@@ -58,3 +58,15 @@ input_ray_cnn:
   # choose from {row, depth, rgbd, rgb, ray}
   image_mode: ray
   in_channel: 1
+
+input_lidar_vision:
+  network: LidarVision
+  image_seq_len: 4
+  pose_seq_len: 4
+  image_h: 40
+  image_w: 60
+  in_channel: 4
+  in_lidar_channel: 100
+  image_mode: depth
+
+
