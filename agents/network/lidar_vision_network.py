@@ -38,8 +38,8 @@ class BaseModel(nn.Module):
         input_channel = kwargs["in_channel"]
         input_lidar_channel = kwargs["in_lidar_channel"]
         self.cnn = build_cnns_2d(input_channel, self.cnn_dims, self.kernel_sizes, self.strides)
-        self.mlp_lidar = build_mlp(input_lidar_channel, self.dim_mlp_lidar, activate_last_layer=False)
         self.mlp_after_cnn = build_mlp(self.dim_cnn_out_flatten, self.dim_mlp_after_cnn, activate_last_layer=False)
+        self.mlp_lidar = build_mlp(input_lidar_channel, self.dim_mlp_lidar, activate_last_layer=False)
 
 
 class LidarVisionActor(BaseModel):
