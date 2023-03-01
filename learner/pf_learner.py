@@ -37,8 +37,9 @@ class PFLearner:
     def run(self):
         print("========================================Start running========================================")
         if self.eval or self.args.resume:
-            logging.info("load model from {} {}".format(self.args.in_model, self.args.in_model_index))
-            self.agent.load("{}/model_epi_{}".format(self.args.in_model, self.args.in_model_index))
+            model_path = os.path.join(self.args.in_folder, "model", "model_epi_{}".format(self.args.in_model_index))
+            logging.info("load model from {} ".format(model_path))
+            self.agent.load(model_path)
 
         if self.args.train or self.args.resume:
             print("Start training")
