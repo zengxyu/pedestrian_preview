@@ -17,8 +17,11 @@ def compute_distance(point1, point2):
     :return:
     """
     return np.linalg.norm(np.array(point1) - np.array(point2))
+
+
 def compute_manhattan_distance(point1, point2):
-    return np.linalg.norm(np.array(point1)-np.array(point2), ord=1)
+    return np.linalg.norm(np.array(point1) - np.array(point2), ord=1)
+
 
 def compute_amplitude(point1, point2, line_point1, line_point2):
     distance = compute_distance(point1, point2)
@@ -49,6 +52,17 @@ def compute_yaw(p1, p2):
     x = p2[0] - p1[0]
     theta = np.arctan2(y, x)
     return theta
+
+
+def compute_cosine_similarity(x_vec, y_vec):
+    dot_product = np.dot(x_vec, y_vec)
+    x_norm = np.linalg.norm(x_vec)
+    y_norm = np.linalg.norm(y_vec)
+    if x_norm * y_norm == 0:
+        return 0
+    else:
+        cosine_similarity = dot_product / (x_norm * y_norm)
+        return cosine_similarity
 
 
 def gaussian(x, mean=0, sigma=5, a=1):
