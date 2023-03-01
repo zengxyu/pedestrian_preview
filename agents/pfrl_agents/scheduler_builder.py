@@ -23,7 +23,7 @@ def get_scheduler(parser_args, name, optimizer) -> _LRScheduler:
 
 class SchedulerHandler:
     def __init__(self, parser_args, name, optimizers):
-        self.adjust_history = {"0.8": False, "0.85": False, "0.9": False, "0.95": False}
+        self.adjust_history = {"0.3": False, "0.35": False, "0.4": False, "0.5": False}
         self.optimizers = optimizers
         self.schedulers = []
         for optimizer in optimizers:

@@ -54,7 +54,7 @@ class SimpleCnnNcpActor(BaseModel):
 
         self.head = build_head(agent_type, action_space)
         self.cnn = build_cnns_2d(self.image_depth, self.cnn_dims, self.kernel_sizes, self.strides)
-        self.wirings = AutoNCP(48, 4)
+        self.wirings = AutoNCP(24, 4)
         self.rnn = build_ncpltc(1282, wirings=self.wirings)
 
     def forward(self, x, hx=None):
