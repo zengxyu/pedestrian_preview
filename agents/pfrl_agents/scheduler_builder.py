@@ -36,7 +36,7 @@ class SchedulerHandler:
 
     def print(self):
         for optimizer in self.optimizers:
-            print("{}: lr: ".format(optimizer.__class__, optimizer.state_dict()['param_groups'][0]['lr']))
+            print("{}: lr: {}".format(optimizer.__class__, optimizer.state_dict()['param_groups'][0]['lr']))
 
     def lr_schedule(self, success_rate):
         """
