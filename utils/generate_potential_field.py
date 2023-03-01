@@ -20,14 +20,9 @@ def create_potential_field(occupancy_map):
         for x in range(GRID_WIDTH):
             if occupancy_map[y][x] == 0:
                 # 如果该格子是空闲的，计算该格子到最近的占据格子的距离并取相反数
-                min_distance = float('inf')
-                for j in range(GRID_HEIGHT):
-                    for i in range(GRID_WIDTH):
-                        if occupancy_map[j][i] == 1:
-                            distance = np.sqrt((x - i) ** 2 + (y - j) ** 2)
-                            if distance < min_distance:
-                                min_distance = distance
-                potential_field[y][x] = -min_distance
+                jj, ii = np.where(occupancy_map)
+                distances = np.linalg.norm(np.array([y - jj, x - ii]).transpose((1, 0)), axis=1)
+                potential_field[y][x] = -np.min(distances, axis=0)
             else:
                 # 如果该格子是占据的，将其 potential field 值设置为一个极小值，表示该区域不可通过。
                 potential_field[y][x] = float(0)
