@@ -451,6 +451,7 @@ class EnvironmentBullet(PybulletBaseEnv):
                 for j in range(self.image_seq_len - 1):
                     temp = np.zeros_like(image)
                     self.ma_images_deque[i].append(temp)
+                for j in range(self.pose_seq_len - 1):
                     temp2 = np.zeros_like(relative_pose)
                     self.ma_relative_poses_deque[i].append(temp2)
             # plt.imshow(depth_image)
