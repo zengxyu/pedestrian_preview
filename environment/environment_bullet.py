@@ -349,25 +349,31 @@ class EnvironmentBullet(PybulletBaseEnv):
         return obstacle_distance_reward
 
     def compute_potential_reward(self):
+        if self.force_u1_x is None:
+            return 0
+
         cur_position = self.agent_robots[0].get_position()
         if self.last_position is None:
             self.last_position = cur_position
-        if self.force_u1_x is None:
-            return 0
+
         cur_position_om = cvt_to_om(cur_position, self.grid_res)
         last_position_om = cvt_to_om(self.last_position, self.grid_res)
-
-        f_u1 = self.get_force_u1(cur_position_om)
-        f_v = self.get_force_v(robot_index=0, pos=cur_position_om)
+        self.last_position = cur_position
 
         s = np.linalg.norm(cur_position_om - last_position_om)
         s_direction = cur_position_om - last_position_om
 
+        f_u1 = self.get_force_u1(cur_position_om)
+        f_v = self.get_force_v(robot_index=0, pos=cur_position_om)
+
         cosine_similarity_u1 = compute_cosine_similarity(s_direction, f_u1)
         cosine_similarity_v = compute_cosine_similarity(s_direction, f_v)
 
-        w_u1 = self.reward_config["force_u1"] * f_u1 * s * cosine_similarity_u1
-        w_v = self.reward_config["force_v"] * f_v * s * cosine_similarity_v
+        f_u1_scalar = np.linalg.norm(f_u1)
+        f_v_scalar = np.linalg.norm(f_v)
+
+        w_u1 = self.reward_config["force_u1"] * f_u1_scalar * s * cosine_similarity_u1
+        w_v = self.reward_config["force_v"] * f_v_scalar * s * cosine_similarity_v
 
         w = w_u1 + w_v
         # print("cosine_similarity:{}".format(cosine_similarity))
