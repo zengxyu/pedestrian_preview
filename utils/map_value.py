@@ -53,7 +53,7 @@ def map_value(H, W, save=False, save_dir=''):
     if save:
         pickle.dump([win_data, win_x, win_y], open(save_path, "wb"))
         # plt.savefig(win_data, win_x, win_y)
-
+    display_windows(win_data, win_x, win_y)
     return win_data, win_x, win_y
 
 
@@ -71,11 +71,12 @@ def display_windows(win_data, win_x, win_y):
     plt.imshow(win_data, cmap='gray')
     plt.title('Window Data')
     h, w = win_data.shape
-    x, y = np.meshgrid(h, w)
+    x, y = np.meshgrid(range(h), range(w))
     plt.figure(2)
     plt.quiver(x, y, win_x, win_y)
-    plt.axis([-1, 1, -1, 1])
+    # plt.axis([-1, 1, -1, 1])
     plt.title('Window Vectors')
+    plt.show()
 
 
 def display_and_save_u(map_x, map_y, save, save_folder):
@@ -89,7 +90,7 @@ def display_and_save_u(map_x, map_y, save, save_folder):
     plt.figure(20)
     plt.quiver(XX, YY, map_x, map_y)
     plt.title('Convolved Map Vectors')
-
+    plt.show()
     if save:
         plt.savefig(save_folder)
 
@@ -113,8 +114,8 @@ def compute_all_u(folder, save_folder):
     win_data, win_x, win_y = pickle.load(open(win_path, "rb"))
     # win_data, win_x, win_y = map_value(H=31, W=31)
     filenames = os.listdir(folder)
-    paths = [os.path.join(folder, filename) for filename in filenames]
-    save_paths = [os.path.join(save_folder, filename) for filename in filenames]
+    paths = [os.path.join(folder, "env_0.pkl") for filename in filenames]
+    save_paths = [os.path.join(save_folder, "env_0.pkl") for filename in filenames]
 
     for path, save_path in zip(paths, save_paths):
         print("Processing path:{}".format(path))
@@ -122,6 +123,8 @@ def compute_all_u(folder, save_folder):
         map_x, map_y = compute_u(win_x, win_y, occupancy_map)
         map_ = np.sqrt(map_x ** 2 + map_y ** 2)
         pickle.dump([map_x, map_y, map_], open(save_path, "wb"))
+        display_and_save_u(map_x, map_y, save_folder="", save=False)
+        print()
         # denominator = np.sqrt(map_x ** 2 + map_y ** 2)
         # map_x = map_x / denominator
         # map_y = map_y / denominator
@@ -130,7 +133,8 @@ def compute_all_u(folder, save_folder):
 
 
 if __name__ == '__main__':
-    # map_value(H=31, W=31, save=True, save_dir=os.path.join(get_project_path(), "data"))
+    # win_data, win_x, win_y = map_value(H=31, W=31, save=True, save_dir=os.path.join(get_project_path(), "data"))
+    # print()
     random_env_folder = os.path.join(get_project_path(), "data", "office_1000", "train", "random_envs")
     save_folder = os.path.join(get_project_path(), "data", "office_1000", "train", "potential_maps")
     if not os.path.exists(save_folder):

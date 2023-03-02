@@ -71,11 +71,24 @@ def load_office1000_scene(p, running_config, worlds_config, phase):
 
     bu_starts = []
     bu_ends = []
-    geodesic_distance_list: List[Dict] = []
+    geodesic_distance_dict_list: List[Dict] = []
+    geodesic_distance_map_list: List[np.array] = []
     for i in indexes:
         start = starts[i]
         end = ends[i]
-        geodesic_distance_list.append(geodesic_distance_dict_dict[tuple(end)])
+
+        # 取出对应终点的测地距离dict
+        geodesic_distance_dict = geodesic_distance_dict_dict[tuple(end)]
+
+        # 将测地距离dict保存到list中
+        geodesic_distance_dict_list.append(geodesic_distance_dict)
+
+        # 将测地距离dict转为测地距离map
+        geo_distance_map = np.zeros_like(occupancy_map).astype(float)
+        for key in geodesic_distance_dict.keys():
+            distance = geodesic_distance_dict[key]
+            geo_distance_map[key] = distance
+        geodesic_distance_map_list.append(geo_distance_map)
         # geodesic_distance_dict[]
         # sample start position and goal position
         bu_start = cvt_to_bu(start, running_config["grid_res"])
@@ -86,4 +99,4 @@ def load_office1000_scene(p, running_config, worlds_config, phase):
     obstacle_ids = drop_world_walls(p, occupancy_map.copy(), running_config["grid_res"], world_config)
 
     # maps, obstacle_ids, bu_starts, bu_goals
-    return occupancy_map, geodesic_distance_list, obstacle_distance_map, potential_map_x, potential_map_y, potential_map, obstacle_ids, bu_starts, bu_ends
+    return occupancy_map, geodesic_distance_dict_list, geodesic_distance_map_list, obstacle_distance_map, potential_map_x, potential_map_y, potential_map, obstacle_ids, bu_starts, bu_ends

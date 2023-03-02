@@ -6,3 +6,14 @@ reward_config1:
   delta_geodesic_distance: 10
   potential_obs: 10
   step_count: 0
+
+reward_config2:
+  collision: -3
+  reach_goal: 100
+  force_u1: 1
+  force_v: 1
+  delta_geodesic_distance: 0
+  delta_distance: 0
+  obstacle_distance: 0
+  potential_obs: 0
+  step_count: 0

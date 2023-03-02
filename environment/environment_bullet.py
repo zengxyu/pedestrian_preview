@@ -33,6 +33,7 @@ from environment.robots.robot_roles import RobotRoles
 from environment.robots.robot_types import RobotTypes, init_robot
 from environment.sensors.sensor_types import SensorTypes
 from environment.sensors.vision_sensor import ImageMode
+from environment.uv_helper import compute_force_v
 from utils.fo_utility import get_project_path
 from utils.image_utility import dilate_image
 
@@ -72,7 +73,7 @@ class EnvironmentBullet(PybulletBaseEnv):
 
         self.occ_map = None
         self.obstacle_distance_map = None
-        self.potential_map_x, self.potential_map_y, self.potential_map = None, None, None
+        self.force_u1_x, self.force_u2_y, self.force_u2 = None, None, None
         self.agent_starts, self.agent_goals = [None] * 2
         self.agent_robots = None
         self.agent_robot_ids = []
@@ -108,7 +109,8 @@ class EnvironmentBullet(PybulletBaseEnv):
         self.agent_sub_goals = None
         self.agent_sub_goals_indexes = None
         self.robot_direction_ids = [None] * self.num_agents
-        self.geodesic_distance_list: List[Dict] = None
+        self.geodesic_distance_dict_list: List[Dict] = None
+        self.geodesic_distance_map_list: List[np.array] = None
 
         self.collision_count = 0
         self.visit_map = None
@@ -155,7 +157,7 @@ class EnvironmentBullet(PybulletBaseEnv):
         check_office1000_folder_structure()
         phase = "train" if self.args.train else "test"
         phase = "train"
-        occ_map, geodesic_distance_list, obstacle_distance_map, potential_map_x, potential_map_y, potential_map, wall_ids, agent_starts, agent_goals = load_office1000_scene(
+        occ_map, geodesic_distance_dict_list, geodesic_distance_map_list, obstacle_distance_map, force_u_x, force_u_y, potential_map, wall_ids, agent_starts, agent_goals = load_office1000_scene(
             p=self.p,
             running_config=self.running_config,
             worlds_config=self.worlds_config,
@@ -165,9 +167,9 @@ class EnvironmentBullet(PybulletBaseEnv):
         self.wall_ids = wall_ids
         self.occ_map = occ_map
         self.obstacle_distance_map = obstacle_distance_map
-        self.potential_map_x = potential_map_x
-        self.potential_map_y = potential_map_y
-        self.potential_map = potential_map
+        self.force_u1_x = force_u_x
+        self.force_u2_y = force_u_y
+        self.force_u2 = potential_map
         self.agent_starts = agent_starts
         # 如果有多个agent，去往同一个目标
         self.agent_goals = [agent_goals[0] for i in range(self.num_agents)]
@@ -175,7 +177,8 @@ class EnvironmentBullet(PybulletBaseEnv):
         # initialize robot
         logging.debug("Create the environment, Done...")
         self.agent_robots = self.init_robots()
-        self.geodesic_distance_list = geodesic_distance_list
+        self.geodesic_distance_dict_list = geodesic_distance_dict_list
+        self.geodesic_distance_map_list = geodesic_distance_map_list
 
     def visualize_goals(self, bu_goals, colors):
         thetas = np.linspace(0, np.pi * 2, 10)
@@ -241,9 +244,9 @@ class EnvironmentBullet(PybulletBaseEnv):
     def compute_geodesic_distance(self, robot_index, cur_position):
         occ_pos = cvt_to_om(cur_position, self.grid_res)
         occ_pos = tuple(occ_pos)
-        if self.geodesic_distance_list is None:
+        if self.geodesic_distance_dict_list is None:
             return 0
-        geodesic_distance_map = self.geodesic_distance_list[robot_index]
+        geodesic_distance_map = self.geodesic_distance_dict_list[robot_index]
         if occ_pos in geodesic_distance_map.keys():
             geodesic_distance = geodesic_distance_map[occ_pos]
         else:
@@ -291,7 +294,7 @@ class EnvironmentBullet(PybulletBaseEnv):
         step_count_reward = self.compute_step_count_reward()
         reward += step_count_reward
 
-        potential_reward = self.compute_potential_map_reward()
+        potential_reward, reward_info_potential = self.compute_potential_reward()
         reward += potential_reward
         """=================obstacle distance reward==============="""
         reward_info = {"reward/reward_collision": collision_reward,
@@ -303,6 +306,7 @@ class EnvironmentBullet(PybulletBaseEnv):
                        "reward/reward_step_count": step_count_reward,
                        "reward/reward": reward
                        }
+        reward_info.update(reward_info_potential)
 
         return reward, reward_info
 
@@ -344,30 +348,58 @@ class EnvironmentBullet(PybulletBaseEnv):
         obstacle_distance_reward = (distance_thresh - min_distance) * self.reward_config["obstacle_distance"]
         return obstacle_distance_reward
 
-    def compute_potential_map_reward(self):
+    def compute_potential_reward(self):
         cur_position = self.agent_robots[0].get_position()
         if self.last_position is None:
             self.last_position = cur_position
+        if self.force_u1_x is None:
+            return 0
         cur_position_om = cvt_to_om(cur_position, self.grid_res)
         last_position_om = cvt_to_om(self.last_position, self.grid_res)
-        vec_x = self.potential_map_x[cur_position_om[0], cur_position_om[1]]
-        vec_y = self.potential_map_y[cur_position_om[0], cur_position_om[1]]
-        vec_move = cur_position_om - last_position_om
-        vec_move = vec_move.astype(int)
-        vec = np.array([vec_x, vec_y])
-        cosine_similarity = compute_cosine_similarity(vec_move, vec)
-        # plt.imshow(self.potential_map_x)
-        # plt.title("potential_map_x")
-        # plt.show()
-        # plt.imshow(self.potential_map_y)
-        # plt.title("potential_map_y")
-        # plt.show()
-        # plt.imshow(np.sqrt(self.potential_map_y ** 2 + self.potential_map_x ** 2))
-        # plt.title("potential_map_y")
-        # plt.show()
+
+        f_u1 = self.get_force_u1(cur_position_om)
+        f_v = self.get_force_v(robot_index=0, pos=cur_position_om)
+
+        s = np.linalg.norm(cur_position_om - last_position_om)
+        s_direction = cur_position_om - last_position_om
+
+        cosine_similarity_u1 = compute_cosine_similarity(s_direction, f_u1)
+        cosine_similarity_v = compute_cosine_similarity(s_direction, f_v)
+
+        w_u1 = self.reward_config["force_u1"] * f_u1 * s * cosine_similarity_u1
+        w_v = self.reward_config["force_v"] * f_v * s * cosine_similarity_v
+
+        w = w_u1 + w_v
         # print("cosine_similarity:{}".format(cosine_similarity))
-        potential_reward = cosine_similarity * self.reward_config["potential_obs"]
-        return potential_reward
+        return w, {"reward/reward_u1": w_u1, "reward/reward_v": w_v}
+
+    def get_force_u1(self, pos):
+        """
+        地图障碍合力方向
+        """
+
+        fx = self.force_u1_x[pos[0], pos[1]]
+        fy = self.force_u2_y[pos[0], pos[1]]
+        f = np.array([fy, fx])
+
+        return f
+
+    def get_force_u2(self):
+        """
+        动态障碍物合力方向
+        """
+        return
+
+    def get_force_v(self, robot_index, pos):
+        """
+        价值合力方向（测地距离）
+        """
+        geo_distance_map = self.geodesic_distance_map_list[robot_index]
+        force_v_scalar, force_v_x, force_v_y = compute_force_v(self.occ_map, geo_distance_map)
+        fx = force_v_x[pos[0], pos[1]]
+        fy = force_v_y[pos[0], pos[1]]
+        f = np.array([fy, fx])
+        return f
 
     def compute_reach_goal_reward(self, reach_goal):
         reach_goal_reward = 0
