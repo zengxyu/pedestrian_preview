@@ -350,8 +350,9 @@ class EnvironmentBullet(PybulletBaseEnv):
 
     def compute_potential_reward(self):
         if self.force_u1_x is None:
-            return 0
-
+            return 0, {}
+        if "force_u1" in self.reward_config.keys():
+            return 0, {}
         cur_position = self.agent_robots[0].get_position()
         if self.last_position is None:
             self.last_position = cur_position
