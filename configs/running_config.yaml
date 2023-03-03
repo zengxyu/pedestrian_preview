@@ -25,13 +25,14 @@ world_name: office
 # choose from ddqn, ddqn_recurrent, ddpg, ddpg_recurrent, td3, td3_recurrent, sac
 agent: sac
 
-action_space: ContinuousVWActionSpace
+# ContinuousVWActionSpace, ContinuousXYYAWActionSpace
+action_space: ContinuousXYYAWActionSpace
 
 # choose from lidar, vision, multi_vision
 sensors_name: [lidar, vision]
 
 # choose from [race_car, turtlebot, object_robot]
-agent_robot_name: race_car
+agent_robot_name: object_robot
 num_agents: 1
 
 npc_robot_name: object_robot

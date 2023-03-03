@@ -211,7 +211,10 @@ class EnvironmentBullet(PybulletBaseEnv):
     def step(self, actions):
         self.step_count += 1
         # print("actions:{}".format(actions))
-        reach_goal, collision = self.iterate_steps(actions)
+
+        reach_goal, collision = self.iterate_steps_pose_control(actions)
+
+        # reach_goal, collision = self.iterate_steps(actions)
         # print("v:{};w:{}".format(*self.robots[0].get_v_w()))
         state = self.get_state()
         reward, reward_info = self.get_reward(reach_goal=reach_goal, collision=collision)
@@ -384,7 +387,8 @@ class EnvironmentBullet(PybulletBaseEnv):
         """
         地图障碍合力方向
         """
-
+        pos[0] = np.clip(pos[0], 0, self.occ_map.shape[0] - 1)
+        pos[1] = np.clip(pos[1], 0, self.occ_map.shape[1] - 1)
         fx = self.force_u1_x[pos[0], pos[1]]
         fy = self.force_u2_y[pos[0], pos[1]]
         f = np.array([fy, fx])
@@ -590,6 +594,40 @@ class EnvironmentBullet(PybulletBaseEnv):
             return CollisionType.CollisionWithAgent
         else:
             return False
+
+    def iterate_steps_pose_control(self, actions):
+        iterate_count = 0
+        reach_goals = []
+        n_step = np.round(self.inference_duration / self.physical_step_duration)
+        while iterate_count < n_step:
+            for i, robot in enumerate(self.agent_robots):
+                delta_x, delta_y, delta_yaw = self.action_space.to_force(action=actions[i])
+                # 机器人n_step步将delta_x, delta_y, delta_yaw走完
+                d_x, d_y, d_yaw = delta_x / n_step, delta_y / n_step, delta_yaw / n_step
+                robot.small_step_pose_control(d_x, d_y, d_yaw)
+                # 画机器人方向线条
+                if self.render:
+                    robot_direction_id = plot_robot_direction_line(self.p, self.robot_direction_ids[i],
+                                                                   robot.get_x_y_yaw())
+                    self.robot_direction_ids[i] = robot_direction_id
+
+            if self.npc_group is not None:
+                self.npc_group.step()
+            # 物理模拟一步
+            self.p_step_simulation()
+            # 检测碰撞
+            collision = self._check_collision()
+            iterate_count += 1
+
+        # check if all reach goal
+        for i, robot in enumerate(self.agent_robots):
+            reach_goal = compute_distance(robot.get_position(), self.agent_goals[i]) < self.running_config[
+                "goal_reached_thresh"]
+            reach_goals.append(reach_goal)
+        all_reach_goal = all(reach_goals)
+
+        # self.print_v()
+        return all_reach_goal, collision
 
     def iterate_steps(self, actions):
         iterate_count = 0

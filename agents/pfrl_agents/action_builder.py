@@ -9,10 +9,11 @@
         
 ===========================================
 """
-from agents.action_space.action_space import ContinuousVWActionSpace
+from agents.action_space.action_space import ContinuousVWActionSpace, ContinuousXYYAWActionSpace
 from utils.config_utility import read_yaml
 
-motion_action_map = {"ContinuousVWActionSpace": ContinuousVWActionSpace}
+motion_action_map = {"ContinuousVWActionSpace": ContinuousVWActionSpace,
+                     "ContinuousXYYAWActionSpace": ContinuousXYYAWActionSpace}
 
 
 def build_action_space(parser_args):

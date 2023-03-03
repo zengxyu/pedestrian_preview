@@ -1,3 +1,8 @@
 ContinuousVWActionSpace:
   v: [ 0, 1.2 ]
   w: [ -1, 1 ]
+
+ContinuousXYYAWActionSpace:
+  x: [ 0, 0.2 ]
+  y: [ 0, 0.2 ]
+  yaw: [ -3.14, 3.14 ]

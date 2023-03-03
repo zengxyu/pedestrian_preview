@@ -7,18 +7,19 @@ from environment.gen_scene.build_office_world import create_cylinder
 from environment.nav_utilities.pybullet_helper import place_object
 from environment.robots.base_robot import BaseRobot
 from environment.robots.robot_roles import get_role_color
+from environment.sensors.sensor_types import init_sensors
 
 
 class ObjectRobot(BaseRobot):
     def __init__(self, p: BulletClient, client_id: int, robot_role: str, step_duration: float, robot_config: Dict,
-                 sensor_name: str, sensor_config: Dict, start_position, start_yaw):
+                 sensor_names: str, sensors_config: Dict, start_position, start_yaw):
         super().__init__(p, client_id)
 
         self.p = p
         self.client_id = client_id
         self.robot_role = robot_role
         self.robot_config = robot_config
-        self.sensor_config = sensor_config
+        self.sensors_config = sensors_config
 
         self.physical_step_duration = step_duration
 
@@ -33,9 +34,26 @@ class ObjectRobot(BaseRobot):
 
         self.with_collision = self.robot_config["with_collision"]
         self.load_object(start_position[0], start_position[1], start_yaw)
+
+        self.sensors = init_sensors(robot_id=self.robot_id, sensor_names=sensor_names,
+                                    sensors_config=self.sensors_config)
+
         self.cur_yaw = start_yaw
         self.cur_v = 0
         self.cur_w = 0
+
+    def small_step_pose_control(self, delta_x, delta_y, delta_yaw):
+        cur_position = self.get_position()
+        cur_yaw = self.get_yaw()
+        target_position = np.array([*cur_position, 0]) + np.array([delta_x, delta_y, 0])
+        target_yaw = cur_yaw + delta_yaw
+        target_orientation = np.array([0., 0., target_yaw])
+        self.p.resetBasePositionAndOrientation(
+            physicsClientId=self.client_id,
+            bodyUniqueId=self.robot_id,
+            posObj=target_position,
+            ornObj=self.p.getQuaternionFromEuler(target_orientation)
+        )
 
     def small_step(self, planned_v, planned_w):
         """
