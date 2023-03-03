@@ -448,7 +448,10 @@ class EnvironmentBullet(PybulletBaseEnv):
             thetas, hit_fractions = rt.sensors[0].get_obs()
             width, height, rgba_image, depth_image, seg_image = rt.sensors[1].get_obs()
             depth_image = depth_image / rt.sensors[1].farVal
-            relative_pose = cvt_positions_to_reference([self.agent_goals[i]], rt.get_position(), rt.get_yaw())
+            relative_position = self.agent_goals[i] - rt.get_position()
+            relative_yaw = compute_yaw(self.agent_goals[i], rt.get_position()) - rt.get_yaw()
+            relative_pose = np.array([*relative_position, relative_yaw])
+            # relative_pose = cvt_positions_to_reference([self.agent_goals[i]], rt.get_position(), rt.get_yaw())
             w = self.input_config["image_w"]
             h = self.input_config["image_h"]
             image = cv2.resize(depth_image, (w, h))
