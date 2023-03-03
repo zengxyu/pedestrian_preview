@@ -97,7 +97,6 @@ class ObjectRobot(BaseRobot):
         load turtle bot from urdf, turtlebot urdf is from rl_utils
         :return:
         """
-        self.cur_yaw = cur_yaw
         race_car_path = os.path.join(
             get_project_path(),
             "environment",
