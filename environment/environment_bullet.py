@@ -150,7 +150,7 @@ class EnvironmentBullet(PybulletBaseEnv):
             for i, robot in enumerate(self.agent_robots):
                 robot_direction_id = plot_robot_direction_line(self.p, self.robot_direction_ids[i], robot.get_x_y_yaw())
                 self.robot_direction_ids[i] = robot_direction_id
-        print(self.agent_robots[0].get_position())
+        # print(self.agent_robots[0].get_position())
         return state
 
     def load_office_1000(self):
