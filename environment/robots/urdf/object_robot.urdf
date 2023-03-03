@@ -1,0 +1,30 @@
+<?xml version='1.0'?>
+<robot name="miniBox">
+
+    <!-- Base Link -->
+    <link name="base_link">
+        <visual>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+            <cylinder length="1.7" radius="0.25" />
+        </geometry>
+        <material name="white">
+            <color rgba="0.90 0.91 0.95 1"/>
+        </material>
+        </visual>
+        <!-- Base collision, mass and inertia -->
+        <collision>
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <geometry>
+                <cylinder length="1.7" radius="0.25" />
+            </geometry>
+        </collision>
+            <inertial>
+            <mass value="60"/>
+          <inertia ixx="100" ixy="0.0" ixz="0.0" iyy="100" iyz="0.0" izz="100"/>
+
+        </inertial>
+    </link>
+
+
+</robot>

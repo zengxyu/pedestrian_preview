@@ -1,3 +1,4 @@
+import os
 from typing import Dict
 
 import numpy as np
@@ -8,6 +9,7 @@ from environment.nav_utilities.pybullet_helper import place_object
 from environment.robots.base_robot import BaseRobot
 from environment.robots.robot_roles import get_role_color
 from environment.sensors.sensor_types import init_sensors
+from utils.fo_utility import get_project_path
 
 
 class ObjectRobot(BaseRobot):
@@ -27,25 +29,24 @@ class ObjectRobot(BaseRobot):
         self.color = None
         self.shape = self.robot_config["shape"]
         self.radius_range = self.robot_config["radius_range"]
-        self.height_range = self.robot_config["height_range"]
 
         self.radius = np.random.random() * (self.radius_range[1] - self.radius_range[0]) + self.radius_range[0]
-        self.height = np.random.random() * (self.height_range[1] - self.height_range[0]) + self.height_range[0]
+        self.height = 1.7
 
         self.with_collision = self.robot_config["with_collision"]
-        self.load_object(start_position[0], start_position[1], start_yaw)
-
+        # self.load_object(start_position[0], start_position[1], start_yaw)
+        self.load_urdf(start_position[0], start_position[1], start_yaw)
         self.sensors = init_sensors(robot_id=self.robot_id, sensor_names=sensor_names,
                                     sensors_config=self.sensors_config)
 
-        self.cur_yaw = start_yaw
         self.cur_v = 0
         self.cur_w = 0
 
     def small_step_pose_control(self, delta_x, delta_y, delta_yaw):
         cur_position = self.get_position()
         cur_yaw = self.get_yaw()
-        target_position = np.array([*cur_position, 0]) + np.array([delta_x, delta_y, 0])
+        (_, _, z), _ = self.p.getBasePositionAndOrientation(self.robot_id)
+        target_position = np.array([*cur_position, z]) + np.array([delta_x, delta_y, 0])
         target_yaw = cur_yaw + delta_yaw
         target_orientation = np.array([0., 0., target_yaw])
         self.p.resetBasePositionAndOrientation(
@@ -69,26 +70,15 @@ class ObjectRobot(BaseRobot):
         # compute the next position where the obstacle should be set
         next_position = [cur_position[0] + delta_x, cur_position[1] + delta_y]
 
-        place_object(self.p, self.robot_id, *next_position)
+        place_object(self.p, self.robot_id, next_position[0], next_position[1], next_yaw)
 
-        self.update_yaw(next_yaw)
         self.update_v_w(planned_v, planned_w, cur_position, next_position)
 
         return planned_v, planned_w
 
-    def update_yaw(self, yaw):
-        self.cur_yaw = yaw
-
     def update_v_w(self, v, w, cur_position, next_position):
         self.cur_v = np.linalg.norm(cur_position - next_position) / self.physical_step_duration
         self.cur_w = w
-
-    def get_position(self):
-        cur_position, cur_orientation_quat = self.p.getBasePositionAndOrientation(self.robot_id)
-        return np.array([cur_position[0], cur_position[1]])
-
-    def get_yaw(self):
-        return self.cur_yaw
 
     def get_v(self):
         return self.cur_v
@@ -97,8 +87,39 @@ class ObjectRobot(BaseRobot):
         return self.cur_w
 
     def load_object(self, cur_x, cur_y, cur_yaw=0):
-        self.cur_yaw = cur_yaw
         start_position = np.array([cur_x, cur_y])
         self.color = get_role_color(self.robot_role)
         self.robot_id = create_cylinder(self.p, start_position, with_collision=self.with_collision, height=self.height,
                                         radius=self.radius, color=self.color)
+
+    def load_urdf(self, cur_x, cur_y, cur_yaw=0):
+        """
+        load turtle bot from urdf, turtlebot urdf is from rl_utils
+        :return:
+        """
+        self.cur_yaw = cur_yaw
+        race_car_path = os.path.join(
+            get_project_path(),
+            "environment",
+            "robots",
+            "urdf",
+            "object_robot.urdf",
+        )
+        robot_id = self.p.loadURDF(
+            race_car_path,
+            [cur_x, cur_y, self.height / 2],
+            self.p.getQuaternionFromEuler([0, 0, cur_yaw]),
+            flags=self.p.URDF_USE_INERTIA_FROM_FILE
+                  | self.p.URDF_USE_IMPLICIT_CYLINDER,
+        )
+
+        base_link = -1
+        # Find relevant joints
+        for j in range(self.p.getNumJoints(robot_id)):
+            if "base_link" in str(self.p.getJointInfo(robot_id, j)[1]):
+                base_link = j
+
+        self.color = get_role_color(self.robot_role)
+        self.p.changeVisualShape(robot_id, base_link, rgbaColor=self.color)
+
+        self.robot_id = robot_id

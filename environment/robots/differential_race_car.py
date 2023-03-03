@@ -35,6 +35,7 @@ class DifferentialRaceCar(BaseDifferentialRobot):
         self.sensors = init_sensors(robot_id=self.robot_id, sensor_names=sensor_names,
                                     sensors_config=self.sensors_config)
         self.physical_step_duration = step_duration
+        self.height = 1.7
 
     def convert_v_w_to_wheel_velocities(self, v, w):
         v = self.v_ctrl_factor * v * 2
@@ -42,6 +43,19 @@ class DifferentialRaceCar(BaseDifferentialRobot):
         vl = v - w * self.wheel_base / 2
         vr = v + w * self.wheel_base / 2
         return np.array([vl, vr])
+
+    def small_step_pose_control(self, delta_x, delta_y, delta_yaw):
+        cur_position = self.get_position()
+        cur_yaw = self.get_yaw()
+        target_position = np.array([*cur_position, self.height / 2]) + np.array([delta_x, delta_y, 0])
+        target_yaw = cur_yaw + delta_yaw
+        target_orientation = np.array([0., 0., target_yaw])
+        self.p.resetBasePositionAndOrientation(
+            physicsClientId=self.client_id,
+            bodyUniqueId=self.robot_id,
+            posObj=target_position,
+            ornObj=self.p.getQuaternionFromEuler(target_orientation)
+        )
 
     def small_step(self, planned_v, planned_w):
         left_v, right_v = self.convert_v_w_to_wheel_velocities(planned_v, planned_w)

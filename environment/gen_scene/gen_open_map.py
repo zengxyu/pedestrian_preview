@@ -14,7 +14,7 @@ from environment.gen_scene.common_sampler import *
 
 
 def create_open_map(configs):
-    grid_resolution = 2.0 * configs["thickness"]
+    grid_resolution = configs["grid_res"]
 
     width = np.array(configs["width_range"][0]
                      + np.random.random_sample() * (configs["width_range"][1] - configs["width_range"][0])

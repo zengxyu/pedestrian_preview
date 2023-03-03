@@ -14,7 +14,7 @@ from environment.gen_scene.gen_map_util import *
 
 
 def create_corridor_map(configs):
-    grid_resolution = 2.0 * configs["thickness"]
+    grid_resolution = configs["grid_res"]
 
     width = np.array(configs["corridor_width"][0]
                      + np.random.random_sample() * (configs["corridor_width"][1] - configs["corridor_width"][0])

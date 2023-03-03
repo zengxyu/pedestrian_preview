@@ -19,7 +19,7 @@ from utils.math_helper import compute_distance
 
 
 def create_L_map(configs):
-    grid_resolution = 2.0 * configs["thickness"]
+    grid_resolution = configs["grid_res"]
 
     hallway_width = np.array(
         configs["limit"][0][0]

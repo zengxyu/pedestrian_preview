@@ -15,20 +15,20 @@ import numpy as np
 
 
 def create_cross_map(configs):
-    grid_resolution = 2.0 * configs["thickness"]
+    grid_resolution = configs["grid_res"]
 
     hallway_width = np.array(
         configs["hallway_width"][0]
         + np.random.random_sample() * (configs["hallway_width"][1] - configs["hallway_width"][0])
-    ) + 2.0 * configs["thickness"]
+    ) + configs["grid_res"]
     short_L = np.array(
         configs["short_L"][0]
         + np.random.random_sample() * (configs["short_L"][1] - configs["short_L"][0])
-    ) + 2.0 * configs["thickness"]
+    ) + configs["grid_res"]
     long_L = np.array(
         configs["long_L"][0]
         + np.random.random_sample() * (configs["long_L"][1] - configs["long_L"][0])
-    ) + 2.0 * configs["thickness"]
+    ) + configs["grid_res"]
     hallway_width = int(hallway_width / grid_resolution)
     short_L = int(short_L / grid_resolution)
     long_L = int(long_L / grid_resolution)

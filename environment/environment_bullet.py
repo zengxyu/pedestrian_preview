@@ -150,7 +150,7 @@ class EnvironmentBullet(PybulletBaseEnv):
             for i, robot in enumerate(self.agent_robots):
                 robot_direction_id = plot_robot_direction_line(self.p, self.robot_direction_ids[i], robot.get_x_y_yaw())
                 self.robot_direction_ids[i] = robot_direction_id
-
+        print(self.agent_robots[0].get_position())
         return state
 
     def load_office_1000(self):
@@ -405,6 +405,8 @@ class EnvironmentBullet(PybulletBaseEnv):
         """
         价值合力方向（测地距离）
         """
+        pos[0] = np.clip(pos[0], 0, self.occ_map.shape[0] - 1)
+        pos[1] = np.clip(pos[1], 0, self.occ_map.shape[1] - 1)
         geo_distance_map = self.geodesic_distance_map_list[robot_index]
         force_v_scalar, force_v_x, force_v_y = compute_force_v(self.occ_map, geo_distance_map)
         fx = force_v_x[pos[0], pos[1]]
@@ -605,7 +607,7 @@ class EnvironmentBullet(PybulletBaseEnv):
                 # 机器人n_step步将delta_x, delta_y, delta_yaw走完
                 d_x, d_y, d_yaw = delta_x / n_step, delta_y / n_step, delta_yaw / n_step
                 robot.small_step_pose_control(d_x, d_y, d_yaw)
-                # 画机器人方向线条
+                # 画机器人朝向线条
                 if self.render:
                     robot_direction_id = plot_robot_direction_line(self.p, self.robot_direction_ids[i],
                                                                    robot.get_x_y_yaw())
@@ -613,12 +615,13 @@ class EnvironmentBullet(PybulletBaseEnv):
 
             if self.npc_group is not None:
                 self.npc_group.step()
+
             # 物理模拟一步
             self.p_step_simulation()
-            # 检测碰撞
-            collision = self._check_collision()
-            iterate_count += 1
 
+            iterate_count += 1
+        # 检测碰撞
+        collision = self._check_collision()
         # check if all reach goal
         for i, robot in enumerate(self.agent_robots):
             reach_goal = compute_distance(robot.get_position(), self.agent_goals[i]) < self.running_config[

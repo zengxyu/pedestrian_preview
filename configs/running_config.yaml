@@ -1,6 +1,6 @@
 # env config
 grid_res: 0.1
-physical_step_duration: 0.1
+physical_step_duration: 0.05
 
 #  """ the resolution of bullet to occupancy map, one cell in occ map = 0.1 meter in bullet"""
 dilation_size: 4

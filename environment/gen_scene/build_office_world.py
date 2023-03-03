@@ -77,7 +77,7 @@ def place_wall_from_cells(_bullet_client, start, end, resolution, thickness, hei
         0,
         _bullet_client.createCollisionShape(
             shapeType=_bullet_client.GEOM_BOX,
-            halfExtents=[dx, dy, height * 0.5],
+            halfExtents=[dx+0.15, dy+0.15, height * 0.5],
             collisionFramePosition=[x, y, height * 0.5],
         ),
         _bullet_client.createVisualShape(
@@ -88,41 +88,6 @@ def place_wall_from_cells(_bullet_client, start, end, resolution, thickness, hei
         ),
     )
 
-
-def add_entity(_bullet_client, pose, configs, size="medium"):
-    if size == "large":
-        radius = 1.5 * int(configs["thickness"])
-    elif size == "medium":
-        radius = 1.0 * configs["thickness"]
-    else:
-        radius = 0.5 * configs["thickness"]
-
-    # indx, indy = point
-    collision_shape_id = _bullet_client.createCollisionShape(
-        _bullet_client.GEOM_CYLINDER,
-        radius=radius,
-        height=configs["height"] * 5,
-    )
-
-    visual_shape_id = _bullet_client.createVisualShape(
-        _bullet_client.GEOM_CYLINDER,
-        radius=radius,
-        length=configs["height"] * 5,
-        rgbaColor=[0, 0, 0, 1]
-
-    )
-
-    oid = _bullet_client.createMultiBody(
-        baseCollisionShapeIndex=collision_shape_id,
-        baseVisualShapeIndex=visual_shape_id,
-        basePosition=[
-            pose[0],
-            pose[1],
-            0.5,
-        ]
-
-    )
-    return oid
 
 
 def clear_world(_bullet_client, obstacles, base_id, goal_id=None):
@@ -140,25 +105,28 @@ def create_cylinder(_bullet_client, pose, with_collision, goal_id=None, height=N
     if goal_id:
         _bullet_client.removeBody(goal_id)
 
+    visual_shape_id = _bullet_client.createVisualShape(
+        _bullet_client.GEOM_CYLINDER,
+        radius=radius,
+        length=height,
+        rgbaColor=color
+
+    )
     if with_collision:
+        collision_shape_id = _bullet_client.createCollisionShape(
+            _bullet_client.GEOM_CYLINDER,
+            radius=radius,
+            height=height,
+        )
 
         return _bullet_client.createMultiBody(
-            baseVisualShapeIndex=-1,
-            baseCollisionShapeIndex=_bullet_client.createCollisionShape(
-                _bullet_client.GEOM_CYLINDER,
-                radius=radius,
-                height=height,
-            ),
+            baseVisualShapeIndex=visual_shape_id,
+            baseCollisionShapeIndex=collision_shape_id,
             basePosition=[x, y, height / 2],
         )
     else:
         return _bullet_client.createMultiBody(
-            baseVisualShapeIndex=_bullet_client.createVisualShape(
-                _bullet_client.GEOM_CYLINDER,
-                radius=radius,
-                length=height,
-                rgbaColor=color
-            ),
+            baseVisualShapeIndex=visual_shape_id,
             baseCollisionShapeIndex=-1,
             basePosition=[x, y, height / 2],
         )

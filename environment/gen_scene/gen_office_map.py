@@ -79,7 +79,7 @@ def create_office_map(configs):
         building_size = outer_limit[0] + np.random.random_sample(
             size=(2)
         ) * (outer_limit[1] - outer_limit[0])
-        grid_resolution = 2.0 * configs["thickness"]
+        grid_resolution = configs["grid_res"]
         max_wall_length = int(max(building_size) / grid_resolution)
 
         occupancy_map = np.zeros(

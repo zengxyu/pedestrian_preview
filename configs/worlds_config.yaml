@@ -1,7 +1,8 @@
 configs_all:
+  grid_res: 0.1
   outer_height: 3.5
   inner_height: 1
-  thickness: 0.05
+  thickness: 0.1
 
 open:
   width_range: [ 6.0, 8.0 ]
