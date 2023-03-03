@@ -26,7 +26,8 @@ from environment.gen_scene.build_office_world import create_cylinder
 from environment.gen_scene.office1000_loader import load_office1000_scene, check_office1000_folder_structure
 from environment.gen_scene.world_loader import load_scene
 from environment.human_npc_generator import generate_human_npc
-from environment.nav_utilities.coordinates_converter import cvt_to_om, cvt_to_bu, cvt_positions_to_reference
+from environment.nav_utilities.coordinates_converter import cvt_to_om, cvt_to_bu, cvt_positions_to_reference, \
+    transform_local_to_world
 from environment.nav_utilities.pybullet_helper import plot_robot_direction_line
 from environment.robots.npc import NpcGroup
 from environment.robots.robot_roles import RobotRoles
@@ -448,10 +449,10 @@ class EnvironmentBullet(PybulletBaseEnv):
             thetas, hit_fractions = rt.sensors[0].get_obs()
             width, height, rgba_image, depth_image, seg_image = rt.sensors[1].get_obs()
             depth_image = depth_image / rt.sensors[1].farVal
-            relative_position = self.agent_goals[i] - rt.get_position()
-            relative_yaw = compute_yaw(self.agent_goals[i], rt.get_position()) - rt.get_yaw()
-            relative_pose = np.array([*relative_position, relative_yaw])
-            # relative_pose = cvt_positions_to_reference([self.agent_goals[i]], rt.get_position(), rt.get_yaw())
+            # relative_position = self.agent_goals[i] - rt.get_position()
+            # relative_yaw = compute_yaw(self.agent_goals[i], rt.get_position()) - rt.get_yaw()
+            # relative_pose = np.array([*relative_position, relative_yaw])
+            relative_pose = cvt_positions_to_reference([self.agent_goals[i]], rt.get_position(), rt.get_yaw())
             w = self.input_config["image_w"]
             h = self.input_config["image_h"]
             image = cv2.resize(depth_image, (w, h))
@@ -609,6 +610,7 @@ class EnvironmentBullet(PybulletBaseEnv):
                 delta_x, delta_y, delta_yaw = self.action_space.to_force(action=actions[i])
                 # 机器人n_step步将delta_x, delta_y, delta_yaw走完
                 d_x, d_y, d_yaw = delta_x / n_step, delta_y / n_step, delta_yaw / n_step
+                d_x, d_y = transform_local_to_world(np.array([d_x, d_y]), robot.get_position(), robot.get_yaw())
                 robot.small_step_pose_control(d_x, d_y, d_yaw)
                 # 画机器人朝向线条
                 if self.render:
