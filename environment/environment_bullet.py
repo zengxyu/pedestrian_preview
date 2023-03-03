@@ -384,6 +384,8 @@ class EnvironmentBullet(PybulletBaseEnv):
         """
         地图障碍合力方向
         """
+        pos[0] = np.clip(pos[0], 0, self.occ_map.shape[0] - 1)
+        pos[1] = np.clip(pos[1], 0, self.occ_map.shape[1] - 1)
 
         fx = self.force_u1_x[pos[0], pos[1]]
         fy = self.force_u2_y[pos[0], pos[1]]
@@ -401,6 +403,8 @@ class EnvironmentBullet(PybulletBaseEnv):
         """
         价值合力方向（测地距离）
         """
+        pos[0] = np.clip(pos[0], 0, self.occ_map.shape[0] - 1)
+        pos[1] = np.clip(pos[1], 0, self.occ_map.shape[1] - 1)
         geo_distance_map = self.geodesic_distance_map_list[robot_index]
         force_v_scalar, force_v_x, force_v_y = compute_force_v(self.occ_map, geo_distance_map)
         fx = force_v_x[pos[0], pos[1]]
