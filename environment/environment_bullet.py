@@ -610,7 +610,9 @@ class EnvironmentBullet(PybulletBaseEnv):
                 delta_x, delta_y, delta_yaw = self.action_space.to_force(action=actions[i])
                 # 机器人n_step步将delta_x, delta_y, delta_yaw走完
                 d_x, d_y, d_yaw = delta_x / n_step, delta_y / n_step, delta_yaw / n_step
-                d_x, d_y = transform_local_to_world(np.array([d_x, d_y]), robot.get_position(), robot.get_yaw())
+
+                d_x, d_y = transform_local_to_world(np.array([d_x, d_y]), robot.get_position(),
+                                                    robot.get_yaw()) - robot.get_position()
                 robot.small_step_pose_control(d_x, d_y, d_yaw)
                 # 画机器人朝向线条
                 if self.render:
