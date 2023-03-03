@@ -25,9 +25,8 @@ class Npc:
         self.physical_step_duration = step_duration
 
         self.npc_robot_name = self.running_config["npc_robot_name"]
-        self.sensors_name = self.running_config["sensors_name"]
         self.npc_robot_config = args.robots_config[self.running_config["npc_robot_name"]]
-        self.sensor_config = args.sensors_config[self.running_config["sensor_name"]]
+        self.sensors_name = self.running_config["sensors_name"]
 
         self.inference_every_duration = self.running_config["inference_duration"]
 
@@ -50,7 +49,7 @@ class Npc:
         yaw = compute_yaw(path[0], path[-1])
         self.robot = init_robot(self.p, self.client_id, self.npc_robot_name, RobotRoles.NPC,
                                 self.physical_step_duration,
-                                self.npc_robot_config, self.sensor_name,
+                                self.npc_robot_config, self.sensors_name,
                                 self.args.sensors_config, path[0], yaw)
 
         self.path_manager.register_path(path)
