@@ -1,3 +1,4 @@
+import math
 import os
 from typing import Dict
 
@@ -30,7 +31,7 @@ class ObjectRobot(BaseRobot):
         self.shape = self.robot_config["shape"]
         self.radius_range = self.robot_config["radius_range"]
 
-        self.radius = np.random.random() * (self.radius_range[1] - self.radius_range[0]) + self.radius_range[0]
+        self.radius = 0.25
         self.height = 1.7
 
         self.with_collision = self.robot_config["with_collision"]
@@ -42,7 +43,52 @@ class ObjectRobot(BaseRobot):
         self.cur_v = 0
         self.cur_w = 0
 
-    def small_step_pose_control(self, delta_x, delta_y, delta_yaw):
+    def prob_distance(self, delta_x, delta_y):
+        # 机器人当前位置
+        cur_position, cur_orientation_quat = self.p.getBasePositionAndOrientation(self.robot_id)
+        cur_yaw = self.p.getEulerFromQuaternion(cur_orientation_quat)[2]
+
+        # 探测机器人行走方向的障碍物距离
+        # 机器人行走方向
+        theta = np.arctan2(delta_y, delta_x)
+
+        # 探测起点
+        s0 = self.radius
+        x0 = s0 * np.cos(theta)
+        y0 = s0 * np.sin(theta)
+
+        # 障碍物的高度要比0.5高，不然探测不到
+        begin = [cur_position[0] + x0, cur_position[1] + y0]
+        ray_begins = [(begin[0], begin[1], 0.5)]
+
+        # 探测终点
+        distance = 10  # 探测距离
+        x1 = (s0 + distance) * np.cos(theta)
+        y1 = (s0 + distance) * np.sin(theta)
+
+        ray_ends = [(begin[0] + x1, begin[1] + y1, 0.5)]
+
+        # 调用激光探测函数
+        results = self.p.rayTestBatch(ray_begins, ray_ends)
+        # plot_lidar_ray(self._bullet_client, results, rayFroms, rayTos, missRayColor, hitRayColor)
+        results = np.array(results, dtype=object)
+        hit_fraction = results[:, 2].astype(float)
+        hit_distance = hit_fraction * distance
+        intent_distance = np.linalg.norm([delta_x, delta_y])
+
+        # 如果探测到的障碍物距离小于意图移动的距离
+        if hit_distance + self.radius < intent_distance:
+            ratio = (hit_distance + self.radius) / intent_distance
+            delta_x = ratio * delta_x
+            delta_y = ratio * delta_y
+            # plot_lidar_ray(self._bullet_client, results, rayFroms, rayTos, missRayColor=[1, 0, 0], hitRayColor=[0, 0, 1])
+        return delta_x, delta_y
+
+    def small_step_pose_control(self, delta_x_, delta_y_, delta_yaw):
+        delta_x, delta_y = self.prob_distance(delta_x_, delta_y_)
+        if delta_x == delta_x_ and delta_y == delta_y_:
+            print("delta_x == delta_x_ and delta_y == delta_y_")
+        # 检测该方向障碍物的距离
         cur_position = self.get_position()
         cur_yaw = self.get_yaw()
         (_, _, z), _ = self.p.getBasePositionAndOrientation(self.robot_id)
