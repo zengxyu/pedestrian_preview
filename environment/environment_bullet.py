@@ -230,6 +230,7 @@ class EnvironmentBullet(PybulletBaseEnv):
             done = self.collision_count >= self.max_collision_count or reach_goal or over_max_step
         else:
             done = reach_goal or over_max_step
+
         # done = reach_goal or over_max_step
         step_info = reward_info
         # store information

@@ -77,7 +77,7 @@ def place_wall_from_cells(_bullet_client, start, end, resolution, thickness, hei
         0,
         _bullet_client.createCollisionShape(
             shapeType=_bullet_client.GEOM_BOX,
-            halfExtents=[dx+0.15, dy+0.15, height * 0.5],
+            halfExtents=[dx, dy, height * 0.5],
             collisionFramePosition=[x, y, height * 0.5],
         ),
         _bullet_client.createVisualShape(

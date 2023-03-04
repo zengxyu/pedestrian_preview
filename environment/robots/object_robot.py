@@ -1,3 +1,4 @@
+import math
 import os
 from typing import Dict
 
@@ -5,7 +6,7 @@ import numpy as np
 from pybullet_utils.bullet_client import BulletClient
 
 from environment.gen_scene.build_office_world import create_cylinder
-from environment.nav_utilities.pybullet_helper import place_object
+from environment.nav_utilities.pybullet_helper import place_object, plot_robot_direction_line
 from environment.robots.base_robot import BaseRobot
 from environment.robots.robot_roles import get_role_color
 from environment.sensors.sensor_types import init_sensors
@@ -30,7 +31,7 @@ class ObjectRobot(BaseRobot):
         self.shape = self.robot_config["shape"]
         self.radius_range = self.robot_config["radius_range"]
 
-        self.radius = np.random.random() * (self.radius_range[1] - self.radius_range[0]) + self.radius_range[0]
+        self.radius = 0.25
         self.height = 1.7
 
         self.with_collision = self.robot_config["with_collision"]
@@ -41,8 +42,71 @@ class ObjectRobot(BaseRobot):
 
         self.cur_v = 0
         self.cur_w = 0
+        self.debug_line_id = None
 
-    def small_step_pose_control(self, delta_x, delta_y, delta_yaw):
+    def compute_hit_distance(self, cur_position, ray_theta):
+        # 探测起点
+        s0 = self.radius
+        x0 = s0 * np.cos(ray_theta)
+        y0 = s0 * np.sin(ray_theta)
+
+        # 障碍物的高度要比0.5高，不然探测不到
+        begin = [cur_position[0] + x0, cur_position[1] + y0]
+        ray_begins = [(begin[0], begin[1], 0.5)]
+
+        # 探测终点
+        distance = 10  # 探测距离
+        x1 = (s0 + distance) * np.cos(ray_theta)
+        y1 = (s0 + distance) * np.sin(ray_theta)
+
+        ray_ends = [(begin[0] + x1, begin[1] + y1, 0.5)]
+
+        # 调用激光探测函数
+        results = self.p.rayTestBatch(ray_begins, ray_ends)
+        # plot_lidar_ray(self._bullet_client, results, rayFroms, rayTos, missRayColor, hitRayColor)
+        results = np.array(results, dtype=object)
+        hit_fraction = results[:, 2].astype(float)
+        hit_distance = hit_fraction * distance
+
+        return hit_distance
+
+    def prob_distance(self, delta_x, delta_y):
+        # 机器人当前位置
+        cur_position, cur_orientation_quat = self.p.getBasePositionAndOrientation(self.robot_id)
+        cur_yaw = self.p.getEulerFromQuaternion(cur_orientation_quat)[2]
+
+        # 探测机器人行走方向的障碍物距离
+        # 机器人行走方向
+        theta = np.arctan2(delta_y, delta_x)
+        hit_distance = self.compute_hit_distance(cur_position, theta)
+        # 发射另外两根射线(robot 半径)
+        # delta_theta = np.arctan2(self.radius, hit_distance-self.radius)
+        # theta1 = theta + delta_theta
+        # theta2 = theta - delta_theta
+        # hit_distance1 = self.compute_prob(cur_position, theta1)
+        # hit_distance2 = self.compute_prob(cur_position, theta2)
+        # min_distance = min(hit_distance, hit_distance1, hit_distance2)
+        intent_distance = np.linalg.norm([delta_x, delta_y])
+
+        # 如果探测到的障碍物距离小于意图移动的距离
+        if hit_distance - 0.25 < intent_distance:
+            ratio = hit_distance / intent_distance
+            delta_x = 0
+            delta_y = 0
+        else:
+            print()
+        # pose = np.array([*cur_position, np.arctan2(delta_y, delta_x)])
+        # self.debug_line_id = plot_robot_direction_line(self.p, self.debug_line_id, current_pose=pose, color=[0, 0, 1])
+        # plot_lidar_ray(self._bullet_client, results, rayFroms, rayTos, missRayColor=[1, 0, 0], hitRayColor=[0, 0, 1])
+        return delta_x, delta_y
+
+    def small_step_pose_control(self, delta_x_, delta_y_, delta_yaw):
+        delta_x, delta_y = self.prob_distance(delta_x_, delta_y_)
+        if abs(delta_x - delta_x_) < 0.00001 and abs(delta_y - delta_y_) < 0.00001:
+            print("delta_x == delta_x_ and delta_y == delta_y_")
+        else:
+            print()
+        # 检测该方向障碍物的距离
         cur_position = self.get_position()
         cur_yaw = self.get_yaw()
         (_, _, z), _ = self.p.getBasePositionAndOrientation(self.robot_id)
