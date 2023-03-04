@@ -10,29 +10,35 @@ from utils.image_utility import dilate_image
 from utils.office_1000_generator import display_and_save
 
 
+# 将 office 100中的目标点转为门，起点是和终点有隔板的点
 def convert_office_1000_goal_outdoor():
-    office_1000_parent_folder = os.path.join(get_project_path(), "data", "office_1000", "test")
-    office_1000_geodesic_distance_folder = os.path.join(office_1000_parent_folder, "geodesic_distance")
+    office_1000_parent_folder = os.path.join(get_project_path(), "data", "office_1000", "train")
     office_1000_random_envs_folder = os.path.join(office_1000_parent_folder, "random_envs")
-    office_1000_random_envs_images_folder = os.path.join(office_1000_parent_folder, "random_envs_images")
 
-    out_office_1000_goal_outdoor = os.path.join(get_project_path(), "data", "office_1000_goal_outdoor", "test")
-    out_office_1000_goal_outdoor_envs_folder = os.path.join(out_office_1000_goal_outdoor, "random_envs")
-    out_office_1000_goal_outdoor_images_folder = os.path.join(out_office_1000_goal_outdoor, "random_envs_images")
+    out_goal_outdoor_parent_folder = os.path.join(get_project_path(), "data", "office_1000_goal_outdoor", "train")
+    out_goal_outdoor_envs_folder = os.path.join(out_goal_outdoor_parent_folder, "random_envs")
+    out_goal_outdoor_images_folder = os.path.join(out_goal_outdoor_parent_folder, "random_envs_images")
 
-    if not os.path.exists(out_office_1000_goal_outdoor):
-        os.makedirs(out_office_1000_goal_outdoor)
-    if not os.path.exists(out_office_1000_goal_outdoor_envs_folder):
-        os.makedirs(out_office_1000_goal_outdoor_envs_folder)
-    if not os.path.exists(out_office_1000_goal_outdoor_images_folder):
-        os.makedirs(out_office_1000_goal_outdoor_images_folder)
+    if not os.path.exists(out_goal_outdoor_parent_folder):
+        os.makedirs(out_goal_outdoor_parent_folder)
+    if not os.path.exists(out_goal_outdoor_envs_folder):
+        os.makedirs(out_goal_outdoor_envs_folder)
+    if not os.path.exists(out_goal_outdoor_images_folder):
+        os.makedirs(out_goal_outdoor_images_folder)
 
     num_starts = 20
+    file_name_template = "env_{}.pkl"
+    image_name_template = "image_{}.png"
     # 读取每一个occupancy map, 计算门位置， 保存到新的文件夹中
-    for filename in os.listdir(office_1000_random_envs_folder):
+    for i in range(1000, 1200):
+        filename = file_name_template.format(i)
+        image_name = image_name_template.format(i)
         print("Processing file:{}".format(filename))
-        file_path = os.path.join(office_1000_random_envs_folder, filename)
-        occupancy_map, _, _ = pickle.load(open(file_path, "rb"))
+        in_file_path = os.path.join(office_1000_random_envs_folder, filename)
+        out_file_path = os.path.join(out_goal_outdoor_envs_folder, filename)
+        out_image_path = os.path.join(out_goal_outdoor_images_folder, image_name)
+
+        occupancy_map, _, _ = pickle.load(open(in_file_path, "rb"))
         dilated_occ_map = dilate_image(occupancy_map, dilation_size=5)
 
         door_center = compute_door(occupancy_map).tolist()
@@ -40,6 +46,7 @@ def convert_office_1000_goal_outdoor():
         # sample start point
         count = 0
         starts = []
+        # 采样起点，和终点之间有障碍物
         while len(starts) < num_starts and count < 100:
             # print("start point number:{}".format(len(starts)))
 
@@ -51,14 +58,24 @@ def convert_office_1000_goal_outdoor():
                 starts.append(start)
             count += 1
 
+        # 如果不能采样成功，采样起点，和终点之间没有障碍物
+        count = 0
+        while len(starts) < num_starts and count < 100:
+            # print("start point number:{}".format(len(starts)))
+
+            start, sample_success = sg_opposite_baffle_sampler3(dilate_occupancy_map=dilated_occ_map,
+                                                                occupancy_map=occupancy_map,
+                                                                goal=door_center)
+
+            starts.append(start)
+            count += 1
+
         ends = np.array([door_center]).astype(int)
         starts = np.array(starts).astype(int)
-        out_file_path = os.path.join(out_office_1000_goal_outdoor_envs_folder, filename)
-        out_image_path = os.path.join(out_office_1000_goal_outdoor_images_folder,
-                                      filename[:filename.index(".")] + ".png")
-
+        # 将目标转为门以后，保存该occupancy map
         pickle.dump([occupancy_map, starts, ends], open(out_file_path, "wb"))
         ends_tile = np.tile(ends, (len(starts), 1))
+        # 保存图像
         display_and_save(occupancy_map, starts, ends_tile, save=True, save_path=out_image_path)
 
     print("Done!")

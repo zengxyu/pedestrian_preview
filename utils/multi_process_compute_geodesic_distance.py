@@ -4,9 +4,14 @@ from multiprocessing import Pool
 import os, time, random
 
 from utils.compute_geodesic_distance import compute_geodesic_distance
+from utils.fo_utility import get_project_path
 
-env_parent_folder = '../data/office_1000_goal_outdoor/test/random_envs'
-geodesic_distance_parent_folder = '../data/office_1000_goal_outdoor/test/geodesic_distance'
+# env_parent_folder = '../data/office_1000_goal_outdoor/test/random_envs'
+# geodesic_distance_parent_folder = '../data/office_1000_goal_outdoor/test/geodesic_distance'
+
+env_parent_folder = os.path.join(get_project_path(), "data", "office_1000_goal_outdoor", "train", "random_envs")
+geodesic_distance_parent_folder = os.path.join(get_project_path(), "data", "office_1000_goal_outdoor", "train",
+                                               "geodesic_distance")
 
 
 def compute_and_save_geodesic_distance(start_index, end_index):
@@ -40,7 +45,7 @@ def multi_process():
 
     p = Pool(num_process)
 
-    env_indexes = [0, 200]
+    env_indexes = [0, 1200]
     part = int((env_indexes[1] - env_indexes[0]) / num_process)
     split_env_indexes = [[env_indexes[0] + i * part, env_indexes[0] + (i + 1) * part] for i in range(num_process)]
     for start_index, end_index in split_env_indexes:
@@ -49,7 +54,6 @@ def multi_process():
     p.close()
     p.join()
     print('All subprocesses done.')
-
 
 
 if __name__ == '__main__':

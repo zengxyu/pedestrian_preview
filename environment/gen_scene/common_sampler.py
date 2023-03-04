@@ -13,7 +13,7 @@ import logging
 import random
 
 import numpy as np
-import shapely
+import shapely.geometry
 
 from environment.gen_scene.gen_map_util import is_door_neighbor, convolve_map
 from utils.math_helper import compute_distance, compute_yaw, swap_value

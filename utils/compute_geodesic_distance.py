@@ -4,6 +4,8 @@ import pickle
 import heapq
 from collections import defaultdict
 
+from utils.fo_utility import get_project_path
+
 node_adj = {}
 node_num2_position = {}
 node_position2_num = {}
@@ -129,15 +131,16 @@ def compute_geodesic_distance(file_name):
 
 
 if __name__ == '__main__':
-    env_parent_folder = '../data/office_1000_goal_outdoor/random_envs'
-    geodesic_distance_parent_folder = '../data/office_1000_goal_outdoor/geodesic_distance'
+    env_parent_folder = os.path.join(get_project_path(), "data", "office_1000_goal_outdoor", "train", "random_envs")
+    geodesic_distance_parent_folder = os.path.join(get_project_path(), "data", "office_1000_goal_outdoor", "train", "geodesic_distance")
+
     if not os.path.exists(geodesic_distance_parent_folder):
         os.makedirs(geodesic_distance_parent_folder)
 
     env_names = os.listdir(env_parent_folder)
     length = len(env_names)
     template = "env_{}.pkl"
-    indexes = range(1000)
+    indexes = range(1200)
     for i in indexes:
         env_name = template.format(i)
         env_path = os.path.join(env_parent_folder, env_name)
