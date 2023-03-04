@@ -23,6 +23,8 @@ from matplotlib import pyplot as plt
 
 from environment.env_types import EnvTypes
 from environment.gen_scene.build_office_world import create_cylinder
+from environment.gen_scene.office1000_door_loader import check_office1000_goal_outdoor_folder_structure, \
+    load_office1000_goal_outdoor, load_office1000_goal_scene
 from environment.gen_scene.office1000_loader import load_office1000_scene, check_office1000_folder_structure
 from environment.gen_scene.world_loader import load_scene
 from environment.human_npc_generator import generate_human_npc
@@ -138,11 +140,14 @@ class EnvironmentBullet(PybulletBaseEnv):
         elif self.args.env == EnvTypes.P2V:
             assert self.args.load_map_from is not None and self.args.load_map_from != "", "args.load_map_from is None and args.load_map_from == ''"
             self.load_env()
+        elif self.args.env == EnvTypes.OFFICE1000DOOR:
+            self.load_office_1000_goal_outdoor()
+            self.randomize_human_npc()
         else:
             # randomize environment
             self.randomize_env()
             self.randomize_human_npc()
-        create_cylinder(self.p, self.agent_goals[0], with_collision=False, height=3, radius=0.1)
+        # create_cylinder(self.p, self.agent_goals[0], with_collision=False, height=3, radius=0.1)
 
         # # randomize environment
         state = self.get_state()
@@ -153,6 +158,33 @@ class EnvironmentBullet(PybulletBaseEnv):
                 self.robot_direction_ids[i] = robot_direction_id
         # print(self.agent_robots[0].get_position())
         return state
+
+    def load_office_1000_goal_outdoor(self):
+        check_office1000_goal_outdoor_folder_structure()
+        phase = "train" if self.args.train else "test"
+        occ_map, geodesic_distance_dict_list, geodesic_distance_map_list, obstacle_distance_map, force_u_x, force_u_y, potential_map, wall_ids, agent_starts, agent_goals = load_office1000_goal_scene(
+            p=self.p,
+            running_config=self.running_config,
+            worlds_config=self.worlds_config,
+            phase=phase)
+
+        # sample start pose and goal pose
+        self.wall_ids = wall_ids
+        self.occ_map = occ_map
+        self.obstacle_distance_map = obstacle_distance_map
+        self.agent_starts = agent_starts
+        self.force_u1_x = force_u_x
+        self.force_u2_y = force_u_y
+        self.force_u2 = potential_map
+        self.agent_starts = agent_starts
+
+        # 如果有多个agent，去往同一个目标
+        self.agent_goals = [agent_goals[0] for i in range(self.num_agents)]
+        # initialize robot
+        logging.debug("Create the environment, Done...")
+        self.agent_robots = self.init_robots()
+        self.geodesic_distance_dict_list = geodesic_distance_dict_list
+        self.geodesic_distance_map_list = geodesic_distance_map_list
 
     def load_office_1000(self):
         check_office1000_folder_structure()

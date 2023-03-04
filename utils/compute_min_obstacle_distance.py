@@ -36,9 +36,9 @@ def display_and_save(obstacle_distance_map, save, save_path):
 
 
 if __name__ == '__main__':
-    phase = "train"
-    env_parent_folder = os.path.join(get_project_path(), "data", "office_1000", phase, "random_envs")
-    obstacle_distance_parent_folder = os.path.join(get_project_path(), "data", "office_1000", phase,
+    phase = "test"
+    env_parent_folder = os.path.join(get_project_path(), "data", "office_1000_goal_outdoor", phase, "random_envs")
+    obstacle_distance_parent_folder = os.path.join(get_project_path(), "data", "office_1000_goal_outdoor", phase,
                                                    "obstacle_distance")
     image_save_folder = os.path.join(get_project_path(), "data", "office_1000", phase,
                                      "obstacle_distance_images")
@@ -52,7 +52,7 @@ if __name__ == '__main__':
     template = "env_{}.pkl"
     image_save_name_template = "env_{}.png"
 
-    indexes = [a for a in range(1000, 1200)]
+    indexes = [a for a in range(0, 1200)]
     for i in indexes:
         env_name = template.format(i)
         env_path = os.path.join(env_parent_folder, env_name)
