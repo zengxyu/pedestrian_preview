@@ -40,8 +40,13 @@ def compute_conv_out_node_num(d, w, h):
 
 
 if __name__ == '__main__':
-    a = compute_conv_out_width(i=20, k=3, s=2, p=1)
+    a = compute_conv_out_width(i=60, k=3, s=2, p=1)
+    print(a)
+
     a = compute_conv_out_width(i=a, k=3, s=2, p=1)
+    print(a)
+
     a = compute_conv_out_width(i=a, k=3, s=2, p=1)
+    print(a)
 
     print(a)

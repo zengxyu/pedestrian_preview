@@ -447,11 +447,21 @@ class EnvironmentBullet(PybulletBaseEnv):
         h = 0
         for i, rt in enumerate(self.agent_robots):
             thetas, hit_fractions = rt.sensors[0].get_obs()
+            # plt.clf()
+            # plt.polar(thetas, hit_fractions)
+            # # plt.show()
+            # plt.tight_layout()
+            # plt.savefig(os.path.join(get_project_path(), "output", "lidar_step_{}.png".format(self.step_count.value)))
+
             width, height, rgba_image, depth_image, seg_image = rt.sensors[1].get_obs()
             depth_image = depth_image / rt.sensors[1].farVal
-            # relative_position = self.agent_goals[i] - rt.get_position()
-            # relative_yaw = compute_yaw(self.agent_goals[i], rt.get_position()) - rt.get_yaw()
-            # relative_pose = np.array([*relative_position, relative_yaw])
+            # plt.clf()
+            # plt.imshow(depth_image)
+            # plt.axis("off")
+            # plt.tight_layout()
+            # # plt.show()
+            # plt.savefig(os.path.join(get_project_path(), "output", "depth_step_{}.png".format(self.step_count.value)))
+
             relative_pose = cvt_positions_to_reference([self.agent_goals[i]], rt.get_position(), rt.get_yaw())
             w = self.input_config["image_w"]
             h = self.input_config["image_h"]
