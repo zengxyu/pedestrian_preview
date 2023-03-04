@@ -168,10 +168,10 @@ class ObjectRobot(BaseRobot):
 
     def small_step_pose_control(self, delta_x_, delta_y_, delta_yaw):
         delta_x, delta_y = self.compute_move_xy(delta_x_, delta_y_)
-        if abs(delta_x - delta_x_) < 0.00001 and abs(delta_y - delta_y_) < 0.00001:
-            print("delta_x == delta_x_ and delta_y == delta_y_")
-        else:
-            print()
+        # if abs(delta_x - delta_x_) < 0.00001 and abs(delta_y - delta_y_) < 0.00001:
+        #     print("delta_x == delta_x_ and delta_y == delta_y_")
+        # else:
+        #     print()
         # 检测该方向障碍物的距离
         cur_position = self.get_position()
         cur_yaw = self.get_yaw()
