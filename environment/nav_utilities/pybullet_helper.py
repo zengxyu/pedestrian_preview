@@ -34,17 +34,18 @@ def place_object(_bullet_client, object_id, x, y, yaw=None):
     )
 
 
-def plot_robot_direction_line(pybullet_client, robot_direction_line_id, current_pose, color=[1, 0, 0]):
+def plot_robot_direction_line(pybullet_client, robot_direction_line_id, current_pose, color=[1, 0, 0], height=1.5,
+                              line_length=0.6):
     if robot_direction_line_id is not None:
         pybullet_client.removeUserDebugItem(robot_direction_line_id)
     robot_direction_line_id = pybullet_client.addUserDebugLine(
-        (*current_pose[:2], 1.5),
+        (*current_pose[:2], height),
         (
-            current_pose[0] + 0.6 * math.cos(current_pose[2]),
-            current_pose[1] + 0.6 * math.sin(current_pose[2]),
-            1.5,
+            current_pose[0] + line_length * math.cos(current_pose[-1]),
+            current_pose[1] + line_length * math.sin(current_pose[-1]),
+            height,
         ),
-       color,
+        color,
         5,
     )
     return robot_direction_line_id
