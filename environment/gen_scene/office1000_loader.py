@@ -14,9 +14,10 @@ def check_office1000_folder_structure():
     url = "https://pan.dm-ai.com/s/AsHXrJGKe4NLsKH"
     password = "12345678"
     office1000_parent_folder = os.path.join(get_project_path(), "data/office_1500")
-    spaces = ["\n-", "\n\t-", "\n\t\t-", "-\n\t\t\t", "\n\t\t\t\t-"]
+    spaces = ["\n\t-", "\n\t\t-", "\n\t\t\t-", "-\n\t\t\t\t", "\n\t\t\t\t\t-"]
+
     parent_folder = "data"
-    sub1_folders = ["office_1500", "office_1500_goal_outdoor"]
+    sub1_folders = ["office_1500"]
     sub2_folders = ["train", "test"]
     sub3_folders = ["envs", "envs_images", "geodesic_distance", "obstacle_distance", "obstacle_distance_images",
                     "uv_forces"]

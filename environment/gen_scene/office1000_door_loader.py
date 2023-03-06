@@ -28,7 +28,7 @@ def check_office1000_goal_outdoor_folder_structure():
     office1000_parent_folder = os.path.join(get_project_path(), "data/office_1500_goal_outdoor")
     spaces = ["\n\t-", "\n\t\t-", "\n\t\t\t-", "-\n\t\t\t\t", "\n\t\t\t\t\t-"]
     parent_folder = "data"
-    sub1_folders = ["office_1500", "office_1500_goal_outdoor"]
+    sub1_folders = ["office_1500_goal_outdoor"]
     sub2_folders = ["train", "test"]
     sub3_folders = ["envs", "envs_images", "geodesic_distance", "obstacle_distance", "obstacle_distance_images",
                     "uv_forces"]

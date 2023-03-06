@@ -313,7 +313,7 @@ class EnvironmentBullet(PybulletBaseEnv):
 
         """================delta distance reward=================="""
         # compute distance from current to goal
-        obj_euclidean_distance_reward = self.compute_obs_euclidean_distance_reward()
+        obj_euclidean_distance_reward = self.compute_goal_euclidean_reward()
         reward += obj_euclidean_distance_reward
 
         """================reach goal reward=================="""
@@ -343,36 +343,31 @@ class EnvironmentBullet(PybulletBaseEnv):
         obstacle_distance_reward = self.compute_obstacle_distance_reward()
         reward += obstacle_distance_reward
         """================delta geodesic distance reward=================="""
-        geo_distance_reward = self.compute_delta_geodesic_distance_reward()
+        geo_distance_reward = self.compute_goal_geo_reward()
         reward += geo_distance_reward
 
-        reward_info = {"reward/reward_obstacle_distance": obstacle_distance_reward,
-                       "reward/reward_obj_geo_distance": geo_distance_reward}
+        reward_info = {"reward/reward_obs": obstacle_distance_reward,
+                       "reward/reward_goal_geo": geo_distance_reward}
 
         return reward, reward_info
 
-    def compute_step_count_reward(self):
-        step_count_reward = np.log(self.step_count.value) * self.reward_config["step_count"]
-        return step_count_reward
-
-    def compute_obs_euclidean_distance_reward(self):
+    def compute_goal_euclidean_reward(self):
         if self.last_distance is None:
             self.last_distance = compute_distance(self.agent_goals[0], self.agent_starts)
 
         distance = compute_distance(self.agent_goals[0], self.agent_robots[0].get_position())
-        delta_distance_reward = (self.last_distance - distance) * self.reward_config["delta_distance"]
+        delta_distance_reward = (self.last_distance - distance) * self.reward_config["goal_euclidean"]
         self.last_distance = distance
         return delta_distance_reward
 
-    def compute_delta_geodesic_distance_reward(self):
+    def compute_goal_geo_reward(self):
         if self.last_geodesic_distance is None:
             self.last_geodesic_distance = self.compute_geodesic_distance(robot_index=0, cur_position=self.agent_robots[
                 0].get_position())
         geodesic_distance = self.compute_geodesic_distance(robot_index=0,
                                                            cur_position=self.agent_robots[0].get_position())
 
-        geo_distance_reward = (self.last_geodesic_distance - geodesic_distance) * self.reward_config[
-            "delta_geodesic_distance"]
+        geo_distance_reward = (self.last_geodesic_distance - geodesic_distance) * self.reward_config["goal_geo"]
         self.last_geodesic_distance = geodesic_distance
         return geo_distance_reward
 
@@ -386,7 +381,7 @@ class EnvironmentBullet(PybulletBaseEnv):
         obstacle_distance = self.compute_obstacle_distance(cur_position=self.agent_robots[0].get_position())
         distance_thresh = 0.4
         min_distance = min(obstacle_distance, distance_thresh)
-        obstacle_distance_reward = (distance_thresh - min_distance) * self.reward_config["obstacle_distance"]
+        obstacle_distance_reward = (distance_thresh - min_distance) * self.reward_config["obs_dist"]
         return obstacle_distance_reward
 
     def compute_uv_reward(self):

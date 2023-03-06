@@ -1,22 +1,43 @@
 reward_euclidean:
+# 碰撞的惩罚
   collision: -3
-  obstacle_distance: -3
+# 到达目标的奖励
   reach_goal: 100
-  delta_distance: 10
-  delta_geodesic_distance: 0
+#  到达目标的欧式距离
+  goal_euclidean: 10
+#  到目标点的测地距离
+  goal_geo: 0
+#  到障碍物的最近距离
+  obs_dist: -3
+
+
 
 reward_geo_obs:
+#  碰撞的惩罚
   collision: -3
-  obstacle_distance: -3
+# 到达目标的奖励
   reach_goal: 100
-  delta_distance: 0
-  delta_geodesic_distance: 10
+#  到达目标的欧式距离
+  goal_euclidean: 0
+#  到目标点的测地距离
+  goal_geo: 10
+#  到障碍物的最近距离
+  obs_dist: -3
+
+
 
 reward_uv:
+#  碰撞的惩罚
   collision: -3
+# 到达目标的奖励
   reach_goal: 100
+#  到达目标的欧式距离
+  goal_euclidean: 0
+#  到目标点的测地距离
+  goal_geo: 0
+#  到障碍物的最近距离
+  obs_dist: 0
+#  u
   force_u1: 1
+#  v
   force_v: 1
-  delta_geodesic_distance: 0
-  delta_distance: 0
-  obstacle_distance: 0
