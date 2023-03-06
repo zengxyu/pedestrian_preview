@@ -15,9 +15,9 @@ def compute_and_save_geodesic_distance(envs_folder, geo_dist_folder, start_index
     for i in indexes:
         env_name = template.format(i)
         env_path = os.path.join(envs_folder, env_name)
+        out_path = os.path.join(geo_dist_folder, env_name)
         print("Computing geodesic distance for {}...".format(env_name))
         out = compute_geodesic_distance(file_name=env_path)
-        out_path = os.path.join(geo_dist_folder, env_name)
         pickle.dump(out, open(out_path, 'wb'))
         print("Save to {}!".format(out_path))
     print("Done!")

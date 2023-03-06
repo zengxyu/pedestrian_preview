@@ -1,6 +1,6 @@
 lidar:
   # """ ray_num - the number of rays that the lidar on robot casts"""
-  ray_num: 100
+  ray_num: 360
 
   # """ height - the height position of lidar on the robot"""
   height: 0.5
