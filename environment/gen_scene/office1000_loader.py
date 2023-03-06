@@ -14,19 +14,39 @@ def check_office1000_folder_structure():
     url = "https://pan.dm-ai.com/s/AsHXrJGKe4NLsKH"
     password = "12345678"
     office1000_parent_folder = os.path.join(get_project_path(), "data/office_1500")
-    folder_structure = "\n-data\n\t-office_1500\n\t\t-train\n\t\t\t\t-geodesic_distance\n\t\t\t\t-envs\n\t\t\t\t-envs_images\n\t\t-test\n\t\t\t\t-geodesic_distance\n\t\t\t\t-envs\n\t\t\t\t-envs_images"
-    warning = "Please download data from url:{}; password:{}; and put it in your project_folder/data; \nYour folder structure should be like : {}".format(
-        url, password, folder_structure)
-    assert os.path.exists(office1000_parent_folder), warning
+    spaces = ["\n-", "\n\t-", "\n\t\t-", "-\n\t\t\t", "\n\t\t\t\t-"]
+    parent_folder = "data"
+    sub1_folders = ["office_1500", "office_1500_goal_outdoor"]
+    sub2_folders = ["train", "test"]
+    sub3_folders = ["envs", "envs_images", "geodesic_distance", "obstacle_distance", "obstacle_distance_images",
+                    "uv_forces"]
+    warning1 = "Please download data from url:{}; password:{}; and put it in your project_folder/data; ".format(url,
+                                                                                                                password)
+    folder_structure = parent_folder
+    for sub1_folder in sub1_folders:
+        space1 = spaces[0]
+        folder_structure += space1
+        folder_structure += sub1_folder
+        for sub2_folder in sub2_folders:
+            space2 = spaces[1]
+            folder_structure += space2
+            folder_structure += sub2_folder
+            for sub3_folder in sub3_folders:
+                space3 = spaces[2]
+                folder_structure += space3
+                folder_structure += sub3_folder
+
+    warning2 = "Your folder structure should be like : {}".format(folder_structure)
+    assert os.path.exists(office1000_parent_folder), warning1 + warning2
 
     for phase in ["train", "test"]:
         geodesic_distance_folder = os.path.join(office1000_parent_folder, phase, "geodesic_distance")
         random_env_folder = os.path.join(office1000_parent_folder, phase, "envs")
         random_envs_images_folder = os.path.join(office1000_parent_folder, phase, "envs_images")
 
-    assert os.path.exists(geodesic_distance_folder), warning
-    assert os.path.exists(random_env_folder), warning
-    assert os.path.exists(random_envs_images_folder), warning
+    assert os.path.exists(geodesic_distance_folder), warning1 + warning2
+    assert os.path.exists(random_env_folder), warning1 + warning2
+    assert os.path.exists(random_envs_images_folder), warning1 + warning2
 
 
 def load_office1000_scene(p, running_config, worlds_config, phase):
