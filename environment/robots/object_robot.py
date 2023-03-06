@@ -167,7 +167,7 @@ class ObjectRobot(BaseRobot):
 
         return delta_x, delta_y
 
-    def small_step_pose_control(self, delta_x_, delta_y_, delta_yaw):
+    def small_step_xy_yaw_control(self, delta_x_, delta_y_, delta_yaw):
         delta_x, delta_y = self.compute_move_xy(delta_x_, delta_y_)
         # if abs(delta_x - delta_x_) < 0.00001 and abs(delta_y - delta_y_) < 0.00001:
         #     print("delta_x == delta_x_ and delta_y == delta_y_")
@@ -179,6 +179,22 @@ class ObjectRobot(BaseRobot):
         (_, _, z), _ = self.p.getBasePositionAndOrientation(self.robot_id)
         target_position = np.array([*cur_position, z]) + np.array([delta_x, delta_y, 0])
         target_yaw = cur_yaw + delta_yaw
+        target_orientation = np.array([0., 0., target_yaw])
+        self.p.resetBasePositionAndOrientation(
+            physicsClientId=self.client_id,
+            bodyUniqueId=self.robot_id,
+            posObj=target_position,
+            ornObj=self.p.getQuaternionFromEuler(target_orientation)
+        )
+
+    def small_step_xy_control(self, delta_x_, delta_y_):
+        delta_x, delta_y = self.compute_move_xy(delta_x_, delta_y_)
+        # 检测该方向障碍物的距离
+        cur_position = self.get_position()
+        cur_yaw = self.get_yaw()
+        (_, _, z), _ = self.p.getBasePositionAndOrientation(self.robot_id)
+        target_position = np.array([*cur_position, z]) + np.array([delta_x, delta_y, 0])
+        target_yaw = np.arctan2(delta_y, delta_x)
         target_orientation = np.array([0., 0., target_yaw])
         self.p.resetBasePositionAndOrientation(
             physicsClientId=self.client_id,

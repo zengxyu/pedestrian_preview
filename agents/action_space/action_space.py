@@ -70,3 +70,18 @@ class ContinuousXYYAWActionSpace(AbstractContinuousActionSpace):
     def to_force(self, action):
         action = action * self.scale + self.loc
         return action
+
+
+class ContinuousXYActionSpace(AbstractContinuousActionSpace):
+    def __init__(self, **kwargs):
+        self.x_range = kwargs["x"]
+        self.y_range = kwargs["y"]
+        low = np.array([self.x_range[0], self.y_range[0]])
+        high = np.array([self.x_range[1], self.y_range[1]])
+        self.scale = (high - low) / 2
+        self.loc = (high + low) / 2
+        super().__init__(-1 * np.ones_like(low), 1 * np.ones_like(high))
+
+    def to_force(self, action):
+        action = action * self.scale + self.loc
+        return action

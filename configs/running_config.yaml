@@ -25,8 +25,8 @@ world_name: office
 # choose from ddqn, ddqn_recurrent, ddpg, ddpg_recurrent, td3, td3_recurrent, sac
 agent: sac
 
-# ContinuousVWActionSpace, ContinuousXYYAWActionSpace
-action_space: ContinuousXYYAWActionSpace
+# ContinuousVWActionSpace, ContinuousXYYAWActionSpace, ContinuousXYActionSpace
+action_space: ContinuousXYActionSpace
 
 # choose from lidar, vision, multi_vision
 sensors_name: [lidar, vision]

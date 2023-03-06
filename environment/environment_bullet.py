@@ -44,7 +44,7 @@ sys.path.append(
     os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), "traditional_planner", "a_star"))
 print(sys.path)
 import numpy as np
-from agents.action_space.action_space import AbstractActionSpace
+from agents.action_space.action_space import AbstractActionSpace, ContinuousXYYAWActionSpace, ContinuousXYActionSpace
 from environment.base_pybullet_env import PybulletBaseEnv
 from environment.nav_utilities.check_helper import check_collision, CollisionType
 from environment.nav_utilities.counter import Counter
@@ -245,9 +245,12 @@ class EnvironmentBullet(PybulletBaseEnv):
     def step(self, actions):
         self.step_count += 1
         # print("actions:{}".format(actions))
-
-        reach_goal, collision = self.iterate_steps_pose_control(actions)
-
+        if isinstance(self.action_space, ContinuousXYYAWActionSpace):
+            reach_goal, collision = self.iterate_steps_xy_yaw_control(actions)
+        elif isinstance(self.action_space, ContinuousXYActionSpace):
+            reach_goal, collision = self.iterate_steps_xy_control(actions)
+        else:
+            raise NotImplementedError
         # reach_goal, collision = self.iterate_steps(actions)
         # print("v:{};w:{}".format(*self.robots[0].get_v_w()))
         state = self.get_state()
@@ -643,7 +646,7 @@ class EnvironmentBullet(PybulletBaseEnv):
         else:
             return False
 
-    def iterate_steps_pose_control(self, actions):
+    def iterate_steps_xy_yaw_control(self, actions):
         iterate_count = 0
         n_step = np.round(self.inference_duration / self.physical_step_duration)
         while iterate_count < n_step:
@@ -657,7 +660,45 @@ class EnvironmentBullet(PybulletBaseEnv):
 
                 reach_goal = compute_distance(robot.get_position(), self.agent_goals[i]) < self.running_config[
                     "goal_reached_thresh"]
-                robot.small_step_pose_control(d_x, d_y, d_yaw)
+                robot.small_step_xy_yaw_control(d_x, d_y, d_yaw)
+
+                if reach_goal:
+                    self.reach_goals[i] = True
+
+                # 画机器人朝向线条
+                if self.render:
+                    robot_direction_id = plot_robot_direction_line(self.p, self.robot_direction_ids[i],
+                                                                   robot.get_x_y_yaw())
+                    self.robot_direction_ids[i] = robot_direction_id
+
+            if self.npc_group is not None:
+                self.npc_group.step()
+
+            # 物理模拟一步
+            self.p_step_simulation()
+
+            iterate_count += 1
+        # 检测碰撞
+        collision = self._check_collision()
+        # check if all reach goal
+        all_reach_goal = all(self.reach_goals)
+        return all_reach_goal, collision
+
+    def iterate_steps_xy_control(self, actions):
+        iterate_count = 0
+        n_step = np.round(self.inference_duration / self.physical_step_duration)
+        while iterate_count < n_step:
+            for i, robot in enumerate(self.agent_robots):
+                delta_x, delta_y = self.action_space.to_force(action=actions[i])
+                # 机器人n_step步将delta_x, delta_y, delta_yaw走完
+                d_x, d_y = delta_x / n_step, delta_y / n_step
+
+                d_x, d_y = transform_local_to_world(np.array([d_x, d_y]), robot.get_position(),
+                                                    robot.get_yaw()) - robot.get_position()
+
+                reach_goal = compute_distance(robot.get_position(), self.agent_goals[i]) < self.running_config[
+                    "goal_reached_thresh"]
+                robot.small_step_xy_control(d_x, d_y)
 
                 if reach_goal:
                     self.reach_goals[i] = True
