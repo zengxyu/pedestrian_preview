@@ -11,7 +11,7 @@ from environment.nav_utilities.coordinates_converter import cvt_to_bu
 import json
 
 
-def load_scene(p, running_config, world_config, map_path, coordinates_path):
+def load_p2v_scene(p, running_config, world_config, map_path, coordinates_path, num_agents):
     """
     load scene from map path and trajectory path
     """
@@ -20,7 +20,9 @@ def load_scene(p, running_config, world_config, map_path, coordinates_path):
     occupancy_map = read_occupancy_map(map_path, ratio=ratio)
 
     start_coordinates, goal = read_start_coordinates(start_coordinates_path=coordinates_path, ratio=ratio)
-    goals = np.array([goal for i in range(len(start_coordinates))])
+    chosen_indexes = np.random.choice(range(len(start_coordinates)), num_agents).tolist()
+    chosen_start_coordinates = start_coordinates[chosen_indexes]
+    goals = np.array([goal for i in range(len(chosen_start_coordinates))])
     # dilated_occ_map = dilate_image(occupancy_map, env_config["dilation_size"])
     # 随机采样起点终点
     # [start, end], sample_success = start_goal_sampler(occupancy_map=dilated_occ_map, margin=env_config["dilation_size"])
@@ -78,11 +80,12 @@ def read_start_coordinates(start_coordinates_path: str, ratio: float):
 
     # select one of the start coordinates groups
     selected_group_index = np.random.randint(1, num_groups)
-    selected_group: Dict = coordinates_groups[0]
+    print(selected_group_index)
+    selected_group: Dict = coordinates_groups[selected_group_index]
 
     start_coordinates = np.array(list(selected_group.values()))[0] * ratio
     # 60, 20
     # 10, 0
-    goal = np.array([10, 0])
+    goal = np.array([10, -10])
 
     return start_coordinates, goal

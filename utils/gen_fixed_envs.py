@@ -5,18 +5,17 @@ import pickle
 import matplotlib.pyplot as plt
 import numpy as np
 
-from environment.gen_scene.gen_office_map import create_u_tunnel_in_office_map
+from environment.gen_scene.gen_office_map import create_office_map
+from environment.gen_scene.gen_u_shape_map import create_u_shape_map
 from environment.gen_scene.sampler_mapping import get_sampler_class
 from environment.gen_scene.world_generator import get_world_config
-from environment.gen_scene.worlds_mapping import get_world_creator_func
 from utils.config_utility import read_yaml
 from utils.fo_utility import get_project_path
 from utils.image_utility import dilate_image
 
 
-def generate_env(num_starts):
+def generate_env(num_starts, world_name):
     # read specified world config
-    world_name = "office"
     worlds_config = read_yaml(os.path.join(get_project_path(), "configs"), "worlds_config.yaml")
     world_config = get_world_config(worlds_config, world_name)
 
@@ -29,9 +28,13 @@ def generate_env(num_starts):
 
     # create world occupancy map
     # create_u_tunnel_in_office_map
-    # create_world = get_world_creator_func(world_name)
-    # occupancy_map = create_world(world_config)
-    occupancy_map = create_u_tunnel_in_office_map()
+    if world_name == "office":
+        occupancy_map = create_office_map(world_config)
+    elif world_name == "u_shape":
+        occupancy_map = create_u_shape_map(world_config)
+    else:
+        raise NotImplementedError
+
     # dilate occupancy map
     dilated_occ_map = dilate_image(occupancy_map, dilation_size=5)
 
@@ -70,7 +73,7 @@ def display_and_save(occupancy_map, starts, ends, save, save_path):
         plt.show()
 
 
-def display_and_save_only_env(occupancy_map,  save, save_path):
+def display_and_save_only_env(occupancy_map, save, save_path):
     plt.imshow(occupancy_map)
     if save:
         plt.savefig(save_path)
@@ -79,25 +82,42 @@ def display_and_save_only_env(occupancy_map,  save, save_path):
         plt.show()
 
 
-def generate_n_envs(num_envs, num_starts, parent_folder, image_save_folder):
-    if not os.path.exists(parent_folder):
-        os.makedirs(parent_folder)
-    if not os.path.exists(image_save_folder):
-        os.makedirs(image_save_folder)
+def generate_n_envs():
+    # 确定生成场景的名字
+    world_name = "u_shape"
+    # 生成的场景的数量或者索引号码
+    indexes = [a for a in range(200, 240)]
+    # 每个场景起点个数
+    num_starts = 20
 
-    save_name_template = "env_{}.pkl"
-    image_save_name_template = "env_{}.png"
-    envs = []
+    # 生成的场景保存位置
+    parent_folder = "office_1500"
+    envs_folder = os.path.join(get_project_path(), "data", parent_folder, "test", "envs")
+    envs_images_folder = os.path.join(get_project_path(), "data", parent_folder, "test", "envs_images")
+
+    # 如果文件夹不存在，创建文件夹
+    if not os.path.exists(envs_folder):
+        os.makedirs(envs_folder)
+    if not os.path.exists(envs_images_folder):
+        os.makedirs(envs_images_folder)
+
+    # 场景名字模板
+    env_name_template = "env_{}.pkl"
+    image_name_template = "env_{}.png"
+
     i = 0
-    indexes = [a for a in range(1000, 1200)]
     while i < len(indexes):
         index = indexes[i]
-        save_file_name = save_name_template.format(index)
-        image_save_file_name = image_save_name_template.format(index)
-        save_path = os.path.join(parent_folder, save_file_name)
-        image_save_path = os.path.join(image_save_folder, image_save_file_name)
+        # 生成的occupancy map保存名字
+        save_file_name = env_name_template.format(index)
+        # 生成的occupancy map对应图像保存名字
+        image_save_file_name = image_name_template.format(index)
+        # 保存的位置
+        save_path = os.path.join(envs_folder, save_file_name)
+        image_save_path = os.path.join(envs_images_folder, image_save_file_name)
         print("Generating {}-th office...".format(index))
-        occupancy_map, starts, ends, sample_success = generate_env(num_starts=num_starts)
+        occupancy_map, starts, ends, sample_success = generate_env(num_starts=num_starts, world_name=world_name)
+
         if sample_success:
             env = [occupancy_map, starts, ends]
             print("Save env {} to {} ... ".format(save_file_name, save_path))
@@ -106,24 +126,6 @@ def generate_n_envs(num_envs, num_starts, parent_folder, image_save_folder):
 
             print("Save done!")
             i += 1
-        # envs.append([occupancy_map, starts, ends])
-    return envs
-
-
-def store_envs(envs, parent_folder):
-    """
-    save environments to parent folder
-    """
-    if not os.path.exists(parent_folder):
-        os.makedirs(parent_folder)
-
-    save_file_name_template = "env_{}.pkl"
-    for i, env in enumerate(envs):
-        save_file_name = save_file_name_template.format(i)
-        save_path = os.path.join(parent_folder, save_file_name)
-        logging.info("Save env {} to {} ... ".format(save_file_name, save_path))
-        pickle.dump(env, open(save_path, 'wb'))
-        logging.info("Save done!")
 
 
 def read_env(file_path):
@@ -149,21 +151,10 @@ def read_envs(parent_folder):
 
 
 def run_read_envs():
-    parent_folder = os.path.join(get_project_path(), "data", "random_envs")
+    parent_folder = os.path.join(get_project_path(), "data", "envs")
     envs = read_envs(parent_folder)
     display_and_save(*envs[0])
 
 
-def run_store_envs():
-    # occupancy_map, starts, ends = generate_env(num_starts=20)
-    # envs = generate_n_envs(num_envs=1000, num_starts=20)
-    parent_folder = os.path.join(get_project_path(), "data", "office_1000", "train", "random_envs")
-    image_save_parent_folder = os.path.join(get_project_path(), "data", "office_1000", "train", "random_envs_images")
-    generate_n_envs(num_envs=200, num_starts=20, parent_folder=parent_folder,
-                    image_save_folder=image_save_parent_folder)
-
-    # store_envs(envs, parent_folder)
-
 if __name__ == '__main__':
-    # test_read_envs()
-    run_store_envs()
+    generate_n_envs()

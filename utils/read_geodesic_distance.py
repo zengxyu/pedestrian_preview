@@ -25,10 +25,10 @@ def get_shortest_path(path):
 
 
 if __name__ == '__main__':
-    geodesic_parent_folder = os.path.join(get_project_path(), "data", "office_1000", "geodesic_distance")
+    geodesic_parent_folder = os.path.join(get_project_path(), "data", "office_1500", "geodesic_distance")
     file_names = os.listdir(geodesic_parent_folder)
     for file_name in file_names:
-        path = os.path.join(get_project_path(), "data", "office_1000", "geodesic_distance", "env_2.pkl")
+        path = os.path.join(get_project_path(), "data", "office_1500", "geodesic_distance", "env_2.pkl")
         shortest_path_obj = get_shortest_path(path)
 
     print()

@@ -46,6 +46,7 @@ class ObjectRobot(BaseRobot):
 
     def compute_move_xy(self, delta_x, delta_y):
         """
+        delta_x, delta_y世界坐标上移动delta_x, delta_y
         方法1：根据x,y方向上与坐标轴的距离来判断
         """
         distance = 10  # 探测距离

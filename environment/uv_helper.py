@@ -37,12 +37,12 @@ def compute_force_u(potential_maps_path):
 
 
 if __name__ == '__main__':
-    scene_path = "/home/zeng/workspace/pycharm_workspace/navigation/pedestrian_preview/data/office_1000/train/random_envs/env_0.pkl"
-    geo_path = "/home/zeng/workspace/pycharm_workspace/navigation/pedestrian_preview/data/office_1000/train/geodesic_distance/env_0.pkl"
-    potential_maps_path = "/home/zeng/workspace/pycharm_workspace/navigation/pedestrian_preview/data/office_1000/train/potential_maps/env_0.pkl"
+    scene_path = "/data/office_1500/train/envs/env_0.pkl"
+    geo_path = "/data/office_1500/train/geodesic_distance/env_0.pkl"
+    potential_maps_path = "/data/office_1500/train/uv_forces/env_0.pkl"
 
     save_path = os.path.join(
-        "/home/zeng/workspace/pycharm_workspace/navigation/pedestrian_preview/data/office_1000/train/geodesic_distance_images",
+        "/data/office_1500/train/geodesic_distance_images",
         "env_0.txt")
 
     occupancy_map, _, _ = pickle.load(open(scene_path, "rb"))

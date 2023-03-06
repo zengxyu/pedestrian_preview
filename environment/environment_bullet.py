@@ -26,7 +26,7 @@ from environment.gen_scene.build_office_world import create_cylinder
 from environment.gen_scene.office1000_door_loader import check_office1000_goal_outdoor_folder_structure, \
     load_office1000_goal_outdoor, load_office1000_goal_scene
 from environment.gen_scene.office1000_loader import load_office1000_scene, check_office1000_folder_structure
-from environment.gen_scene.world_loader import load_scene
+from environment.gen_scene.world_loader import load_p2v_scene
 from environment.human_npc_generator import generate_human_npc
 from environment.nav_utilities.coordinates_converter import cvt_to_om, cvt_to_bu, cvt_positions_to_reference, \
     transform_local_to_world
@@ -118,6 +118,7 @@ class EnvironmentBullet(PybulletBaseEnv):
         self.collision_count = 0
         self.visit_map = None
         self.max_collision_count = 5
+        self.reach_goals = [False for i in range(self.num_agents)]
 
     def render(self, mode="human"):
         width, height, rgb_image, depth_image, seg_image = self.agent_robots[0].sensor.get_obs()
@@ -134,12 +135,12 @@ class EnvironmentBullet(PybulletBaseEnv):
         self.reset_simulation()
         self.clear_variables()
 
-        if self.args.env == EnvTypes.OFFICE1000:
+        if self.args.env == EnvTypes.OFFICE1500:
             self.load_office_1000()
             self.randomize_human_npc()
         elif self.args.env == EnvTypes.P2V:
             assert self.args.load_map_from is not None and self.args.load_map_from != "", "args.load_map_from is None and args.load_map_from == ''"
-            self.load_env()
+            self.load_p2v_env()
         elif self.args.env == EnvTypes.OFFICE1000DOOR:
             self.load_office_1000_goal_outdoor()
             self.randomize_human_npc()
@@ -310,40 +311,43 @@ class EnvironmentBullet(PybulletBaseEnv):
         collision_reward = self.compute_collision_reward(collision)
         reward += collision_reward
 
-        """================obstacle distance reward"""
-        obstacle_distance_reward = self.compute_obstacle_distance_reward()
-        reward += obstacle_distance_reward
-
         """================delta distance reward=================="""
         # compute distance from current to goal
-        delta_distance_reward = self.compute_delta_euclidean_distance_reward()
-        reward += delta_distance_reward
-
-        """================delta geodesic distance reward=================="""
-        geo_distance_reward = self.compute_delta_geodesic_distance_reward()
-        reward += geo_distance_reward
+        obj_euclidean_distance_reward = self.compute_obs_euclidean_distance_reward()
+        reward += obj_euclidean_distance_reward
 
         """================reach goal reward=================="""
         reach_goal_reward = self.compute_reach_goal_reward(reach_goal)
         reward += reach_goal_reward
 
-        """================reach step count reward=================="""
-        step_count_reward = self.compute_step_count_reward()
-        reward += step_count_reward
+        geo_obs_reward, reward_info_geo_obs = self.compute_geo_obs_reward()
+        reward += geo_obs_reward
 
-        potential_reward, reward_info_potential = self.compute_potential_reward()
-        reward += potential_reward
+        uv_reward, reward_info_uv = self.compute_uv_reward()
+        reward += uv_reward
         """=================obstacle distance reward==============="""
         reward_info = {"reward/reward_collision": collision_reward,
-                       "reward/reward_obstacle_distance": obstacle_distance_reward,
-                       "reward/reward_delta_distance": delta_distance_reward,
-                       "reward/reward_delta_geo_distance": geo_distance_reward,
-                       "reward/reward_potential_reward": potential_reward,
+                       "reward/reward_obj_euclidean_distance": obj_euclidean_distance_reward,
                        "reward/reward_reach_goal": reach_goal_reward,
-                       "reward/reward_step_count": step_count_reward,
                        "reward/reward": reward
                        }
-        reward_info.update(reward_info_potential)
+
+        reward_info.update(reward_info_geo_obs)
+        reward_info.update(reward_info_uv)
+
+        return reward, reward_info
+
+    def compute_geo_obs_reward(self):
+        reward = 0
+        """================obstacle distance reward"""
+        obstacle_distance_reward = self.compute_obstacle_distance_reward()
+        reward += obstacle_distance_reward
+        """================delta geodesic distance reward=================="""
+        geo_distance_reward = self.compute_delta_geodesic_distance_reward()
+        reward += geo_distance_reward
+
+        reward_info = {"reward/reward_obstacle_distance": obstacle_distance_reward,
+                       "reward/reward_obj_geo_distance": geo_distance_reward}
 
         return reward, reward_info
 
@@ -351,7 +355,7 @@ class EnvironmentBullet(PybulletBaseEnv):
         step_count_reward = np.log(self.step_count.value) * self.reward_config["step_count"]
         return step_count_reward
 
-    def compute_delta_euclidean_distance_reward(self):
+    def compute_obs_euclidean_distance_reward(self):
         if self.last_distance is None:
             self.last_distance = compute_distance(self.agent_goals[0], self.agent_starts)
 
@@ -385,7 +389,7 @@ class EnvironmentBullet(PybulletBaseEnv):
         obstacle_distance_reward = (distance_thresh - min_distance) * self.reward_config["obstacle_distance"]
         return obstacle_distance_reward
 
-    def compute_potential_reward(self):
+    def compute_uv_reward(self):
         if self.force_u1_x is None:
             return 0, {}
         if "force_u1" not in self.reward_config.keys():
@@ -646,7 +650,6 @@ class EnvironmentBullet(PybulletBaseEnv):
 
     def iterate_steps_pose_control(self, actions):
         iterate_count = 0
-        reach_goals = []
         n_step = np.round(self.inference_duration / self.physical_step_duration)
         while iterate_count < n_step:
             for i, robot in enumerate(self.agent_robots):
@@ -656,7 +659,14 @@ class EnvironmentBullet(PybulletBaseEnv):
 
                 d_x, d_y = transform_local_to_world(np.array([d_x, d_y]), robot.get_position(),
                                                     robot.get_yaw()) - robot.get_position()
+
+                reach_goal = compute_distance(robot.get_position(), self.agent_goals[i]) < self.running_config[
+                    "goal_reached_thresh"]
                 robot.small_step_pose_control(d_x, d_y, d_yaw)
+
+                if reach_goal:
+                    self.reach_goals[i] = True
+
                 # 画机器人朝向线条
                 if self.render:
                     robot_direction_id = plot_robot_direction_line(self.p, self.robot_direction_ids[i],
@@ -673,13 +683,7 @@ class EnvironmentBullet(PybulletBaseEnv):
         # 检测碰撞
         collision = self._check_collision()
         # check if all reach goal
-        for i, robot in enumerate(self.agent_robots):
-            reach_goal = compute_distance(robot.get_position(), self.agent_goals[i]) < self.running_config[
-                "goal_reached_thresh"]
-            reach_goals.append(reach_goal)
-        all_reach_goal = all(reach_goals)
-
-        # self.print_v()
+        all_reach_goal = all(self.reach_goals)
         return all_reach_goal, collision
 
     def iterate_steps(self, actions):
@@ -760,7 +764,7 @@ class EnvironmentBullet(PybulletBaseEnv):
                                   paths=npc_paths)
         self.npc_ids = self.npc_group.npc_robot_ids
 
-    def load_env(self):
+    def load_p2v_env(self):
         """
         read env from path
         Returns:
@@ -768,8 +772,8 @@ class EnvironmentBullet(PybulletBaseEnv):
         map_path = self.args.load_map_from
         coordinates_from = self.args.load_coordinates_from
 
-        occ_map, wall_ids, agent_starts, agent_goals = load_scene(self.p, self.running_config, self.worlds_config,
-                                                                  map_path, coordinates_from)
+        occ_map, wall_ids, agent_starts, agent_goals = load_p2v_scene(self.p, self.running_config, self.worlds_config,
+                                                                      map_path, coordinates_from, self.num_agents)
 
         self.wall_ids = wall_ids
         self.occ_map = occ_map
@@ -842,6 +846,7 @@ class EnvironmentBullet(PybulletBaseEnv):
         self.agent_starts, self.agent_goals = [None] * 2
         self.agent_sub_goals = None
         self.visit_map = None
+        self.reach_goals = [False for i in range(self.num_agents)]
 
     def logging_action(self, action):
         logging_str = ""

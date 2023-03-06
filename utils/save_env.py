@@ -1,11 +1,11 @@
 import os
 import pickle
 
-from utils.office_1000_generator import display_and_save_only_env
+from utils.gen_fixed_envs import display_and_save_only_env
 
 if __name__ == '__main__':
-    env_parent_folder = '../data/office_1000/train/random_envs'
-    occupancy_maps_folder = '../data/office_1000/train/occupancy_maps'
+    env_parent_folder = '../data/office_1500/train/envs'
+    occupancy_maps_folder = '../data/office_1500/train/occupancy_maps'
     if not os.path.exists(occupancy_maps_folder):
         os.makedirs(occupancy_maps_folder)
 

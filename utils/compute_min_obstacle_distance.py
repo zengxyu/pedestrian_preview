@@ -37,32 +37,29 @@ def display_and_save(obstacle_distance_map, save, save_path):
 
 if __name__ == '__main__':
     phase = "test"
-    env_parent_folder = os.path.join(get_project_path(), "data", "office_1000_goal_outdoor", phase, "random_envs")
-    obstacle_distance_parent_folder = os.path.join(get_project_path(), "data", "office_1000_goal_outdoor", phase,
-                                                   "obstacle_distance")
-    image_save_folder = os.path.join(get_project_path(), "data", "office_1000", phase,
-                                     "obstacle_distance_images")
-    if not os.path.exists(obstacle_distance_parent_folder):
-        os.makedirs(obstacle_distance_parent_folder)
-    if not os.path.exists(image_save_folder):
-        os.makedirs(image_save_folder)
+    parent_folder = "office_1500_goal_outdoor"
+    env_parent_folder = os.path.join(get_project_path(), "data", parent_folder, phase, "envs")
+    obs_dist_parent_folder = os.path.join(get_project_path(), "data", parent_folder, phase, "obstacle_distance")
+    image_folder = os.path.join(get_project_path(), "data", parent_folder, phase, "obstacle_distance_images")
+    if not os.path.exists(obs_dist_parent_folder):
+        os.makedirs(obs_dist_parent_folder)
+    if not os.path.exists(image_folder):
+        os.makedirs(image_folder)
+    indexes = [a for a in range(0, 240)]
 
-    env_names = os.listdir(env_parent_folder)
-    length = len(env_names)
-    template = "env_{}.pkl"
-    image_save_name_template = "env_{}.png"
+    env_name_template = "env_{}.pkl"
+    image_name_template = "env_{}.png"
 
-    indexes = [a for a in range(0, 1200)]
     for i in indexes:
-        env_name = template.format(i)
+        env_name = env_name_template.format(i)
         env_path = os.path.join(env_parent_folder, env_name)
         print("Computing obstacle distance for {}...".format(env_name))
         out = compute_min_obstacle_distance(file_name=env_path)
-        out_path = os.path.join(obstacle_distance_parent_folder, env_name)
+        out_path = os.path.join(obs_dist_parent_folder, env_name)
         pickle.dump(out, open(out_path, 'wb'))
 
-        image_save_file_name = image_save_name_template.format(i)
-        image_save_path = os.path.join(image_save_folder, image_save_file_name)
-        display_and_save(out, save=True, save_path=image_save_path)
+        image_name = image_name_template.format(i)
+        image_path = os.path.join(image_folder, image_name)
+        display_and_save(out, save=True, save_path=image_path)
         print("Save to {}!".format(out_path))
     print("Done!")

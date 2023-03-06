@@ -129,8 +129,8 @@ def compute_geodesic_distance(file_name):
 
 
 if __name__ == '__main__':
-    env_parent_folder = '../data/office_1000/random_envs'
-    geodesic_distance_parent_folder = '../data/office_1000/geodesic_distance'
+    env_parent_folder = '../data/office_1500/envs'
+    geodesic_distance_parent_folder = '../data/office_1500/geodesic_distance'
     if not os.path.exists(geodesic_distance_parent_folder):
         os.makedirs(geodesic_distance_parent_folder)
 

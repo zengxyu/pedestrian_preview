@@ -25,16 +25,16 @@ from utils.fo_utility import get_project_path
 def check_office1000_goal_outdoor_folder_structure():
     url = "https://pan.dm-ai.com/s/BgxDACLPNb8nQ5f"
     password = "12345678"
-    office1000_parent_folder = os.path.join(get_project_path(), "data/office_1000_goal_outdoor")
-    folder_structure = "\n-data\n\t-office_1000_goal_outdoor\n\t\t-train\n\t\t\t\t-geodesic_distance\n\t\t\t\t-random_envs\n\t\t\t\t-random_envs_images\n\t\t-test\n\t\t\t\t-geodesic_distance\n\t\t\t\t-random_envs\n\t\t\t\t-random_envs_images"
+    office1000_parent_folder = os.path.join(get_project_path(), "data/office_1500_goal_outdoor")
+    folder_structure = "\n-data\n\t-office_1500_goal_outdoor\n\t\t-train\n\t\t\t\t-geodesic_distance\n\t\t\t\t-envs\n\t\t\t\t-envs_images\n\t\t-test\n\t\t\t\t-geodesic_distance\n\t\t\t\t-envs\n\t\t\t\t-envs_images"
     warning = "Please download data from url:{}; password:{}; and put it in your project_folder/data; \nYour folder structure should be like : {}".format(
         url, password, folder_structure)
     assert os.path.exists(office1000_parent_folder), warning
 
     for phase in ["train", "test"]:
         geodesic_distance_folder = os.path.join(office1000_parent_folder, phase, "geodesic_distance")
-        random_env_folder = os.path.join(office1000_parent_folder, phase, "random_envs")
-        random_envs_images_folder = os.path.join(office1000_parent_folder, phase, "random_envs_images")
+        random_env_folder = os.path.join(office1000_parent_folder, phase, "envs")
+        random_envs_images_folder = os.path.join(office1000_parent_folder, phase, "envs_images")
 
     assert os.path.exists(geodesic_distance_folder), warning
     assert os.path.exists(random_env_folder), warning
@@ -48,13 +48,13 @@ def load_office1000_goal_scene(p, running_config, worlds_config, phase):
 
     # scene_index = np.random.randint(0, 1000)
     # logging.error("Choose scene index:{}".format(scene_index))
-    scene_parent_folder = os.path.join(get_project_path(), "data", "office_1000_goal_outdoor", phase, "random_envs")
-    geodesic_distance_parent_folder = os.path.join(get_project_path(), "data", "office_1000_goal_outdoor", phase,
+    scene_parent_folder = os.path.join(get_project_path(), "data", "office_1500_goal_outdoor", phase, "envs")
+    geodesic_distance_parent_folder = os.path.join(get_project_path(), "data", "office_1500_goal_outdoor", phase,
                                                    "geodesic_distance")
-    obstacle_distance_parent_folder = os.path.join(get_project_path(), "data", "office_1000_goal_outdoor", phase,
+    obstacle_distance_parent_folder = os.path.join(get_project_path(), "data", "office_1500_goal_outdoor", phase,
                                                    "obstacle_distance")
-    potential_maps_parent_folder = os.path.join(get_project_path(), "data", "office_1000_goal_outdoor", phase,
-                                                "potential_maps")
+    potential_maps_parent_folder = os.path.join(get_project_path(), "data", "office_1500_goal_outdoor", phase,
+                                                "uv_forces")
     file_names = os.listdir(geodesic_distance_parent_folder)
     file_name = np.random.choice(file_names)
     print("scene file name:{}".format(file_name))
@@ -87,7 +87,7 @@ def load_office1000_goal_scene(p, running_config, worlds_config, phase):
     geodesic_distance_map_list: List[np.array] = []
     for i in indexes:
         start = starts[i]
-        end = ends[0]
+        end = ends[0].copy()
 
         # 取出对应终点的测地距离dict
         geodesic_distance_dict = geodesic_distance_dict_dict[tuple(end)]
@@ -103,6 +103,16 @@ def load_office1000_goal_scene(p, running_config, worlds_config, phase):
         geodesic_distance_map_list.append(geo_distance_map)
         # geodesic_distance_dict[]
         # sample start position and goal position
+
+        if end[0] == 0:
+            end[0] = -10
+        if end[1] == 0:
+            end[1] = -10
+        if end[0] == occupancy_map.shape[0] - 1:
+            end[0] = occupancy_map.shape[0] + 10
+        if end[1] == occupancy_map.shape[1] - 1:
+            end[1] = occupancy_map.shape[1] + 10
+
         bu_start = cvt_to_bu(start, running_config["grid_res"])
         bu_end = cvt_to_bu(end, running_config["grid_res"])
         bu_starts.append(bu_start)
@@ -121,8 +131,8 @@ def load_office1000_goal_outdoor(p, running_config, worlds_config, phase):
 
     # scene_index = np.random.randint(0, 1000)
     # logging.error("Choose scene index:{}".format(scene_index))
-    scene_parent_folder = os.path.join(get_project_path(), "data", "office_1000_goal_outdoor", phase, "random_envs")
-    geodesic_distance_parent_folder = os.path.join(get_project_path(), "data", "office_1000_goal_outdoor", phase,
+    scene_parent_folder = os.path.join(get_project_path(), "data", "office_1500_goal_outdoor", phase, "envs")
+    geodesic_distance_parent_folder = os.path.join(get_project_path(), "data", "office_1500_goal_outdoor", phase,
                                                    "geodesic_distance")
 
     file_names = os.listdir(geodesic_distance_parent_folder)

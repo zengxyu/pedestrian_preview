@@ -6,7 +6,7 @@ from numpy import mean
 
 from utils.fo_utility import get_project_path
 
-random_env_folder = os.path.join(get_project_path(), "data", "office_1000", "train", "random_envs")
+random_env_folder = os.path.join(get_project_path(), "data", "office_1500", "train", "envs")
 filenames = os.listdir(random_env_folder)
 paths = [os.path.join(random_env_folder, filename) for filename in filenames]
 obstacle_num_list = []

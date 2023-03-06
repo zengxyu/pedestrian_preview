@@ -232,3 +232,25 @@ def in_line_right(om_center, theta, point):
     y = point[1]
     line_left = np.tan(theta) * (x - om_center[0] - 5) + om_center[1] - y > 0
     return line_left
+
+
+def sg_opposite_baffle_sampler3(**kwargs):
+    """
+    generate start and goal on the opposite of the baffle
+    """
+    dilate_occupancy_map = kwargs["dilate_occupancy_map"]
+    occupancy_map = kwargs["occupancy_map"]
+    x_end, y_end = tuple(kwargs["goal"])
+    walls = get_walls(occupancy_map.copy())
+
+    x_start, y_start = point_sampler(dilate_occupancy_map)
+    line_through_baffle = check_intersection_with_wall([x_start, y_start], [x_end, y_end], walls)
+
+    counter = 0
+
+    while (not line_through_baffle) and counter < 100:
+        x_start, y_start = point_sampler(dilate_occupancy_map)
+        line_through_baffle = check_intersection_with_wall([x_start, y_start], [x_end, y_end], walls)
+        counter += 1
+    sample_success = line_through_baffle
+    return [x_start, y_start], sample_success

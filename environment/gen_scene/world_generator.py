@@ -8,17 +8,11 @@ from environment.gen_scene.build_office_world import drop_walls, drop_world_wall
 import logging as logger
 
 from environment.gen_scene.sampler_mapping import get_sampler_class, SamplerClassMapping
-from environment.gen_scene.worlds_mapping import WorldMapClassMapping, get_world_creator_func
+from environment.gen_scene.worlds_mapping import get_world_creator_func, get_world_config
 from environment.nav_utilities.coordinates_converter import cvt_to_bu
 from utils.image_utility import dilate_image
 
 from global_planning.a_star.astar import AStar
-
-
-def get_world_config(worlds_config, world_name):
-    component_configs = worlds_config[world_name]
-    component_configs.update(worlds_config["configs_all"])
-    return component_configs
 
 
 def load_environment_scene(p: BulletClient, running_config: Dict, worlds_config: Dict, agent_sg_sampler_config: Dict):

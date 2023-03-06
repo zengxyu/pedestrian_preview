@@ -6,10 +6,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.signal import convolve2d
 
-scene_path = "/home/zeng/workspace/pycharm_workspace/navigation/pedestrian_preview/data/office_1000/train/random_envs/env_0.pkl"
-geo_path = "/home/zeng/workspace/pycharm_workspace/navigation/pedestrian_preview/data/office_1000/train/geodesic_distance/env_0.pkl"
+scene_path = "/data/office_1500/train/envs/env_0.pkl"
+geo_path = "/data/office_1500/train/geodesic_distance/env_0.pkl"
 save_path = os.path.join(
-    "/home/zeng/workspace/pycharm_workspace/navigation/pedestrian_preview/data/office_1000/train/geodesic_distance_images",
+    "/data/office_1500/train/geodesic_distance_images",
     "env_0.txt")
 
 occupancy_map, _, _ = pickle.load(open(scene_path, "rb"))
@@ -50,10 +50,10 @@ for i in range(0, image2.shape[0]):
         image_y[i][j] = np.sign(image1[i - 1][j] - image1[i][j]) * image2[i][j]
 
 save_path_image_x = os.path.join(
-    "/home/zeng/workspace/pycharm_workspace/navigation/pedestrian_preview/data/office_1000/train/geodesic_distance_images",
+    "/data/office_1500/train/geodesic_distance_images",
     "env_0_image_x.txt")
 save_path_image_y = os.path.join(
-    "/home/zeng/workspace/pycharm_workspace/navigation/pedestrian_preview/data/office_1000/train/geodesic_distance_images",
+    "/data/office_1500/train/geodesic_distance_images",
     "env_0_image_y.txt")
 np.savetxt(save_path_image_x, image_x.tolist())
 np.savetxt(save_path_image_y, image_y.tolist())

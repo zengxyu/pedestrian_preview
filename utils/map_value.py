@@ -132,8 +132,10 @@ def compute_all_u(folder, save_folder):
 if __name__ == '__main__':
     # win_data, win_x, win_y = map_value(H=31, W=31, save=False, save_dir=os.path.join(get_project_path(), "data"))
     print()
-    random_env_folder = os.path.join(get_project_path(), "data", "office_1000_goal_outdoor", "test", "random_envs")
-    save_folder = os.path.join(get_project_path(), "data", "office_1000_goal_outdoor", "test", "potential_maps")
+    parent_folder = "office_1500_goal_outdoor"
+    phase = "test"
+    random_env_folder = os.path.join(get_project_path(), "data", parent_folder, phase, "envs")
+    save_folder = os.path.join(get_project_path(), "data", parent_folder, phase, "uv_forces")
     if not os.path.exists(save_folder):
         os.makedirs(save_folder)
     compute_all_u(folder=random_env_folder, save_folder=save_folder)

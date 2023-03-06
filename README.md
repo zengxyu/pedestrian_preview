@@ -27,3 +27,19 @@ python3 run.py --train --resume --in_folder=[] --in_model_index=[] --out_folder=
 ```
 python3 run.py --render  --in_folder=[] --in_model_index=[model_index] --num_episodes=[]
 ```
+
+## Generate your office_1500 dataset
+
+```commandline
+python3 gen_fixed_envs.py
+```
+
+## compute geodesic distance by multi process
+```commandline
+compute_geodesic_distance.py
+```
+
+## compute min distance map
+```commandline
+python3 compute_min_obstacle_distance.py
+```
