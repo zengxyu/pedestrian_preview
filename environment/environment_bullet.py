@@ -116,7 +116,6 @@ class EnvironmentBullet(PybulletBaseEnv):
         self.geodesic_distance_map_list: List[np.array] = None
 
         self.collision_count = 0
-        self.visit_map = None
         self.max_collision_count = 5
         self.reach_goals = [False for i in range(self.num_agents)]
 
@@ -285,6 +284,7 @@ class EnvironmentBullet(PybulletBaseEnv):
     def compute_geodesic_distance(self, robot_index, cur_position):
         occ_pos = cvt_to_om(cur_position, self.grid_res)
         occ_pos = tuple(occ_pos)
+
         if self.geodesic_distance_dict_list is None:
             return 0
         geodesic_distance_map = self.geodesic_distance_dict_list[robot_index]
@@ -457,20 +457,59 @@ class EnvironmentBullet(PybulletBaseEnv):
         return reach_goal_reward
 
     def get_state(self):
-        if len(self.sensors_name) >= 2:
+        if self.running_config["input_config_name"] == "input_lidar_vision_geo":
+            return self.get_state6()
+        elif len(self.sensors_name) >= 2:
             return self.get_state5()
         elif self.sensors_name[0] == SensorTypes.LidarSensor:
             return self.get_state2()
-        elif self.sensors_name[0] == SensorTypes.PenetrateRaySensor:
-            return self.get_state4()
-        else:
-            return self.get_state1()
 
-    def get_state3(self):
-        if self.visit_map is None:
-            self.visit_map = np.zeros_like(self.occ_map)
+    def get_state6(self):
+        # compute depth image
+        ma_images = []
+        ma_relative_poses = []
+        ma_hit_fractions = []
+        res = []
+        w = 0
+        h = 0
+        for i, rt in enumerate(self.agent_robots):
+            thetas, hit_fractions = rt.sensors[0].get_obs()
 
-        return
+            width, height, rgba_image, depth_image, seg_image = rt.sensors[1].get_obs()
+            depth_image = depth_image / rt.sensors[1].farVal
+
+            relative_pose = cvt_positions_to_reference([self.agent_goals[i]], rt.get_position(), rt.get_yaw())
+
+            geodesic_distance = self.compute_geodesic_distance(robot_index=0,
+                                                               cur_position=self.agent_robots[0].get_position())
+            rela_pose_geo = np.array([*relative_pose.flatten().tolist(), geodesic_distance]).astype(float)[np.newaxis,
+                            :]
+            # print(rela_pose_geo.dtype)
+            # print(rela_pose_geo)
+            w = self.input_config["image_w"]
+            h = self.input_config["image_h"]
+            image = cv2.resize(depth_image, (w, h))
+            image[np.isnan(image)] = 1
+            if len(self.ma_images_deque[i]) == 0:
+                for j in range(self.image_seq_len - 1):
+                    temp = np.zeros_like(image)
+                    self.ma_images_deque[i].append(temp)
+                for j in range(self.pose_seq_len - 1):
+                    temp2 = np.zeros_like(rela_pose_geo)
+                    self.ma_relative_poses_deque[i].append(temp2)
+            # plt.imshow(depth_image)
+            # plt.show()
+            self.ma_images_deque[i].append(image)
+            ma_images.append(np.array(self.ma_images_deque[i]))
+
+            self.ma_relative_poses_deque[i].append(rela_pose_geo)
+            ma_relative_poses.append(np.array([self.ma_relative_poses_deque[i]]).flatten())
+
+            ma_hit_fractions.append(hit_fractions.flatten().astype(float))
+
+        for i in range(len(self.agent_robots)):
+            res.append([ma_images[i].reshape((-1, h, w)), ma_hit_fractions[i], ma_relative_poses[i]])
+        return res
 
     def get_state5(self):
         # compute depth image
@@ -531,105 +570,6 @@ class EnvironmentBullet(PybulletBaseEnv):
             state = np.concatenate([hit_fractions, relative_pose.flatten()], axis=0).flatten()
             res.append(state.astype(float))
 
-        return res
-
-    def get_state4(self):
-        ma_images = []
-        ma_relative_poses = []
-        res = []
-        w = 0
-        h = 0
-        for i, rt in enumerate(self.agent_robots):
-            rt.sensor.register_occupancy_map(self.occ_map, self.grid_res)
-            image = rt.sensor.get_obs()
-            plt.imshow(image)
-            plt.show()
-            relative_pose = cvt_positions_to_reference([self.agent_goals[i]], rt.get_position(), rt.get_yaw())
-            w = self.input_config["image_w"]
-            h = self.input_config["image_h"]
-            if len(self.ma_images_deque[i]) == 0:
-                for j in range(self.image_seq_len - 1):
-                    temp = np.zeros_like(image)
-                    self.ma_images_deque[i].append(temp)
-                    temp2 = np.zeros_like(relative_pose)
-                    self.ma_relative_poses_deque[i].append(temp2)
-            # plt.imshow(depth_image)
-            # plt.show()
-            self.ma_images_deque[i].append(image)
-            ma_images.append(np.array(self.ma_images_deque[i]))
-
-            self.ma_relative_poses_deque[i].append(relative_pose)
-            ma_relative_poses.append(np.array([self.ma_relative_poses_deque[i]]).flatten())
-
-        for i in range(len(self.agent_robots)):
-            res.append([ma_images[i].reshape((-1, h, w)), ma_relative_poses[i]])
-        return res
-
-    def get_state1(self):
-        # compute depth image
-        ma_images = []
-        ma_relative_poses = []
-        res = []
-        w = 0
-        h = 0
-        for i, rt in enumerate(self.agent_robots):
-
-            width, height, rgba_image, depth_image, seg_image = rt.sensor.get_obs()
-            depth_image = depth_image / rt.sensor.farVal
-            relative_pose = cvt_positions_to_reference([self.agent_goals[i]], rt.get_position(), rt.get_yaw())
-            w = self.input_config["image_w"]
-            h = self.input_config["image_h"]
-            if self.input_config["image_mode"] == ImageMode.MULTI_VISION:
-                depth_image = np.transpose(depth_image, (1, 2, 0))
-                image = cv2.resize(depth_image, (w, h))
-                image[np.isnan(image)] = 1
-                image = np.transpose(image, (2, 0, 1))
-            elif self.input_config["image_mode"] == ImageMode.ROW:
-                image = depth_image[25]
-                h = 1
-                w = int(depth_image.shape[1])
-            elif self.input_config["image_mode"] == ImageMode.MULTI_ROW:
-                image = cv2.resize(depth_image, (int(depth_image.shape[1] / 2), int(depth_image.shape[0] / 2)))
-                image = image[:h, :]
-                # plt.imsave("")
-                # plt.imshow(image)
-                # plt.show()
-            elif self.input_config["image_mode"] == ImageMode.DEPTH:
-                image = cv2.resize(depth_image, (w, h))
-                image[np.isnan(image)] = 1
-            elif self.input_config["image_mode"] == ImageMode.GD:
-                depth_image = cv2.resize(depth_image, (w, h))
-                rgb_image = cv2.resize(rgba_image[:, :, :3], (w, h))
-                gray_image = cv2.cvtColor(rgb_image, cv2.COLOR_RGB2GRAY)
-                gray_image = gray_image / 255
-                image = np.array([depth_image, gray_image])
-            elif self.input_config["image_mode"] == ImageMode.RGB:
-                rgba_image = rgba_image / 255
-                image = cv2.resize(rgba_image[:, :, :3], (w, h))
-                image = np.transpose(image, (2, 0, 1))
-            elif self.input_config["image_mode"] == ImageMode.RGBD:
-                rgba_image = rgba_image / 255
-                image = np.append(rgba_image[:, :, :3], depth_image[:, :, np.newaxis], axis=-1)
-                image = cv2.resize(image, (w, h))
-                image = np.transpose(image, (2, 0, 1))
-            else:
-                raise NotImplementedError
-            if len(self.ma_images_deque[i]) == 0:
-                for j in range(self.image_seq_len - 1):
-                    temp = np.zeros_like(image)
-                    self.ma_images_deque[i].append(temp)
-                    temp2 = np.zeros_like(relative_pose)
-                    self.ma_relative_poses_deque[i].append(temp2)
-            # plt.imshow(depth_image)
-            # plt.show()
-            self.ma_images_deque[i].append(image)
-            ma_images.append(np.array(self.ma_images_deque[i]))
-
-            self.ma_relative_poses_deque[i].append(relative_pose)
-            ma_relative_poses.append(np.array([self.ma_relative_poses_deque[i]]).flatten())
-
-        for i in range(len(self.agent_robots)):
-            res.append([ma_images[i].reshape((-1, h, w)), ma_relative_poses[i]])
         return res
 
     def p_step_simulation(self):
@@ -881,7 +821,6 @@ class EnvironmentBullet(PybulletBaseEnv):
         self.agent_robot_ids = []
         self.agent_starts, self.agent_goals = [None] * 2
         self.agent_sub_goals = None
-        self.visit_map = None
         self.reach_goals = [False for i in range(self.num_agents)]
 
     def logging_action(self, action):

@@ -27,7 +27,7 @@ class BaseModel(nn.Module):
         self.kernel_sizes = model_params["kernel_sizes"]
         self.strides = model_params["strides"]
         self.image_seq_len = kwargs["image_seq_len"]
-        self.pose_seq_len = kwargs["pose_seq_len"]
+        self.in_pose_channel = kwargs["in_pose_channel"]
         self.image_mode = kwargs["image_mode"]
         self.dim_relative_position = model_params["mlp_relative_position"]
         self.dim_mlp_lidar = model_params["mlp_lidar"]
@@ -55,7 +55,7 @@ class LidarVisionActor(BaseModel):
 
         self.head = build_head(agent_type, action_space)
 
-        self.mlp_action = build_mlp(self.dim_mlp_after_cnn[-1] + self.dim_mlp_lidar[-1] + 2 * self.pose_seq_len,
+        self.mlp_action = build_mlp(self.dim_mlp_after_cnn[-1] + self.dim_mlp_lidar[-1] + self.in_pose_channel,
                                     mlp_values_dims + [self.n_actions * 2],
                                     activate_last_layer=False,
                                     )
@@ -97,10 +97,11 @@ class LidarVisionCritic(BaseModel):
         self.n_actions = len(action_space.low)
         mlp_values_dims = model_params["mlp_values"]
 
-        self.mlp_value = build_mlp(self.dim_mlp_after_cnn[-1] + self.dim_mlp_lidar[-1] + 2 * self.pose_seq_len + self.n_actions,
-                                   mlp_values_dims + [1],
-                                   activate_last_layer=False,
-                                   )
+        self.mlp_value = build_mlp(
+            self.dim_mlp_after_cnn[-1] + self.dim_mlp_lidar[-1] + self.in_pose_channel + self.n_actions,
+            mlp_values_dims + [1],
+            activate_last_layer=False,
+            )
 
     def forward(self, x):
         x, action = x

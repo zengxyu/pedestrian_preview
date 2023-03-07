@@ -68,5 +68,15 @@ input_lidar_vision:
   in_channel: 4
   in_lidar_channel: 360
   image_mode: depth
+  in_pose_channel: 8
 
-
+input_lidar_vision_geo:
+  network: LidarVision
+  image_seq_len: 4
+  pose_seq_len: 4
+  image_h: 40
+  image_w: 60
+  in_channel: 4
+  in_lidar_channel: 360
+  in_pose_channel: 12
+  image_mode: depth

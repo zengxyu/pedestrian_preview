@@ -17,7 +17,7 @@ evaluate_n_times: 100
 reward_config_name: reward_geo_obs
 
 # choose from  inputs_config.yaml: input_multi_row_multi_sensor, input_multi_row_cnn, input_lidar_mlp, input_cnn
-input_config_name: input_lidar_vision
+input_config_name: input_lidar_vision_geo
 
 # choose from worlds_config.yaml: "corridor","cross","office","empty"
 world_name: office
@@ -26,7 +26,7 @@ world_name: office
 agent: sac
 
 # ContinuousVWActionSpace, ContinuousXYYAWActionSpace, ContinuousXYActionSpace
-action_space: ContinuousXYActionSpace
+action_space: ContinuousXYYAWActionSpace
 
 # choose from lidar, vision, multi_vision
 sensors_name: [lidar, vision]
