@@ -13,12 +13,12 @@ from utils.gen_fixed_envs import display_and_save
 # 将 office 1500 中的目标点转为门，起点是和终点仍然是有隔板的点, 之后需要重新计算obstacle distance, geodesic distance, uv_forces
 def convert_office_1000_goal_outdoor():
     phase = "test"
-    office_1000_parent_folder = os.path.join(get_project_path(), "data", "office_1000", phase)
-    office_1000_random_envs_folder = os.path.join(office_1000_parent_folder, "random_envs")
+    office_1000_parent_folder = os.path.join(get_project_path(), "data", "office_1500", phase)
+    office_1000_random_envs_folder = os.path.join(office_1000_parent_folder, "envs")
 
-    out_goal_outdoor_parent_folder = os.path.join(get_project_path(), "data", "office_1000_goal_outdoor", phase)
-    out_goal_outdoor_envs_folder = os.path.join(out_goal_outdoor_parent_folder, "random_envs")
-    out_goal_outdoor_images_folder = os.path.join(out_goal_outdoor_parent_folder, "random_envs_images")
+    out_goal_outdoor_parent_folder = os.path.join(get_project_path(), "data", "office_1500_goal_outdoor", phase)
+    out_goal_outdoor_envs_folder = os.path.join(out_goal_outdoor_parent_folder, "envs")
+    out_goal_outdoor_images_folder = os.path.join(out_goal_outdoor_parent_folder, "envs_images")
 
     num_starts = 20
     indexes = [i for i in range(0, 240)]

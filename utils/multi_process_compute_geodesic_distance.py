@@ -1,4 +1,5 @@
 import pickle
+import shutil
 
 from multiprocessing import Pool
 import os, time, random
@@ -16,6 +17,7 @@ def compute_and_save_geodesic_distance(envs_folder, geo_dist_folder, start_index
         env_name = template.format(i)
         env_path = os.path.join(envs_folder, env_name)
         out_path = os.path.join(geo_dist_folder, env_name)
+        print("out_path:{}".format(out_path))
         print("Computing geodesic distance for {}...".format(env_name))
         out = compute_geodesic_distance(file_name=env_path)
         pickle.dump(out, open(out_path, 'wb'))
@@ -27,7 +29,7 @@ def compute_and_save_geodesic_distance(envs_folder, geo_dist_folder, start_index
 
 
 def multi_process():
-    parent_folder = "office_1500"
+    parent_folder = "office_1500_goal_outdoor"
     phase = "test"
     envs_folder = os.path.join(get_project_path(), "data", parent_folder, phase, "envs")
     geo_dist_folder = os.path.join(get_project_path(), "data", parent_folder, phase, "envs_images")
@@ -55,4 +57,15 @@ def multi_process():
 
 if __name__ == '__main__':
     multi_process()
-    # compute_and_save_geodesic_distance(envs_folder, 0, 1)
+    # in_folder = os.path.join(get_project_path(), "data", "office_1500_goal_outdoor", "test", "geodesic_distance")
+    # out_folder = os.path.join(get_project_path(), "data", "office_1500_goal_outdoor", "test", "envs_images")
+    # filenames = os.listdir(in_folder)
+    # in_paths = [os.path.join(in_folder, filename) for filename in filenames if filename.endswith("png")]
+    # out_paths = [os.path.join(out_folder, filename) for filename in filenames]
+    # # for in_path, out_path in zip(in_paths, out_paths):
+    # #     print("in_path:{}, out_path:{}".format(in_path, out_path))
+    # #     shutil.move(in_path, out_path)
+    #
+    # for i in range(240):
+    #     in_path = os.path.join(in_folder, "env_{}.pkl".format(i))
+    #     assert os.path.exists(in_path), "in_path:{} not exist".format(in_path)

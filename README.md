@@ -43,3 +43,8 @@ compute_geodesic_distance.py
 ```commandline
 python3 compute_min_obstacle_distance.py
 ```
+
+## compute uv forces
+```commandline
+python3 compute_uv_forces.py
+```
