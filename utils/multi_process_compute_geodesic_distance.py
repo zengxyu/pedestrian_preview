@@ -32,7 +32,7 @@ def multi_process():
     parent_folder = "office_1500_goal_outdoor"
     phase = "test"
     envs_folder = os.path.join(get_project_path(), "data", parent_folder, phase, "envs")
-    geo_dist_folder = os.path.join(get_project_path(), "data", parent_folder, phase, "envs_images")
+    geo_dist_folder = os.path.join(get_project_path(), "data", parent_folder, phase, "geodesic_distance")
 
     # 要处理从哪个到哪个文件
     indexes = [0, 240]

@@ -45,7 +45,7 @@ if __name__ == '__main__':
         os.makedirs(obs_dist_parent_folder)
     if not os.path.exists(image_folder):
         os.makedirs(image_folder)
-    indexes = [a for a in range(0, 240)]
+    indexes = [a for a in range(136, 137)]
 
     env_name_template = "env_{}.pkl"
     image_name_template = "env_{}.png"

@@ -224,3 +224,10 @@ if __name__ == '__main__':
                 folder_structure += sub3_folder
 
     print(folder_structure)
+
+if __name__ == '__main__':
+    parent_folder = "/home/zeng/workspace/pycharm_workspace/navigation/pedestrian_preview/data/office_1500_goal_outdoor/test/geodesic_distance"
+
+    path = os.path.join(parent_folder, "env_136.pkl")
+    obj = pickle.load(open(path, "rb"))
+    print()

@@ -6,9 +6,13 @@ import cv2
 import numpy as np
 
 from environment.gen_scene.build_office_world import drop_walls, drop_world_walls
+from environment.gen_scene.common_sampler import point_sampler
+from environment.gen_scene.compute_door import compute_door
 from environment.nav_utilities.coordinates_converter import cvt_to_bu
 
 import json
+
+from utils.image_utility import dilate_image
 
 
 def load_p2v_scene(p, running_config, world_config, map_path, coordinates_path, num_agents):
@@ -19,17 +23,23 @@ def load_p2v_scene(p, running_config, world_config, map_path, coordinates_path, 
     # read occupancy map from map_path
     occupancy_map = read_occupancy_map(map_path, ratio=ratio)
 
+    dilated_occupancy_map = dilate_image(occupancy_map, running_config["dilation_size"])
+
     start_coordinates, goal = read_start_coordinates(start_coordinates_path=coordinates_path, ratio=ratio)
     chosen_indexes = np.random.choice(range(len(start_coordinates)), num_agents).tolist()
-    chosen_start_coordinates = start_coordinates[chosen_indexes]
-    goals = np.array([goal for i in range(len(chosen_start_coordinates))])
+    starts = start_coordinates[chosen_indexes]
+    # goals = np.array([goal for i in range(len(chosen_start_coordinates))])
     # dilated_occ_map = dilate_image(occupancy_map, env_config["dilation_size"])
     # 随机采样起点终点
     # [start, end], sample_success = start_goal_sampler(occupancy_map=dilated_occ_map, margin=env_config["dilation_size"])
-    #
+
+    # starts = [point_sampler(dilated_occupancy_map) for i in range(num_agents)]
+    goal = np.array([10, -10])
+    goals = [goal for i in range(num_agents)]
+    # compute door
     config = world_config["configs_all"]
     agent_ids = drop_world_walls(p, occupancy_map.copy(), running_config["grid_res"], config)
-    agent_starts = cvt_to_bu(start_coordinates, running_config["grid_res"])
+    agent_starts = cvt_to_bu(starts, running_config["grid_res"])
     agent_goals = cvt_to_bu(goals, running_config["grid_res"])
     # maps, obstacle_ids, bu_starts, bu_goals
     return occupancy_map, agent_ids, agent_starts, agent_goals
