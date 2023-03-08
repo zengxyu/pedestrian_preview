@@ -65,14 +65,6 @@ class PFLearner:
             pbar = tqdm(range(self.args.num_episodes))
             for i in pbar:
                 self.evaluate_once()
-                # if info['a_success']:
-                #     success_num += 1
-                # elif info["collision"]:
-                #     collision_num += 1
-                # else:
-                #     timeout_num += 1
-                # navigation_time_on_success_episodes["{}".format(i)] = info['step_count']
-
                 pbar.set_description("Success rate:{}".format(self.test_collector.get_success_rate()))
 
             test_result = {
@@ -145,7 +137,6 @@ class PFLearner:
                 if self.args.debug:
                     actions = self.agent.batch_act(state)
                     state, reward, done, info_for_sum, info_for_last = self.env.step(actions)
-                    self.agent.observe(obs=state, reward=reward, done=done, reset=False)
                     self.global_i_step += 1
                     infos_for_sum.append(info_for_sum)
                     infos_for_last.append(info_for_last)
@@ -153,7 +144,6 @@ class PFLearner:
                     try:
                         actions = self.agent.batch_act(state)
                         state, reward, done, info_for_sum, info_for_last = self.env.step(actions)
-                        self.agent.observe(obs=state, reward=reward, done=done, reset=False)
                         self.global_i_step += 1
                         infos_for_sum.append(info_for_sum)
                         infos_for_last.append(info_for_last)
