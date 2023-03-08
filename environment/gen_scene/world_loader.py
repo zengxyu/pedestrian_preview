@@ -1,5 +1,6 @@
 import logging
 import os
+import pickle
 from typing import Dict
 
 import cv2
@@ -12,6 +13,7 @@ from environment.nav_utilities.coordinates_converter import cvt_to_bu
 
 import json
 
+from utils.fo_utility import get_project_path, get_data_path
 from utils.image_utility import dilate_image
 
 
@@ -99,3 +101,41 @@ def read_start_coordinates(start_coordinates_path: str, ratio: float):
     goal = np.array([10, -10])
 
     return start_coordinates, goal
+
+
+if __name__ == '__main__':
+    p2v_map_folder = os.path.join(get_data_path(), "p2v", "env1", "maps")
+    p2v_occupancy_map_folder = os.path.join(get_data_path(), "p2v", "env1", "occupancy_map")
+    if not os.path.exists(p2v_occupancy_map_folder):
+        os.makedirs(p2v_occupancy_map_folder)
+
+    # 地图读入路径
+    p2v_map_path = os.path.join(p2v_map_folder, "map.txt")
+    # 地图写出路径
+    p2v_occupancy_map_path = os.path.join(p2v_occupancy_map_folder, "occupancy_map.pkl")
+    ratio = 0.25 / 0.1
+    occupancy_map = read_occupancy_map(p2v_map_path, ratio)
+    p2v_occ_map_file = open(p2v_occupancy_map_path, "wb")
+    pickle.dump(occupancy_map, p2v_occ_map_file)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

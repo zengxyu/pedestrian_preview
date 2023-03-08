@@ -6,34 +6,10 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 
-def compute_force_v(occupancy_map, geo_distance_map, k1=0.01, k2=0.005, k3=1):
-    force_v_scalar = k1 * geo_distance_map + k2 * geo_distance_map ** 2 + k3
-    force_v_scalar[geo_distance_map > 39] = 11
-
-    force_v_x = np.zeros_like(force_v_scalar)
-    force_v_x = force_v_x.astype(float)
-    for i in range(0, force_v_scalar.shape[0]):
-        for j in range(0, force_v_scalar.shape[1]):
-            if occupancy_map[i][j] == 1 or occupancy_map[i][j - 1] == 1:
-                continue
-            force_v_x[i][j] = np.sign(geo_distance_map[i][j - 1] - geo_distance_map[i][j]) * force_v_scalar[i][j]
-
-    force_v_y = np.zeros_like(force_v_scalar).astype(float)
-    force_v_y = force_v_y.astype(float)
-
-    for i in range(0, force_v_scalar.shape[0]):
-        for j in range(0, force_v_scalar.shape[1]):
-            if occupancy_map[i][j] == 1 or occupancy_map[i - 1][j] == 1:
-                continue
-            force_v_y[i][j] = np.sign(geo_distance_map[i - 1][j] - geo_distance_map[i][j]) * force_v_scalar[i][j]
-
-    return force_v_scalar, force_v_x, force_v_y
-
-
 def compute_force_u(potential_maps_path):
-    force_u_x, force_u_y, force_u_scalar = pickle.load(open(potential_maps_path, 'rb'))
+    force_ux, force_uy, force_u = pickle.load(open(potential_maps_path, 'rb'))
 
-    return force_u_scalar, force_u_x, force_u_y
+    return force_ux, force_uy, force_u
 
 
 if __name__ == '__main__':

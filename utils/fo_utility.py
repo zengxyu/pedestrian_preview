@@ -3,6 +3,22 @@ import os
 import yaml
 
 
+def get_office1500_goal_outdoor_path():
+    return os.path.join(get_project_path(), "data", "office_1500_goal_outdoor")
+
+
+def get_office1500_path():
+    return os.path.join(get_project_path(), "data", "office_1500")
+
+
+def get_p2v_path():
+    return os.path.join(get_project_path(), "data", "p2v")
+
+
+def get_data_path():
+    return os.path.join(get_project_path(), "data")
+
+
 def get_project_path():
     return os.path.dirname(os.path.dirname(__file__))
 
