@@ -36,7 +36,7 @@ from environment.robots.robot_roles import RobotRoles
 from environment.robots.robot_types import RobotTypes, init_robot
 from environment.sensors.sensor_types import SensorTypes
 from environment.sensors.vision_sensor import ImageMode
-from environment.uv_helper import compute_force_v
+from utils.compute_v_forces import display_v_images
 from utils.fo_utility import get_project_path
 from utils.image_utility import dilate_image
 
@@ -76,7 +76,8 @@ class EnvironmentBullet(PybulletBaseEnv):
 
         self.occ_map = None
         self.obstacle_distance_map = None
-        self.force_u1_x, self.force_u2_y, self.force_u2 = None, None, None
+        self.force_u1_x, self.force_u1_y, self.force_u1 = None, None, None
+        self.force_vxs, self.force_vys, self.force_vs = [], [], []
         self.agent_starts, self.agent_goals = [None] * 2
         self.agent_robots = None
         self.agent_robot_ids = []
@@ -113,11 +114,11 @@ class EnvironmentBullet(PybulletBaseEnv):
         self.agent_sub_goals_indexes = None
         self.robot_direction_ids = [None] * self.num_agents
         self.geodesic_distance_dict_list: List[Dict] = None
-        self.geodesic_distance_map_list: List[np.array] = None
 
         self.collision_count = 0
         self.max_collision_count = 5
         self.reach_goals = [False for i in range(self.num_agents)]
+        self.phase = Phase.TRAIN
 
     def render(self, mode="human"):
         width, height, rgb_image, depth_image, seg_image = self.agent_robots[0].sensor.get_obs()
@@ -135,14 +136,11 @@ class EnvironmentBullet(PybulletBaseEnv):
         self.clear_variables()
 
         if self.args.env == EnvTypes.OFFICE1500:
-            self.load_office_1000()
+            self.load_office_evacuation()
             self.randomize_human_npc()
         elif self.args.env == EnvTypes.P2V:
             assert self.args.load_map_from is not None and self.args.load_map_from != "", "args.load_map_from is None and args.load_map_from == ''"
             self.load_p2v_env()
-        elif self.args.env == EnvTypes.OFFICE1000DOOR:
-            self.load_office_1000_goal_outdoor()
-            self.randomize_human_npc()
         else:
             # randomize environment
             self.randomize_env()
@@ -159,59 +157,29 @@ class EnvironmentBullet(PybulletBaseEnv):
         # print(self.agent_robots[0].get_position())
         return state
 
-    def load_office_1000_goal_outdoor(self):
-        check_office1000_goal_outdoor_folder_structure()
-        phase = "train" if self.args.train else "test"
-        occ_map, geodesic_distance_dict_list, geodesic_distance_map_list, obstacle_distance_map, force_u_x, force_u_y, potential_map, wall_ids, agent_starts, agent_goals = load_office1000_goal_scene(
-            p=self.p,
-            running_config=self.running_config,
-            worlds_config=self.worlds_config,
-            phase=phase)
-
-        # sample start pose and goal pose
-        self.wall_ids = wall_ids
-        self.occ_map = occ_map
-        self.obstacle_distance_map = obstacle_distance_map
-        self.agent_starts = agent_starts
-        self.force_u1_x = force_u_x
-        self.force_u2_y = force_u_y
-        self.force_u2 = potential_map
-        self.agent_starts = agent_starts
-
-        # 如果有多个agent，去往同一个目标
-        self.agent_goals = [agent_goals[0] for i in range(self.num_agents)]
-        # initialize robot
-        logging.debug("Create the environment, Done...")
-        self.agent_robots = self.init_robots()
-        self.geodesic_distance_dict_list = geodesic_distance_dict_list
-        self.geodesic_distance_map_list = geodesic_distance_map_list
-
-    def load_office_1000(self):
+    def load_office_evacuation(self):
         check_office1000_folder_structure()
-        phase = "train" if self.args.train else "test"
-        phase = "train"
-        occ_map, geodesic_distance_dict_list, geodesic_distance_map_list, obstacle_distance_map, force_u_x, force_u_y, potential_map, wall_ids, agent_starts, agent_goals = load_office1000_scene(
+        occ_map, geodesic_distance_dict_list, obstacle_distance_map, force_ux, force_uy, force_u, force_vxs, force_vys, force_vs, wall_ids, agent_starts, agent_goals = load_office1000_scene(
             p=self.p,
             running_config=self.running_config,
             worlds_config=self.worlds_config,
-            phase=phase)
+            phase=self.phase)
 
         # sample start pose and goal pose
         self.wall_ids = wall_ids
         self.occ_map = occ_map
         self.obstacle_distance_map = obstacle_distance_map
-        self.force_u1_x = force_u_x
-        self.force_u2_y = force_u_y
-        self.force_u2 = potential_map
+        self.force_u1_x, self.force_u1_y, self.force_u1 = force_ux, force_uy, force_u
+        self.force_vxs, self.force_vys, self.force_vs = force_vxs, force_vys, force_vs
         self.agent_starts = agent_starts
         # 如果有多个agent，去往同一个目标
         self.agent_goals = [agent_goals[0] for i in range(self.num_agents)]
 
+        # display_v_images(self.force_vxs[0], self.force_vys[0], self.force_vs[0])
         # initialize robot
         logging.debug("Create the environment, Done...")
         self.agent_robots = self.init_robots()
         self.geodesic_distance_dict_list = geodesic_distance_dict_list
-        self.geodesic_distance_map_list = geodesic_distance_map_list
 
     def visualize_goals(self, bu_goals, colors):
         thetas = np.linspace(0, np.pi * 2, 10)
@@ -426,7 +394,7 @@ class EnvironmentBullet(PybulletBaseEnv):
         pos[0] = np.clip(pos[0], 0, self.occ_map.shape[0] - 1)
         pos[1] = np.clip(pos[1], 0, self.occ_map.shape[1] - 1)
         fx = self.force_u1_x[pos[0], pos[1]]
-        fy = self.force_u2_y[pos[0], pos[1]]
+        fy = self.force_u1_y[pos[0], pos[1]]
         f = np.array([fy, fx])
 
         return f
@@ -443,10 +411,10 @@ class EnvironmentBullet(PybulletBaseEnv):
         """
         pos[0] = np.clip(pos[0], 0, self.occ_map.shape[0] - 1)
         pos[1] = np.clip(pos[1], 0, self.occ_map.shape[1] - 1)
-        geo_distance_map = self.geodesic_distance_map_list[robot_index]
-        force_v_scalar, force_v_x, force_v_y = compute_force_v(self.occ_map, geo_distance_map)
-        fx = force_v_x[pos[0], pos[1]]
-        fy = force_v_y[pos[0], pos[1]]
+        force_vx = self.force_vxs[robot_index]
+        force_vy = self.force_vys[robot_index]
+        fx = force_vx[pos[0], pos[1]]
+        fy = force_vy[pos[0], pos[1]]
         f = np.array([fy, fx])
         return f
 
@@ -828,3 +796,8 @@ class EnvironmentBullet(PybulletBaseEnv):
         for key, item in zip(self.action_space_keys, action):
             logging_str += "{}: {}; ".format(key[:-1], item)
         logging.warning(logging_str)
+
+
+class Phase:
+    TRAIN = "train"
+    TEST = "test"

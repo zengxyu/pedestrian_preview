@@ -11,11 +11,12 @@
 """
 import os.path
 import pickle
+from multiprocessing import Pool
 
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.signal import convolve2d
-from utils.fo_utility import get_project_path, get_data_path
+from utils.fo_utility import *
 import scipy
 
 
@@ -127,7 +128,7 @@ def display_u_force(force_x, force_y, force):
     plt.show()
 
 
-def save_u_force(force_x, force_y, force, save_folder):
+def save_u_force(force_x, force_y, force, save_folder, i):
     """
     保存u force
     Args:
@@ -143,96 +144,103 @@ def save_u_force(force_x, force_y, force, save_folder):
     plt.figure(30)
     plt.imshow(np.sqrt(force_x ** 2 + force_y ** 2), cmap='gray')
     plt.title('Convolved Map')
-    plt.savefig(os.path.join(save_folder, "convolved_map.png"))
+    plt.savefig(os.path.join(save_folder, "env_{}_convolved_map.png".format(i)))
 
     XX, YY = np.meshgrid(np.arange(1, L1 + 1), np.arange(1, L2 + 1))
     plt.figure(20)
     plt.quiver(XX, YY, force_x, force_y)
     plt.title('Convolved Map Vectors')
-    plt.savefig(os.path.join(save_folder, "convolved_map_vector.png"))
+    plt.savefig(os.path.join(save_folder, "env_{}_convolved_map_vector.png".format(i)))
 
     plt.figure(11)
     plt.imshow(force_x, cmap='gray')
     plt.title('X-Convolved Map')
-    plt.savefig(os.path.join(save_folder, "x_convolved_map.png"))
+    plt.savefig(os.path.join(save_folder, "env_{}_x_convolved_map.png".format(i)))
 
     plt.figure(12)
     plt.imshow(force_y, cmap='gray')
     plt.title('Y-Convolved Map')
-    plt.savefig(os.path.join(save_folder, "y_convolved_map.png"))
+    plt.savefig(os.path.join(save_folder, "env_{}_y_convolved_map.png".format(i)))
+
+    plt.figure(13)
+    plt.imshow(force_y, cmap='gray')
+    plt.title('Y-Convolved Map')
+    plt.savefig(os.path.join(save_folder, "env_{}_y_convolved_map.png".format(i)))
 
 
-def compute_u_forces(env_folder, u_folder, u_image_folder):
+def compute_u_forces(dataset_path, folder_name, phase, indexes):
     """
 
     Args:
-        env_folder: 环境文件夹
-        u_folder: uv文件夹
+        indexes: [0, 1, 2...]
+        phase: train / test
+        folder_name: 文件夹名: 如 sg_walls / sg_no_walls / goal_at_door
 
     Returns:
 
     """
+
     kernel_path = os.path.join(get_project_path(), "data", "kernel.pkl")
     kernel, kernel_x, kernel_y = pickle.load(open(kernel_path, "rb"))
     # 环境folder
-    env_folder = os.path.join(get_project_path(), "data", parent_folder, phase, "envs")
+    env_folder = os.path.join(dataset_path, folder_name, phase, "envs")
+    u_folder = os.path.join(dataset_path, folder_name, phase, "u_forces")
+    u_image_folder = os.path.join(dataset_path, folder_name, phase, "u_image_forces")
+    if not os.path.exists(u_folder):
+        os.makedirs(u_folder)
+    if not os.path.exists(u_image_folder):
+        os.makedirs(u_image_folder)
 
-    uv_folder = os.path.join(get_project_path(), "data", parent_folder, phase, "uv_forces")
-    if not os.path.exists(uv_folder):
-        os.makedirs(uv_folder)
-
-    filenames = os.listdir(env_folder)
-    indexes = [i for i in range(0, 1200)]
     env_name_template = "env_{}"
     env_paths = [os.path.join(env_folder, env_name_template.format(ind) + ".pkl") for ind in indexes]
     u_paths = [os.path.join(u_folder, env_name_template.format(ind) + ".pkl") for ind in indexes]
-    u_image_paths = [os.path.join(u_image_folder, env_name_template.format(ind) + ".png") for ind in indexes]
-    for i in range(len(filenames)):
+    for i, ind in enumerate(indexes):
         env_path = env_paths[i]
         u_path = u_paths[i]
-        u_image_path = u_image_paths[i]
         print("Processing path:{}".format(env_path))
+        assert os.path.exists(env_path)
         occupancy_map, _, _ = pickle.load(open(env_path, "rb"))
         force_x, force_y, force = compute_u_force(kernel_x, kernel_y, occupancy_map)
         # 保存force
         pickle.dump([force_x, force_y, force], open(u_path, "wb"))
-        # 显示u force
-        display_u_force(force_x, force_y, force)
+        # # 显示u force
+        # display_u_force(force_x, force_y, force)
         # 保存 u force 图片
-        save_u_force(force_x, force_y, force, save_folder=u_image_path)
+        save_u_force(force_x, force_y, force, save_folder=u_image_folder, i=i)
         print()
 
 
-def compute_p2v_forces():
-    p2v_occupancy_map_folder = os.path.join(get_data_path(), "p2v", "env1", "occupancy_map")
-    p2v_occupancy_map_path = os.path.join(p2v_occupancy_map_folder, "occupancy_map.pkl")
-    p2v_occupancy_map_file = open(p2v_occupancy_map_path, "rb")
-    # 读取P2V地图
-    p2v_occupancy_map = pickle.load(p2v_occupancy_map_file)
-    # 计算场
-    # 加载卷积核
-    win_path = os.path.join(get_project_path(), "data", "win.pkl")
-    kernel_x, kernel_y, kernel_data = pickle.load(open(win_path, "rb"))
-    force_x, force_y, force = compute_u_force(kernel_x, kernel_y, p2v_occupancy_map)
-    # 保存force
-    display_u_force(force_x, force_y, force)
-    save_u_force(force_x, force_y, force, save_folder=u_image_path)
-
-    return
+def multi_process(dataset_path, folder_name, phase, indexes):
+    print('Parent process %s.' % os.getpid())
+    # 进程数量
+    num_process = 1
+    p = Pool(num_process)
+    num_batch = int((indexes[-1] + 1 - indexes[0]) / num_process)
+    split_env_indexes = [[indexes[0] + i * num_batch, indexes[0] + (i + 1) * num_batch] for i in range(num_process)]
+    for start_index, end_index in split_env_indexes:
+        split_indexes = [i for i in range(start_index, end_index)]
+        p.apply_async(compute_u_forces,
+                      args=(dataset_path, folder_name, phase, split_indexes,))
+    print('Waiting for all subprocesses done...')
+    p.close()
+    p.join()
+    print('All subprocesses done.')
 
 
 if __name__ == '__main__':
     # 计算kernel
-    u_kernel_x, u_kernel_y, u_kernel = compute_u_kernel(H=31, W=31)
+    # u_kernel_x, u_kernel_y, u_kernel = compute_u_kernel(H=31, W=31)
     # 保存kernel
-    save = False
-    save_dir = os.path.join(get_project_path(), "data")
-    save_kernel(u_kernel_x, u_kernel_y, u_kernel)
-    display_kernel(u_kernel_x, u_kernel_y, u_kernel)
+    # save = False
+    # save_dir = os.path.join(get_project_path(), "data")
+    # save_kernel(u_kernel_x, u_kernel_y, u_kernel)
+    # display_kernel(u_kernel_x, u_kernel_y, u_kernel)
 
     # 为文件夹下所有图计算向量场
-    print()
-    parent_folder = "office_1500_goal_outdoor"
+    dataset_path = get_office_evacuation_path()
     phase = "test"
-
-    compute_u_forces(env_folder=env_folder, u_folder=uv_folder)
+    folder_name = "sg_walls"
+    # 要处理从哪个到哪个文件
+    indexes = [i for i in range(93, 94)]
+    # compute_u_forces(dataset_path, folder_name, phase, indexes)
+    multi_process(dataset_path, folder_name, phase, indexes)

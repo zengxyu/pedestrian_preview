@@ -3,12 +3,20 @@ import os
 import yaml
 
 
-def get_office1500_goal_outdoor_path():
-    return os.path.join(get_project_path(), "data", "office_1500_goal_outdoor")
+def get_goal_at_door_path():
+    return os.path.join(get_office_evacuation_path(), "goal_at_door")
 
 
-def get_office1500_path():
-    return os.path.join(get_project_path(), "data", "office_1500")
+def get_sg_no_walls_path():
+    return os.path.join(get_office_evacuation_path(), "sg_no_walls")
+
+
+def get_sg_walls_path():
+    return os.path.join(get_office_evacuation_path(), "sg_walls")
+
+
+def get_office_evacuation_path():
+    return os.path.join(get_project_path(), "data", "office_evacuation")
 
 
 def get_p2v_path():

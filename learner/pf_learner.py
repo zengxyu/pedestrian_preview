@@ -9,6 +9,7 @@ import torch
 
 from torch.utils.tensorboard import SummaryWriter
 
+from environment.environment_bullet import Phase
 from learner.trainer_helper import add_scalar, save_episodes_info, get_items, add_graph
 from utils.info import EpisodeInfo
 from tqdm import tqdm
@@ -92,7 +93,7 @@ class PFLearner:
         phase = "Train"
         self.train_i_episode += 1
         state = self.env.reset()
-
+        self.env.phase = Phase.TRAIN
         infos_for_sum = []
         infos_for_last = []
         done = False
@@ -128,6 +129,7 @@ class PFLearner:
         phase = "ZEvaluation"
         self.test_i_episode += 1
         state = self.env.reset()
+        self.env.phase = Phase.TEST
 
         done = False
         infos_for_sum = []

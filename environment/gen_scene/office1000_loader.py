@@ -7,20 +7,20 @@ import numpy as np
 from environment.gen_scene.build_office_world import drop_world_walls
 from environment.gen_scene.world_generator import get_world_config
 from environment.nav_utilities.coordinates_converter import cvt_to_bu
-from utils.fo_utility import get_project_path
+from utils.fo_utility import *
 
 
 def check_office1000_folder_structure():
     url = "https://pan.dm-ai.com/s/AsHXrJGKe4NLsKH"
     password = "12345678"
-    office1000_parent_folder = os.path.join(get_project_path(), "data/office_1500")
+    office1000_parent_folder = os.path.join(get_project_path(), "data/office_evacuation")
     spaces = ["\n\t-", "\n\t\t-", "\n\t\t\t-", "-\n\t\t\t\t", "\n\t\t\t\t\t-"]
 
     parent_folder = "data"
-    sub1_folders = ["office_1500"]
-    sub2_folders = ["train", "test"]
-    sub3_folders = ["envs", "envs_images", "geodesic_distance", "obstacle_distance", "obstacle_distance_images",
-                    "uv_forces"]
+    sub1_folders = ["office_evacuation"]
+    sub2_folders = ["sg_walls", "sg_no_walls", "goal_at_door"]
+    sub3_folders = ["train", "test"]
+    sub4_folders = ["envs", "geodesic_distance", "obstacle_distance", "u_forces", "v_forces"]
     warning1 = "Please download data from url:{}; password:{}; and put it in your project_folder/data; ".format(url,
                                                                                                                 password)
     folder_structure = parent_folder
@@ -36,18 +36,26 @@ def check_office1000_folder_structure():
                 space3 = spaces[2]
                 folder_structure += space3
                 folder_structure += sub3_folder
+                for sub4_folder in sub4_folders:
+                    space4 = spaces[3]
+                    folder_structure += space4
+                    folder_structure += sub4_folder
 
     warning2 = "Your folder structure should be like : {}".format(folder_structure)
     assert os.path.exists(office1000_parent_folder), warning1 + warning2
 
-    for phase in ["train", "test"]:
-        geodesic_distance_folder = os.path.join(office1000_parent_folder, phase, "geodesic_distance")
-        random_env_folder = os.path.join(office1000_parent_folder, phase, "envs")
-        random_envs_images_folder = os.path.join(office1000_parent_folder, phase, "envs_images")
-
-    assert os.path.exists(geodesic_distance_folder), warning1 + warning2
-    assert os.path.exists(random_env_folder), warning1 + warning2
-    assert os.path.exists(random_envs_images_folder), warning1 + warning2
+    for sub1_folder in sub1_folders:
+        for sub2_folder in sub2_folders:
+            for sub3_folder in sub3_folders:
+                for sub4_folder in sub4_folders:
+                    path = os.path.join(get_project_path(), "data", sub1_folder, sub2_folder, sub3_folder, sub4_folder)
+                    warning3 = "\n" + path
+                    assert os.path.exists(path), warning1 + warning2 + warning3
+                    length = len(os.listdir(path))
+                    if sub3_folder == "train":
+                        assert length == 1200, warning1 + warning2 + warning3 + ";length={}".format(length)
+                    else:
+                        assert length == 240, warning1 + warning2 + warning3 + ";length={}".format(length)
 
 
 def load_office1000_scene(p, running_config, worlds_config, phase):
@@ -57,46 +65,55 @@ def load_office1000_scene(p, running_config, worlds_config, phase):
 
     # scene_index = np.random.randint(0, 1000)
     # logging.error("Choose scene index:{}".format(scene_index))
-    scene_parent_folder = os.path.join(get_project_path(), "data", "office_1500", phase, "envs")
-    geodesic_distance_parent_folder = os.path.join(get_project_path(), "data", "office_1500", phase,
-                                                   "geodesic_distance")
-    obstacle_distance_parent_folder = os.path.join(get_project_path(), "data", "office_1500", phase,
-                                                   "obstacle_distance")
-    potential_maps_parent_folder = os.path.join(get_project_path(), "data", "office_1500", phase,
-                                                "uv_forces")
-    file_names = os.listdir(geodesic_distance_parent_folder)
+    parent_folders = [get_sg_walls_path(), get_goal_at_door_path(), get_sg_no_walls_path()]
+    parent_folder = np.random.choice(parent_folders, size=(1,))[0]
+    print("scene folder:{}".format(parent_folder))
+
+    envs_folder = os.path.join(parent_folder, phase, "envs")
+    geodesic_distance_folder = os.path.join(parent_folder, phase, "geodesic_distance")
+    obstacle_distance_folder = os.path.join(parent_folder, phase, "obstacle_distance")
+    u_folder = os.path.join(parent_folder, phase, "u_forces")
+    v_folder = os.path.join(parent_folder, phase, "v_forces")
+
+    # 确定场景
+    file_names = os.listdir(geodesic_distance_folder)
     file_name = np.random.choice(file_names)
     print("scene file name:{}".format(file_name))
     si = file_name.index("_") + 1
     ei = file_name.index(".")
-    scene_index = int(file_name[si:ei])
+    index = int(file_name[si:ei])
     # scene_index = np.random.randint(1000, 1200)
-    scene_path = os.path.join(scene_parent_folder, "env_{}.pkl".format(scene_index))
+    env = os.path.join(envs_folder, "env_{}.pkl".format(index))
 
-    obstacle_distance_path = os.path.join(obstacle_distance_parent_folder, "env_{}.pkl".format(scene_index))
-    geodesic_distance_dict_path = os.path.join(geodesic_distance_parent_folder, "env_{}.pkl".format(scene_index))
-    potential_maps_path = os.path.join(potential_maps_parent_folder, "env_{}.pkl".format(scene_index))
+    obstacle_distance_path = os.path.join(obstacle_distance_folder, "env_{}.pkl".format(index))
+    geodesic_distance_dict_path = os.path.join(geodesic_distance_folder, "env_{}.pkl".format(index))
+    u_path = os.path.join(u_folder, "env_{}.pkl".format(index))
+    v_path = os.path.join(v_folder, "env_{}.pkl".format(index))
+
     # Read occupancy map, starts and ends
-    occupancy_map, starts, ends = pickle.load(open(scene_path, 'rb'))
+    occupancy_map, starts, ends = pickle.load(open(env, 'rb'))
     # read obstacle distance map
     obstacle_distance_map = pickle.load(open(obstacle_distance_path, 'rb'))
     # read geodesic_distance_map
     geodesic_distance_dict_dict = pickle.load(open(geodesic_distance_dict_path, 'rb'))
-    potential_map_x, potential_map_y, potential_map = pickle.load(open(potential_maps_path, 'rb'))
-
-    world_name = running_config["world_name"]
-    # get method to create specified scene map
-    world_config = get_world_config(worlds_config, world_name)
+    force_ux, force_uy, force_u = pickle.load(open(u_path, 'rb'))
+    v_map_dict = pickle.load(open(v_path, 'rb'))
 
     indexes = np.random.randint(0, len(starts), size=running_config["num_agents"])
 
     bu_starts = []
     bu_ends = []
     geodesic_distance_dict_list: List[Dict] = []
-    geodesic_distance_map_list: List[np.array] = []
+
+    force_vxs = []
+    force_vys = []
+    force_vs = []
     for i in indexes:
         start = starts[i]
-        end = ends[i]
+        if len(ends) == 1:
+            end = ends[0]
+        else:
+            end = ends[i]
 
         # 取出对应终点的测地距离dict
         geodesic_distance_dict = geodesic_distance_dict_dict[tuple(end)]
@@ -104,20 +121,23 @@ def load_office1000_scene(p, running_config, worlds_config, phase):
         # 将测地距离dict保存到list中
         geodesic_distance_dict_list.append(geodesic_distance_dict)
 
-        # 将测地距离dict转为测地距离map
-        geo_distance_map = np.zeros_like(occupancy_map).astype(float)
-        for key in geodesic_distance_dict.keys():
-            distance = geodesic_distance_dict[key]
-            geo_distance_map[key] = distance
-        geodesic_distance_map_list.append(geo_distance_map)
-        # geodesic_distance_dict[]
+        # 将
+        force_vx, force_vy, force_v = v_map_dict[tuple(end)]
+        force_vxs.append(force_vx)
+        force_vys.append(force_vy)
+        force_vs.append(force_v)
+
         # sample start position and goal position
         bu_start = cvt_to_bu(start, running_config["grid_res"])
         bu_end = cvt_to_bu(end, running_config["grid_res"])
         bu_starts.append(bu_start)
         bu_ends.append(bu_end)
 
+    world_name = running_config["world_name"]
+    # get method to create specified scene map
+    world_config = get_world_config(worlds_config, world_name)
+
     obstacle_ids = drop_world_walls(p, occupancy_map.copy(), running_config["grid_res"], world_config)
 
     # maps, obstacle_ids, bu_starts, bu_goals
-    return occupancy_map, geodesic_distance_dict_list, geodesic_distance_map_list, obstacle_distance_map, potential_map_x, potential_map_y, potential_map, obstacle_ids, bu_starts, bu_ends
+    return occupancy_map, geodesic_distance_dict_list, obstacle_distance_map, force_ux, force_uy, force_u, force_vxs, force_vys, force_vs, obstacle_ids, bu_starts, bu_ends

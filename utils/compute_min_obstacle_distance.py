@@ -4,7 +4,7 @@ import pickle
 import matplotlib.pyplot as plt
 import numpy as np
 
-from utils.fo_utility import get_project_path
+from utils.fo_utility import *
 
 
 def compute_min_obstacle_distance(file_name):
@@ -25,6 +25,33 @@ def compute_min_obstacle_distance(file_name):
     return obstacle_distance_map
 
 
+def compute_min_obstacle_distances(folder_name, phase, indexes):
+    env_parent_folder = os.path.join(get_office_evacuation_path(), folder_name, phase, "envs")
+    obs_dist_folder = os.path.join(get_office_evacuation_path(), folder_name, phase, "obstacle_distance")
+    image_folder = os.path.join(get_office_evacuation_path(), folder_name, phase, "obstacle_distance_images")
+    if not os.path.exists(obs_dist_folder):
+        os.makedirs(obs_dist_folder)
+    if not os.path.exists(image_folder):
+        os.makedirs(image_folder)
+
+    env_name_template = "env_{}.pkl"
+    image_name_template = "env_{}.png"
+
+    for i in indexes:
+        env_name = env_name_template.format(i)
+        env_path = os.path.join(env_parent_folder, env_name)
+        print("Computing obstacle distance for {}...".format(env_name))
+        out = compute_min_obstacle_distance(file_name=env_path)
+        out_path = os.path.join(obs_dist_folder, env_name)
+        pickle.dump(out, open(out_path, 'wb'))
+
+        image_name = image_name_template.format(i)
+        image_path = os.path.join(image_folder, image_name)
+        display_and_save(out, save=True, save_path=image_path)
+        print("Save to {}!".format(out_path))
+    print("Done!")
+
+
 def display_and_save(obstacle_distance_map, save, save_path):
     plt.imshow(obstacle_distance_map)
 
@@ -36,30 +63,8 @@ def display_and_save(obstacle_distance_map, save, save_path):
 
 
 if __name__ == '__main__':
-    phase = "test"
-    parent_folder = "office_1500_goal_outdoor"
-    env_parent_folder = os.path.join(get_project_path(), "data", parent_folder, phase, "envs")
-    obs_dist_parent_folder = os.path.join(get_project_path(), "data", parent_folder, phase, "obstacle_distance")
-    image_folder = os.path.join(get_project_path(), "data", parent_folder, phase, "obstacle_distance_images")
-    if not os.path.exists(obs_dist_parent_folder):
-        os.makedirs(obs_dist_parent_folder)
-    if not os.path.exists(image_folder):
-        os.makedirs(image_folder)
-    indexes = [a for a in range(136, 137)]
-
-    env_name_template = "env_{}.pkl"
-    image_name_template = "env_{}.png"
-
-    for i in indexes:
-        env_name = env_name_template.format(i)
-        env_path = os.path.join(env_parent_folder, env_name)
-        print("Computing obstacle distance for {}...".format(env_name))
-        out = compute_min_obstacle_distance(file_name=env_path)
-        out_path = os.path.join(obs_dist_parent_folder, env_name)
-        pickle.dump(out, open(out_path, 'wb'))
-
-        image_name = image_name_template.format(i)
-        image_path = os.path.join(image_folder, image_name)
-        display_and_save(out, save=True, save_path=image_path)
-        print("Save to {}!".format(out_path))
-    print("Done!")
+    folder_name = "sg_no_walls"
+    phase = "train"
+    # 要处理从哪个到哪个文件
+    indexes = [i for i in range(0, 1200)]
+    compute_min_obstacle_distances(folder_name, phase, indexes)

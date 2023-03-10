@@ -1,12 +1,13 @@
 import os
 import pickle
+from multiprocessing import Pool
 from typing import Dict
 
 import numpy as np
 from matplotlib import pyplot as plt
 
-from utils.compute_u_forces import compute_u_force
-from utils.fo_utility import get_project_path, get_p2v_path
+from utils.compute_u_forces import compute_u_force, display_u_force
+from utils.fo_utility import get_project_path, get_p2v_path, get_office_evacuation_path
 
 
 def compute_v_force(occupancy_map, geo_distance_map, k1=0.01, k2=0.005, k3=1):
@@ -45,7 +46,7 @@ def compute_v_force_const(occupancy_map, geo_distance_map):
     """
     force_vx = np.zeros_like(occupancy_map).astype(float)
     force_vy = np.zeros_like(occupancy_map).astype(float)
-    force_v = np.zeros_like(occupancy_map).astype(float)
+    force_v = np.ones_like(occupancy_map).astype(float) * 10
 
     for i in range(0, force_v.shape[0]):
         for j in range(0, force_v.shape[1]):
@@ -62,49 +63,115 @@ def compute_v_force_const(occupancy_map, geo_distance_map):
     return force_vx, force_vy, force_v
 
 
+def display_v_images(force_vx, force_vy, force_v):
+    L1, L2 = force_v.shape
+    plt.figure(30)
+    plt.imshow(np.sqrt(force_vx ** 2 + force_vy ** 2), cmap='gray')
+    plt.title('Convolved Map')
+    plt.show()
+
+    XX, YY = np.meshgrid(np.arange(1, L1 + 1), np.arange(1, L2 + 1))
+    plt.figure(20)
+    plt.quiver(XX, YY, force_vx, force_vy)
+    plt.title('Convolved Map Vectors')
+    plt.show()
+
+    plt.figure(11)
+    plt.imshow(force_vx, cmap='gray')
+    plt.title('X-Convolved Map')
+    plt.show()
+
+    plt.figure(12)
+    plt.imshow(force_vy, cmap='gray')
+    plt.title('Y-Convolved Map')
+    plt.show()
+
+
+def save_v_images(force_vx, force_vy, force_v, save_folder, i, goal):
+    plt.figure(30)
+    plt.imshow(np.sqrt(force_vx ** 2 + force_vy ** 2), cmap='gray')
+    plt.title('Convolved Map')
+    plt.savefig(os.path.join(save_folder, "env_{}_{}_convolved_map.png".format(i, goal)))
+
+
+def compute_v_force_by_path(env_path, geo_path):
+    occupancy_map, _, _ = pickle.load(open(env_path, "rb"))
+    geo_dict_dict = pickle.load(open(geo_path, "rb"))
+    v_map_dict: Dict = {}
+    for goal in geo_dict_dict.keys():
+        geo_distance_map = np.zeros_like(occupancy_map).astype(float)
+        geo_distance_dict: Dict = geo_dict_dict[goal]
+
+        for key in geo_distance_dict.keys():
+            geo_distance_map[key] = geo_distance_dict[key]
+
+        force_vx, force_vy, force_v = compute_v_force_const(occupancy_map, geo_distance_map)
+        v_map_dict[goal] = [force_vx, force_vy, force_v]
+    return v_map_dict
+
+
+def compute_v_forces(folder_name, phase, indexes):
+    env_folder = os.path.join(get_office_evacuation_path(), folder_name, phase, "envs")
+    geo_folder = os.path.join(get_office_evacuation_path(), folder_name, phase, "geodesic_distance")
+
+    v_folder = os.path.join(get_office_evacuation_path(), folder_name, phase, "v_forces")
+    v_image_folder = os.path.join(get_office_evacuation_path(), folder_name, phase, "v_image_forces")
+
+    if not os.path.exists(v_folder):
+        os.makedirs(v_folder)
+    if not os.path.exists(v_image_folder):
+        os.makedirs(v_image_folder)
+
+    env_name_template = "env_{}.pkl"
+    #
+    env_paths = [os.path.join(env_folder, env_name_template.format(ind)) for ind in indexes]
+    geo_paths = [os.path.join(geo_folder, env_name_template.format(ind)) for ind in indexes]
+    v_paths = [os.path.join(v_folder, env_name_template.format(ind)) for ind in indexes]
+    for i, ind in enumerate(indexes):
+        env_path = env_paths[i]
+        geo_path = geo_paths[i]
+        v_path = v_paths[i]
+        print("Processing path:{}".format(env_path))
+        v_map_dict = compute_v_force_by_path(env_path, geo_path)
+
+        # 保存force
+        pickle.dump(v_map_dict, open(v_path, "wb"))
+
+        # for goal in geo_distance_map_dict.keys():
+        #     force_vx, force_vy, force_v = geo_distance_map_dict[goal]
+
+        # 显示u force
+        # display_v_images(force_vx, force_vy, force_v)
+        # save_v_images(force_vx, force_vy, force_v, save_folder=v_image_folder, i=i, goal=goal)
+
+        # 保存 u force 图片
+
+    return
+
+
+def multi_process(folder_name, phase, indexes):
+    print('Parent process %s.' % os.getpid())
+    # 进程数量
+    num_process = 5
+    p = Pool(num_process)
+    num_batch = int((indexes[-1] + 1 - indexes[0]) / num_process)
+    split_env_indexes = [[indexes[0] + i * num_batch, indexes[0] + (i + 1) * num_batch] for i in range(num_process)]
+    for start_index, end_index in split_env_indexes:
+        split_indexes = [i for i in range(start_index, end_index)]
+        p.apply_async(compute_v_forces,
+                      args=(folder_name, phase, split_indexes,))
+    print('Waiting for all subprocesses done...')
+    p.close()
+    p.join()
+    print('All subprocesses done.')
+
+
 if __name__ == '__main__':
-    scene_path = os.path.join(get_p2v_path(), "train", "envs", "env_{}.pkl".format(0))
-    geo_path = os.path.join(get_p2v_path(), "train", "envs", "env_{}.pkl".format(0))
-    # scene_path = "/data/office_1500/train/envs/env_0.pkl"
-    # geo_path = "/data/office_1500/train/geodesic_distance/env_0.pkl"
-    potential_maps_path = "/data/office_1500/train/uv_forces/env_0.pkl"
+    folder_name = "sg_no_walls"
+    phase = "test"
+    # 要处理从哪个到哪个文件
+    indexes = [i for i in range(12, 192)]
 
-    save_path = os.path.join(
-        "/data/office_1500/train/geodesic_distance_images",
-        "env_0.txt")
-
-    occupancy_map, _, _ = pickle.load(open(scene_path, "rb"))
-    obj = pickle.load(open(geo_path, "rb"))
-    geo_distance_map = np.zeros_like(occupancy_map).astype(float)
-    goal = (38, 9)
-    geodesic_distance: Dict = obj[goal]
-
-    for key in geodesic_distance.keys():
-        distance = geodesic_distance[key]
-        geo_distance_map[key] = distance
-
-    force_v, force_vx, force_vy = compute_v_force(occupancy_map, geo_distance_map)
-    # force_u_scalar_map, force_u_x, force_u_y = compute_u_force(potential_maps_path)
-
-    # force_x = force_u_x + 0.1 * force_vx
-    # force_y = force_u_y + 0.1 * force_vy
-    XX, YY = np.meshgrid(np.arange(1, occupancy_map.shape[0] + 1), np.arange(1, occupancy_map.shape[1] + 1))
-    plt.figure(100)
-    plt.quiver(XX, YY, force_vx, force_vy)
-    plt.title('Force V')
-    plt.savefig("force_v.png")
-    plt.show()
-
-    plt.quiver(XX, YY, force_vx, force_vy)
-    plt.title('Force U')
-    plt.savefig("force_u.png")
-
-    plt.show()
-
-    plt.quiver(XX, YY, force_vx, force_vy)
-    plt.title('Force')
-    plt.savefig("force.png")
-
-    plt.show()
+    multi_process(folder_name, phase, indexes)
 
     print()

@@ -119,7 +119,7 @@ def generate_n_envs():
         occupancy_map, starts, ends, sample_success = generate_env(num_starts=num_starts, world_name=world_name)
 
         if sample_success:
-            env = [occupancy_map, starts, ends]
+            env = [occupancy_map, starts, ends, world_name, ]
             print("Save env {} to {} ... ".format(save_file_name, save_path))
             pickle.dump(env, open(save_path, 'wb'))
             display_and_save(occupancy_map, starts, ends, save=True, save_path=image_save_path)
