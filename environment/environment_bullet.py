@@ -236,10 +236,12 @@ class EnvironmentBullet(PybulletBaseEnv):
 
         # done = reach_goal or over_max_step
         step_info = reward_info
+
         # store information
         episode_info = {"collision": collision == CollisionType.CollisionWithWall, "a_success": reach_goal,
                         "over_max_step": over_max_step, "step_count": self.step_count.value}
-
+        if reach_goal:
+            episode_info.update({"success_step_count": self.step_count.value})
         if done:
             print("success:{}; collision:{}; over_max_step:{}".format(reach_goal, collision, over_max_step))
 
@@ -300,7 +302,7 @@ class EnvironmentBullet(PybulletBaseEnv):
         reward_info = {"reward/reward_collision": collision_reward,
                        "reward/reward_obj_euclidean_distance": obj_euclidean_distance_reward,
                        "reward/reward_reach_goal": reach_goal_reward,
-                       "reward/reward": reward
+                       "reward/reward": reward,
                        }
 
         reward_info.update(reward_info_geo_obs)
