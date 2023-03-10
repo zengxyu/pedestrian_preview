@@ -20,7 +20,7 @@ reward_geo_obs:
 #  到达目标的欧式距离
   goal_euclidean: 0
 #  到目标点的测地距离
-  goal_geo: 10
+  goal_geo: 20
 #  到障碍物的最近距离
   obs_dist: -3
 
