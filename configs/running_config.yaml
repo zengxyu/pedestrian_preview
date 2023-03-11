@@ -14,7 +14,7 @@ inference_duration: 0.2 # [s]
 evaluate_every_n_training: 1000
 evaluate_n_times: 100
 
-reward_config_name: reward_geo_obs
+reward_config_name: reward_uv
 
 # choose from  inputs_config.yaml: input_multi_row_multi_sensor, input_multi_row_cnn, input_lidar_mlp, input_cnn
 input_config_name: input_lidar_vision_geo
