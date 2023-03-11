@@ -66,7 +66,7 @@ def load_office1000_scene(p, running_config, worlds_config, phase):
     # scene_index = np.random.randint(0, 1000)
     # logging.error("Choose scene index:{}".format(scene_index))
     parent_folders = [get_sg_walls_path(), get_goal_at_door_path(), get_sg_no_walls_path()]
-    parent_folder = np.random.choice(parent_folders, size=(1,))[0]
+    parent_folder = np.random.choice(parent_folders, size=(1,), p=np.array([2, 1, 1]))[0]
     print("scene folder:{}".format(parent_folder))
 
     envs_folder = os.path.join(parent_folder, phase, "envs")
