@@ -63,8 +63,8 @@ def display_and_save(obstacle_distance_map, save, save_path):
 
 
 if __name__ == '__main__':
-    folder_name = "sg_no_walls"
+    folder_name = "sg_walls"
     phase = "train"
     # 要处理从哪个到哪个文件
-    indexes = [i for i in range(0, 1200)]
+    indexes = [i for i in range(1200, 1500)]
     compute_min_obstacle_distances(folder_name, phase, indexes)

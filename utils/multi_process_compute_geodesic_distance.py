@@ -55,9 +55,9 @@ def multi_process(folder_name, phase, indexes):
 
 
 if __name__ == '__main__':
-    phase = "test"
-    folder_name = "sg_no_walls"
+    phase = "train"
+    folder_name = "sg_walls"
     # 要处理从哪个到哪个文件
-    indexes = [12, 192]
+    indexes = [1200, 1499]
 
     multi_process(folder_name, phase, indexes)

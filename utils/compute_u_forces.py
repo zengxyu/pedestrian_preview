@@ -199,7 +199,7 @@ def compute_u_forces(dataset_path, folder_name, phase, indexes):
         u_path = u_paths[i]
         print("Processing path:{}".format(env_path))
         assert os.path.exists(env_path)
-        occupancy_map, _, _ = pickle.load(open(env_path, "rb"))
+        occupancy_map, _, _, _ = pickle.load(open(env_path, "rb"))
         force_x, force_y, force = compute_u_force(kernel_x, kernel_y, occupancy_map)
         # 保存force
         pickle.dump([force_x, force_y, force], open(u_path, "wb"))
@@ -238,9 +238,9 @@ if __name__ == '__main__':
 
     # 为文件夹下所有图计算向量场
     dataset_path = get_office_evacuation_path()
-    phase = "test"
+    phase = "train"
     folder_name = "sg_walls"
     # 要处理从哪个到哪个文件
-    indexes = [i for i in range(93, 94)]
-    compute_u_forces(dataset_path, folder_name, phase, indexes)
+    indexes = [i for i in range(1200, 1500)]
+    # compute_u_forces(dataset_path, folder_name, phase, indexes)
     multi_process(dataset_path, folder_name, phase, indexes)
