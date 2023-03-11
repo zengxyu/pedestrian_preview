@@ -58,6 +58,6 @@ if __name__ == '__main__':
     phase = "train"
     folder_name = "sg_walls"
     # 要处理从哪个到哪个文件
-    indexes = [1200, 1499]
+    indexes = [1495, 1500]
 
     multi_process(folder_name, phase, indexes)

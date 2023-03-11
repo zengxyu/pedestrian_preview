@@ -95,7 +95,7 @@ def save_v_images(force_vx, force_vy, force_v, save_folder, i, goal):
 
 
 def compute_v_force_by_path(env_path, geo_path):
-    occupancy_map, _, _, _ = pickle.load(open(env_path, "rb"))
+    occupancy_map, _, _ = pickle.load(open(env_path, "rb"))
     geo_dict_dict = pickle.load(open(geo_path, "rb"))
     v_map_dict: Dict = {}
     for goal in geo_dict_dict.keys():
@@ -152,7 +152,7 @@ def compute_v_forces(folder_name, phase, indexes):
 def multi_process(folder_name, phase, indexes):
     print('Parent process %s.' % os.getpid())
     # 进程数量
-    num_process = 5
+    num_process = 1
     p = Pool(num_process)
     num_batch = int((indexes[-1] + 1 - indexes[0]) / num_process)
     split_env_indexes = [[indexes[0] + i * num_batch, indexes[0] + (i + 1) * num_batch] for i in range(num_process)]
@@ -170,9 +170,9 @@ if __name__ == '__main__':
     folder_name = "sg_walls"
     phase = "train"
     # 要处理从哪个到哪个文件
-    indexes = [i for i in range(1200, 1500)]
-    # compute_v_forces(folder_name, phase, indexes)
+    indexes = [i for i in range(1495, 1500)]
+    compute_v_forces(folder_name, phase, indexes)
 
-    multi_process(folder_name, phase, indexes)
+    # multi_process(folder_name, phase, indexes)
 
     print()

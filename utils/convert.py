@@ -25,3 +25,4 @@ for i, ind in enumerate(indexes):
     env_path = env_paths[i]
     occupancy_map, starts, ends, _ = pickle.load(open(env_path, "rb"))
     pickle.dump([occupancy_map, starts, ends], open(env_path, "wb"))
+
