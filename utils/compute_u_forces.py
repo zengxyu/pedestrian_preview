@@ -242,5 +242,5 @@ if __name__ == '__main__':
     folder_name = "sg_walls"
     # 要处理从哪个到哪个文件
     indexes = [i for i in range(93, 94)]
-    # compute_u_forces(dataset_path, folder_name, phase, indexes)
+    compute_u_forces(dataset_path, folder_name, phase, indexes)
     multi_process(dataset_path, folder_name, phase, indexes)

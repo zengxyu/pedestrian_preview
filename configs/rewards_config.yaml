@@ -38,6 +38,6 @@ reward_uv:
 #  到障碍物的最近距离
   obs_dist: 0
 #  u
-  force_u1: 2
+  force_u1: 1
 #  v
-  force_v: 1
+  force_v: 2

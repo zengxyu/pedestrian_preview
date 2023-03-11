@@ -222,6 +222,8 @@ class EnvironmentBullet(PybulletBaseEnv):
         # print("v:{};w:{}".format(*self.robots[0].get_v_w()))
         state = self.get_state()
         reward, reward_info = self.get_reward(reach_goal=reach_goal, collision=collision)
+        if not self.args.train:
+            print("reward={}".format(reward))
         over_max_step = self.step_count >= self.max_step
         if collision == CollisionType.CollisionWithWall:
             self.collision_count += 1
@@ -299,14 +301,14 @@ class EnvironmentBullet(PybulletBaseEnv):
         uv_reward, reward_info_uv = self.compute_uv_reward()
         reward += uv_reward
         """=================obstacle distance reward==============="""
-        reward_info = {"reward/reward_collision": collision_reward,
-                       "reward/reward_obj_euclidean_distance": obj_euclidean_distance_reward,
-                       "reward/reward_reach_goal": reach_goal_reward,
-                       "reward/reward": reward,
+        reward_info = {"reward/reward_collision": np.around(collision_reward, 2),
+                       "reward/reward_obj_euclidean_distance": np.around(obj_euclidean_distance_reward, 2),
+                       "reward/reward_reach_goal": np.around(reach_goal_reward, 2),
                        }
-
         reward_info.update(reward_info_geo_obs)
         reward_info.update(reward_info_uv)
+        reward_info.update({"reward/reward": np.around(reward, 2)})
+        print("reward info:{}".format(reward_info))
 
         return reward, reward_info
 
@@ -319,8 +321,8 @@ class EnvironmentBullet(PybulletBaseEnv):
         geo_distance_reward = self.compute_goal_geo_reward()
         reward += geo_distance_reward
 
-        reward_info = {"reward/reward_obs": obstacle_distance_reward,
-                       "reward/reward_goal_geo": geo_distance_reward}
+        reward_info = {"reward/reward_obs": np.around(obstacle_distance_reward, 2),
+                       "reward/reward_goal_geo": np.around(geo_distance_reward, 2)}
 
         return reward, reward_info
 
@@ -387,7 +389,7 @@ class EnvironmentBullet(PybulletBaseEnv):
 
         w = w_u1 + w_v
         # print("cosine_similarity:{}".format(cosine_similarity))
-        return w, {"reward/reward_u1": w_u1, "reward/reward_v": w_v}
+        return w, {"reward/reward_u1": np.around(w_u1, 2), "reward/reward_v": np.around(w_v, 2)}
 
     def get_force_u1(self, pos):
         """
@@ -452,6 +454,8 @@ class EnvironmentBullet(PybulletBaseEnv):
 
             geodesic_distance = self.compute_geodesic_distance(robot_index=0,
                                                                cur_position=self.agent_robots[0].get_position())
+            if not self.args.train:
+                print("input geodesic_distance:{}".format(geodesic_distance))
             rela_pose_geo = np.array([*relative_pose.flatten().tolist(), geodesic_distance]).astype(float)[np.newaxis,
                             :]
             # print(rela_pose_geo.dtype)

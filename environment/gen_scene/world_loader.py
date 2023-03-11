@@ -35,7 +35,7 @@ def load_p2v_scene(p, running_config, world_config, map_path, coordinates_path, 
     # 随机采样起点终点
     # [start, end], sample_success = start_goal_sampler(occupancy_map=dilated_occ_map, margin=env_config["dilation_size"])
 
-    # starts = [point_sampler(dilated_occupancy_map) for i in range(num_agents)]
+    starts = [point_sampler(dilated_occupancy_map) for i in range(num_agents)]
     goal = np.array([10, -10])
     goals = [goal for i in range(num_agents)]
     # compute door
