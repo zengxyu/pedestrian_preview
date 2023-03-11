@@ -308,7 +308,8 @@ class EnvironmentBullet(PybulletBaseEnv):
         reward_info.update(reward_info_geo_obs)
         reward_info.update(reward_info_uv)
         reward_info.update({"reward/reward": np.around(reward, 2)})
-        print("reward info:{}".format(reward_info))
+        if not self.args.train:
+            print("reward info:{}".format(reward_info))
 
         return reward, reward_info
 
