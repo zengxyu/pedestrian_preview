@@ -40,7 +40,13 @@ def test_data_folder_complete():
                     path = os.path.join(get_project_path(), "data", sub1_folder, sub2_folder, sub3_folder, sub4_folder)
                     warning3 = "\n" + path
                     assert os.path.exists(path), warning2 + warning3
-                    if sub3_folder == "train":
+                    if sub3_folder == "train" and sub2_folder == "sg_walls":
+                        indexes = [i for i in range(1500)]
+                        for i in indexes:
+                            file_path = os.path.join(path, "env_{}.pkl".format(indexes[i]))
+                            if not os.path.exists(file_path):
+                                print("Path not exist:{}".format(file_path))
+                    elif sub3_folder == "train":
                         indexes = [i for i in range(1200)]
                         for i in indexes:
                             file_path = os.path.join(path, "env_{}.pkl".format(indexes[i]))
