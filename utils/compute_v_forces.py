@@ -170,7 +170,7 @@ if __name__ == '__main__':
     folder_name = "sg_walls"
     phase = "train"
     # 要处理从哪个到哪个文件
-    indexes = [i for i in range(1495, 1500)]
+    indexes = [i for i in range(1500, 1700)]
     compute_v_forces(folder_name, phase, indexes)
 
     # multi_process(folder_name, phase, indexes)

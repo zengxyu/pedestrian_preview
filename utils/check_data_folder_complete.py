@@ -41,7 +41,7 @@ def test_data_folder_complete():
                     warning3 = "\n" + path
                     assert os.path.exists(path), warning2 + warning3
                     if sub3_folder == "train" and sub2_folder == "sg_walls":
-                        indexes = [i for i in range(1500)]
+                        indexes = [i for i in range(1700)]
                         for i in indexes:
                             file_path = os.path.join(path, "env_{}.pkl".format(indexes[i]))
                             if not os.path.exists(file_path):
