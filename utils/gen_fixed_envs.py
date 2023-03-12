@@ -87,7 +87,7 @@ def generate_n_envs():
     # 确定生成场景的名字
     world_name = "office"
     # 生成的场景的数量或者索引号码
-    indexes = [a for a in range(1200, 1500)]
+    indexes = [a for a in range(1500, 1700)]
     # 每个场景起点个数
     num_starts = 20
     phase = "train"
@@ -99,6 +99,10 @@ def generate_n_envs():
     envs_images_folder2 = os.path.join(get_project_path(), "data", parent_folder, phase, "envs_images2")
 
     # 如果文件夹不存在，创建文件夹
+    if not os.path.exists(envs_folder):
+        os.makedirs(envs_folder)
+    if not os.path.exists(envs_images_folder):
+        os.makedirs(envs_images_folder)
     if not os.path.exists(envs_folder2):
         os.makedirs(envs_folder2)
     if not os.path.exists(envs_images_folder2):
@@ -127,7 +131,7 @@ def generate_n_envs():
         occupancy_map, starts, ends, sample_success = generate_env(num_starts=num_starts, world_name=world_name)
 
         if sample_success:
-            env = [occupancy_map, starts, ends, world_name, ]
+            env = [occupancy_map, starts, ends]
             print("Save env {} to {} ... ".format(save_file_name, save_path2))
             pickle.dump(env, open(save_path2, 'wb'))
             display_and_save(occupancy_map, starts, ends, save=True, save_path=image_save_path2)

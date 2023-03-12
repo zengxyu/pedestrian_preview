@@ -136,6 +136,7 @@ def create_office_map(configs):
     make_exit_door(occupancy_map, configs, grid_resolution)
     return occupancy_map
 
+
 def create_office_map2(configs):
     logging.info("creating office map")
     has_no_closed_rooms_in_free_space = True
@@ -265,6 +266,7 @@ def create_office_map2(configs):
     make_exit_door(occupancy_map, configs, grid_resolution)
     return occupancy_map
 
+
 def filter_corners_in_same_room(room_map, occ_map, corners):
     # 去掉边缘
     room_map[0, :] = False
@@ -285,7 +287,7 @@ def filter_corners_in_same_room(room_map, occ_map, corners):
                 is_neighbor_res = [False]
                 is_evolved_neighbor(room_map.copy(), corner, temp, is_neighbor_res)
 
-                if is_neighbor_res[0] and not is_direct_neighbor(corner, temp):
+                if is_neighbor_res[0] and not is_direct_neighbor(corner, temp) and np.random.random() < 0.2:
                     corners.remove(temp)
 
     return corners_res
@@ -294,5 +296,3 @@ def filter_corners_in_same_room(room_map, occ_map, corners):
 def show_image(plt, image):
     plt.imshow(image)
     plt.show()
-
-
