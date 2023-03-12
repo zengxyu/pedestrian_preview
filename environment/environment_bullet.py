@@ -453,8 +453,8 @@ class EnvironmentBullet(PybulletBaseEnv):
 
             relative_pose = cvt_positions_to_reference([self.agent_goals[i]], rt.get_position(), rt.get_yaw())
 
-            geodesic_distance = self.compute_geodesic_distance(robot_index=0,
-                                                               cur_position=self.agent_robots[0].get_position())
+            geodesic_distance = self.compute_geodesic_distance(robot_index=i,
+                                                               cur_position=self.agent_robots[i].get_position())
             if not self.args.train:
                 print("input geodesic_distance:{}".format(geodesic_distance))
             rela_pose_geo = np.array([*relative_pose.flatten().tolist(), geodesic_distance]).astype(float)[np.newaxis,
