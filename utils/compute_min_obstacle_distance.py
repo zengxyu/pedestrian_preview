@@ -66,5 +66,5 @@ if __name__ == '__main__':
     folder_name = "sg_walls"
     phase = "train"
     # 要处理从哪个到哪个文件
-    indexes = [i for i in range(1200, 1500)]
+    indexes = [i for i in range(1500, 1700)]
     compute_min_obstacle_distances(folder_name, phase, indexes)
