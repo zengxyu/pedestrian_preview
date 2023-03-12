@@ -516,6 +516,8 @@ class EnvironmentBullet(PybulletBaseEnv):
             h = self.input_config["image_h"]
             image = cv2.resize(depth_image, (w, h))
             image[np.isnan(image)] = 1
+            hit_fractions[np.isnan(hit_fractions)] = 1
+            relative_pose = relative_pose / rt.sensors[1].farVal
             if len(self.ma_images_deque[i]) == 0:
                 for j in range(self.image_seq_len - 1):
                     temp = np.zeros_like(image)
