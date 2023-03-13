@@ -127,14 +127,10 @@ class EnvironmentBullet(PybulletBaseEnv):
         if not self.args.env == EnvTypes.RANDOM:
             self.load_office_evacuation()
             self.randomize_human_npc()
-        # elif self.args.env == EnvTypes.P2V:
-        #     assert self.args.load_map_from is not None and self.args.load_map_from != "", "args.load_map_from is None and args.load_map_from == ''"
-        #     self.load_p2v_env()
         else:
             # randomize environment
             self.randomize_env()
             self.randomize_human_npc()
-        # create_cylinder(self.p, self.agent_goals[0], with_collision=False, height=3, radius=0.1)
 
         # # randomize environment
         state = self.get_state()
@@ -149,7 +145,8 @@ class EnvironmentBullet(PybulletBaseEnv):
         check_office1000_folder_structure()
         if self.args.env == EnvTypes.OFFICE1500:
             parent_folders = [get_sg_walls_path(), get_goal_at_door_path(), get_sg_no_walls_path()]
-            parent_folder = np.random.choice(parent_folders, size=(1,), p=np.array([0.5, 0.25, 0.25]))[0]
+            parent_folder = np.random.choice(parent_folders, size=(1,), p=np.array([0.8, 0.1, 0.1]))[0]
+            parent_folder = get_sg_walls_path()
             print("scene folder:{}".format(parent_folder))
         elif self.args.env == EnvTypes.P2V:
             parent_folders = [get_p2v_sg_walls_path(), get_p2v_goal_at_door_path()]

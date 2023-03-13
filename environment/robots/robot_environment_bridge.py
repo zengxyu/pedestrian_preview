@@ -170,7 +170,8 @@ class RobotEnvBridge:
 
     def clear_itself(self):
         self.env.p.removeBody(self.robot.robot_id)
-        self.env.p.removeUserDebugItem(self.robot_direction_id)
+        if self.robot_direction_id is not None:
+            self.env.p.removeUserDebugItem(self.robot_direction_id)
 
     def add_to_trajectories(self):
         self.trajectories.append(self.robot.get_position())

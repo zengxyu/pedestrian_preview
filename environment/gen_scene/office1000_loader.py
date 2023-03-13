@@ -62,11 +62,9 @@ def load_office1000_scene(p, running_config, worlds_config, phase, parent_folder
     """
     load scene from map path and trajectory path
     """
-
+    phase = "train"
     # scene_index = np.random.randint(0, 1000)
     # logging.error("Choose scene index:{}".format(scene_index))
-
-
     envs_folder = os.path.join(parent_folder, phase, "envs")
     geodesic_distance_folder = os.path.join(parent_folder, phase, "geodesic_distance")
     obstacle_distance_folder = os.path.join(parent_folder, phase, "obstacle_distance")
@@ -79,8 +77,8 @@ def load_office1000_scene(p, running_config, worlds_config, phase, parent_folder
     print("scene file name:{}".format(file_name))
     si = file_name.index("_") + 1
     ei = file_name.index(".")
-    index = int(file_name[si:ei])
-    # scene_index = np.random.randint(1000, 1200)
+    # index = int(file_name[si:ei])
+    index = np.random.randint(600, 1700)
     env = os.path.join(envs_folder, "env_{}.pkl".format(index))
 
     obstacle_distance_path = os.path.join(obstacle_distance_folder, "env_{}.pkl".format(index))

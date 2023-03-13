@@ -6,12 +6,9 @@
 # !/usr/bin/env python3
 import logging
 import os
-import sys
 
-from agents.mapping import Env
 from agents.pfrl_agents.agent_builder import build_agent
 from config import process_args
-from learner.pf_learner import PFLearner
 from utils.basic_logger import setup_logger
 from utils.set_random_seed import set_random_seeds
 from warnings import filterwarnings
@@ -19,7 +16,7 @@ from warnings import filterwarnings
 from environment.environment_bullet import EnvironmentBullet, Phase
 
 
-def run_deduction(occupancy_map, starts, ends):
+def run_deduction(args, occupancy_map, starts, ends):
     """
     加载环境
     Args:
@@ -30,13 +27,6 @@ def run_deduction(occupancy_map, starts, ends):
     Returns:
 
     """
-    filterwarnings(action='ignore', category=DeprecationWarning, message='`np.')
-    set_random_seeds(500001)
-    args = process_args()
-    if args.render:
-        setup_logger(log_level=logging.INFO)
-    else:
-        setup_logger(log_level=logging.WARNING)
 
     agent, action_space, scheduler, replay_buffer = build_agent(args)
     env: EnvironmentBullet = EnvironmentBullet(args=args, action_space=action_space)
@@ -65,3 +55,20 @@ def run_deduction(occupancy_map, starts, ends):
     trajectories = robot.bridge.trajectories
     times = robot.bridge.times
     return trajectories, times
+
+
+def load_args_and_configs():
+    filterwarnings(action='ignore', category=DeprecationWarning, message='`np.')
+    set_random_seeds(500001)
+    args = process_args()
+    if args.render:
+        setup_logger(log_level=logging.INFO)
+    else:
+        setup_logger(log_level=logging.WARNING)
+    return args
+
+
+if __name__ == '__main__':
+    args = load_args_and_configs()
+    # occupancy_map, starts, ends =
+    run_deduction(args, None, None, None)

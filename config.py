@@ -31,7 +31,6 @@ def process_args():
     parser.add_argument("--goal_reached_thresh", type=float)
     parser.add_argument("--num_npc", type=int)
     parser.add_argument("--num_agents", type=int)
-    parser.add_argument("--prm", action="store_true", default=False)
     parser.add_argument("--env", type=str, help="random; p2v; office_1500", default="office_1500")
 
     parser_args = parser.parse_args()
