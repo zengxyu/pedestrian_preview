@@ -25,10 +25,10 @@ def compute_min_obstacle_distance(file_name):
     return obstacle_distance_map
 
 
-def compute_min_obstacle_distances(folder_name, phase, indexes):
-    env_parent_folder = os.path.join(get_office_evacuation_path(), folder_name, phase, "envs")
-    obs_dist_folder = os.path.join(get_office_evacuation_path(), folder_name, phase, "obstacle_distance")
-    image_folder = os.path.join(get_office_evacuation_path(), folder_name, phase, "obstacle_distance_images")
+def compute_min_obstacle_distances(dataset_path, folder_name, phase, indexes):
+    env_parent_folder = os.path.join(dataset_path, folder_name, phase, "envs")
+    obs_dist_folder = os.path.join(dataset_path, folder_name, phase, "obstacle_distance")
+    image_folder = os.path.join(dataset_path, folder_name, phase, "obstacle_distance_images")
     if not os.path.exists(obs_dist_folder):
         os.makedirs(obs_dist_folder)
     if not os.path.exists(image_folder):
@@ -63,8 +63,9 @@ def display_and_save(obstacle_distance_map, save, save_path):
 
 
 if __name__ == '__main__':
-    folder_name = "sg_walls"
-    phase = "train"
+    dataset_path = get_p2v_path()
+    folder_name = "goal_at_door"
+    phase = "test"
     # 要处理从哪个到哪个文件
-    indexes = [i for i in range(1500, 1700)]
-    compute_min_obstacle_distances(folder_name, phase, indexes)
+    indexes = [i for i in range(0, 1)]
+    compute_min_obstacle_distances(dataset_path, folder_name, phase, indexes)

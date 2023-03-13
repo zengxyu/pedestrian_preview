@@ -8,6 +8,7 @@ from pybullet_utils.bullet_client import BulletClient
 from environment.gen_scene.build_office_world import create_cylinder
 from environment.nav_utilities.pybullet_helper import place_object, plot_robot_direction_line
 from environment.robots.base_robot import BaseRobot
+from environment.robots.robot_environment_bridge import RobotEnvBridge
 from environment.robots.robot_roles import get_role_color
 from environment.sensors.sensor_types import init_sensors
 from utils.fo_utility import get_project_path
@@ -15,9 +16,9 @@ from utils.fo_utility import get_project_path
 
 class ObjectRobot(BaseRobot):
     def __init__(self, p: BulletClient, client_id: int, robot_role: str, step_duration: float, robot_config: Dict,
-                 sensor_names: str, sensors_config: Dict, start_position, start_yaw):
+                 sensor_names: str, sensors_config: Dict, start_position, goal_position, start_yaw):
         super().__init__(p, client_id)
-
+        # RobotEnvBridge.__init__(self)
         self.p = p
         self.client_id = client_id
         self.robot_role = robot_role
@@ -39,10 +40,16 @@ class ObjectRobot(BaseRobot):
         self.load_urdf(start_position[0], start_position[1], start_yaw)
         self.sensors = init_sensors(robot_id=self.robot_id, sensor_names=sensor_names,
                                     sensors_config=self.sensors_config)
+        self.start = start_position
+        self.goal = goal_position
 
         self.cur_v = 0
         self.cur_w = 0
         self.debug_line_id = None
+        self.bridge: RobotEnvBridge = None
+
+    def set_bridge(self, bridge):
+        self.bridge = bridge
 
     def compute_move_xy(self, delta_x, delta_y):
         """

@@ -17,7 +17,7 @@ np.set_printoptions(precision=3, suppress=True)
 
 class TurtleBot(BaseDifferentialRobot):
     def __init__(self, p: BulletClient, client_id: int, robot_role: str, step_duration: float, robot_config: Dict,
-                 sensor_name: str, sensor_config: Dict, start_position, start_yaw):
+                 sensor_name: str, sensor_config: Dict, start_position, goal_position, start_yaw):
         super().__init__(p, client_id)
         self.robot_config = robot_config
         self.sensor_config = sensor_config
@@ -29,7 +29,8 @@ class TurtleBot(BaseDifferentialRobot):
         self.load_urdf(start_position[0], start_position[1], start_yaw)
 
         self.sensor = VisionSensor(robot_id=self.robot_id, sensor_config=self.sensor_config)
-
+        self.start = start_position
+        self.goal = goal_position
         self.physical_step_duration = step_duration
 
     def convert_v_w_to_wheel_velocities(self, v, w):

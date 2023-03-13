@@ -92,8 +92,8 @@ class PFLearner:
     def train_once(self):
         phase = "Train"
         self.train_i_episode += 1
-        state = self.env.reset()
         self.env.phase = Phase.TRAIN
+        state = self.env.reset()
         infos_for_sum = []
         infos_for_last = []
         done = False
@@ -128,9 +128,8 @@ class PFLearner:
     def evaluate_once(self):
         phase = "ZEvaluation"
         self.test_i_episode += 1
-        state = self.env.reset()
         self.env.phase = Phase.TEST
-
+        state = self.env.reset()
         done = False
         infos_for_sum = []
         infos_for_last = []

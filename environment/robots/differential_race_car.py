@@ -19,7 +19,7 @@ np.set_printoptions(precision=3, suppress=True)
 
 class DifferentialRaceCar(BaseDifferentialRobot):
     def __init__(self, p: BulletClient, client_id: int, robot_role: str, step_duration: float, robot_config: Dict,
-                 sensor_names: str, sensors_config: Dict, start_position, start_yaw):
+                 sensor_names: str, sensors_config: Dict, start_position, goal_position, start_yaw):
         super().__init__(p, client_id)
         self.lidar_joint_id = None
         self.robot_config = robot_config
@@ -34,6 +34,8 @@ class DifferentialRaceCar(BaseDifferentialRobot):
 
         self.sensors = init_sensors(robot_id=self.robot_id, sensor_names=sensor_names,
                                     sensors_config=self.sensors_config)
+        self.start = start_position
+        self.goal = goal_position
         self.physical_step_duration = step_duration
         self.height = 1.7
 

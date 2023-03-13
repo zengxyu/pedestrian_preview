@@ -237,10 +237,10 @@ if __name__ == '__main__':
     # display_kernel(u_kernel_x, u_kernel_y, u_kernel)
 
     # 为文件夹下所有图计算向量场
-    dataset_path = get_office_evacuation_path()
-    phase = "train"
-    folder_name = "sg_walls"
+    dataset_path = get_p2v_path()
+    phase = "test"
+    folder_name = "goal_at_door"
     # 要处理从哪个到哪个文件
-    indexes = [i for i in range(1500, 1700)]
+    indexes = [i for i in range(0, 1)]
     # compute_u_forces(dataset_path, folder_name, phase, indexes)
     multi_process(dataset_path, folder_name, phase, indexes)

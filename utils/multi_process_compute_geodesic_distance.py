@@ -5,7 +5,7 @@ from multiprocessing import Pool
 import os, time, random
 
 from utils.compute_geodesic_distance import compute_geodesic_distance
-from utils.fo_utility import get_project_path, get_office_evacuation_path
+from utils.fo_utility import *
 
 
 def compute_and_save_geodesic_distance(envs_folder, geo_dist_folder, start_index, end_index):
@@ -28,9 +28,9 @@ def compute_and_save_geodesic_distance(envs_folder, geo_dist_folder, start_index
     print('Task from {} to {} runs {} seconds.'.format(start_index, end_index, end - start))
 
 
-def multi_process(folder_name, phase, indexes):
+def multi_process(dataset_path, folder_name, phase, indexes):
     # in
-    folder = os.path.join(get_office_evacuation_path(), folder_name)
+    folder = os.path.join(dataset_path, folder_name)
     # in
     in_envs_folder = os.path.join(folder, phase, "envs")
     # out
@@ -41,7 +41,7 @@ def multi_process(folder_name, phase, indexes):
 
     print('Parent process %s.' % os.getpid())
     # 进程数量
-    num_process = 5
+    num_process = 1
     p = Pool(num_process)
     num_batch = int((indexes[1] - indexes[0]) / num_process)
     split_env_indexes = [[indexes[0] + i * num_batch, indexes[0] + (i + 1) * num_batch] for i in range(num_process)]
@@ -55,9 +55,9 @@ def multi_process(folder_name, phase, indexes):
 
 
 if __name__ == '__main__':
-    phase = "train"
-    folder_name = "sg_walls"
+    phase = "test"
+    folder_name = "goal_at_door"
     # 要处理从哪个到哪个文件
-    indexes = [1500, 1700]
-
-    multi_process(folder_name, phase, indexes)
+    indexes = [0, 1]
+    dataset_path = get_p2v_path()
+    multi_process(dataset_path, folder_name, phase, indexes)

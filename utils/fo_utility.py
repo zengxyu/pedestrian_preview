@@ -15,6 +15,14 @@ def get_sg_walls_path():
     return os.path.join(get_office_evacuation_path(), "sg_walls")
 
 
+def get_p2v_sg_walls_path():
+    return os.path.join(get_p2v_path(), "sg_walls")
+
+
+def get_p2v_goal_at_door_path():
+    return os.path.join(get_p2v_path(), "goal_at_door")
+
+
 def get_office_evacuation_path():
     return os.path.join(get_project_path(), "data", "office_evacuation")
 

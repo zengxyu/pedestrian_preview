@@ -110,12 +110,12 @@ def compute_v_force_by_path(env_path, geo_path):
     return v_map_dict
 
 
-def compute_v_forces(folder_name, phase, indexes):
-    env_folder = os.path.join(get_office_evacuation_path(), folder_name, phase, "envs")
-    geo_folder = os.path.join(get_office_evacuation_path(), folder_name, phase, "geodesic_distance")
+def compute_v_forces(dataset_path, folder_name, phase, indexes):
+    env_folder = os.path.join(dataset_path, folder_name, phase, "envs")
+    geo_folder = os.path.join(dataset_path, folder_name, phase, "geodesic_distance")
 
-    v_folder = os.path.join(get_office_evacuation_path(), folder_name, phase, "v_forces")
-    v_image_folder = os.path.join(get_office_evacuation_path(), folder_name, phase, "v_image_forces")
+    v_folder = os.path.join(dataset_path, folder_name, phase, "v_forces")
+    v_image_folder = os.path.join(dataset_path, folder_name, phase, "v_image_forces")
 
     if not os.path.exists(v_folder):
         os.makedirs(v_folder)
@@ -167,11 +167,12 @@ def multi_process(folder_name, phase, indexes):
 
 
 if __name__ == '__main__':
-    folder_name = "sg_walls"
-    phase = "train"
+    dataset_path = get_p2v_path()
+    folder_name = "goal_at_door"
+    phase = "test"
     # 要处理从哪个到哪个文件
-    indexes = [i for i in range(1500, 1700)]
-    compute_v_forces(folder_name, phase, indexes)
+    indexes = [i for i in range(0, 1)]
+    compute_v_forces(dataset_path, folder_name, phase, indexes)
 
     # multi_process(folder_name, phase, indexes)
 
