@@ -22,7 +22,7 @@ import cv2
 from environment.env_types import EnvTypes
 from environment.gen_scene.office1000_loader import load_office1000_scene, check_office1000_folder_structure
 from environment.gen_scene.world_loader import load_p2v_scene
-from environment.human_npc_generator import generate_human_npc
+from environment.human_npc_generator import generate_human_npc, generate_human_npc_with_specified_goal
 from environment.nav_utilities.coordinates_converter import cvt_positions_to_reference, \
     transform_local_to_world
 from environment.nav_utilities.pybullet_helper import plot_robot_direction_line
@@ -102,7 +102,6 @@ class EnvironmentBullet(PybulletBaseEnv):
         
         
         """
-        self.agent_sub_goals = None
         self.agent_sub_goals_indexes = None
         self.geodesic_distance_dict_list: List[Dict] = None
 
@@ -558,9 +557,10 @@ class EnvironmentBullet(PybulletBaseEnv):
         add human npc
         """
         # randomize the start and end position for occupancy map
-        npc_starts, npc_goals, npc_paths = generate_human_npc(running_config=self.running_config,
-                                                              occ_map=self.occ_map,
-                                                              npc_sg_sampler_config=self.npc_sg_sampler_config)
+        npc_starts, npc_goals, npc_paths = generate_human_npc_with_specified_goal(running_config=self.running_config,
+                                                                                  occ_map=self.occ_map,
+                                                                                  goal=self.agent_robots[0].goal,
+                                                                                  npc_sg_sampler_config=self.npc_sg_sampler_config)
         self.npc_goals = npc_goals
         # create n dynamic obstacles, put them into the environment
         self.npc_group = NpcGroup(p=self.p,
@@ -645,7 +645,6 @@ class EnvironmentBullet(PybulletBaseEnv):
         self.ma_relative_poses_deque = [deque(maxlen=self.pose_seq_len) for i in range(self.num_agents)]
         self.agent_robots = None
         self.agent_robot_ids = []
-        self.agent_sub_goals = None
 
     def logging_action(self, action):
         logging_str = ""
