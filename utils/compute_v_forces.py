@@ -87,11 +87,50 @@ def display_v_images(force_vx, force_vy, force_v):
     plt.show()
 
 
-def save_v_images(force_vx, force_vy, force_v, save_folder, i, goal):
+# def save_v_images(force_vx, force_vy, force_v, save_folder, i, goal):
+#     plt.figure(30)
+#     plt.imshow(np.sqrt(force_vx ** 2 + force_vy ** 2), cmap='gray')
+#     plt.title('Convolved Map')
+#     plt.savefig(os.path.join(save_folder, "env_{}_{}_convolved_map.png".format(i, goal)))
+
+def save_v_force(force_x, force_y, force, save_folder, i):
+    """
+    保存u force
+    Args:
+        force_x:
+        force_y:
+        force:
+        save_folder:
+
+    Returns:
+
+    """
+    L1, L2 = force_x.shape
     plt.figure(30)
-    plt.imshow(np.sqrt(force_vx ** 2 + force_vy ** 2), cmap='gray')
+    plt.imshow(np.sqrt(force_x ** 2 + force_y ** 2), cmap='gray')
     plt.title('Convolved Map')
-    plt.savefig(os.path.join(save_folder, "env_{}_{}_convolved_map.png".format(i, goal)))
+    plt.savefig(os.path.join(save_folder, "env_{}_convolved_map.png".format(i)))
+
+    XX, YY = np.meshgrid(np.arange(1, L1 + 1), np.arange(1, L2 + 1))
+    plt.figure(20)
+    plt.quiver(XX, YY, force_x, force_y)
+    plt.title('Convolved Map Vectors')
+    plt.savefig(os.path.join(save_folder, "env_{}_convolved_map_vector.png".format(i)))
+
+    plt.figure(11)
+    plt.imshow(force_x, cmap='gray')
+    plt.title('X-Convolved Map')
+    plt.savefig(os.path.join(save_folder, "env_{}_x_convolved_map.png".format(i)))
+
+    plt.figure(12)
+    plt.imshow(force_y, cmap='gray')
+    plt.title('Y-Convolved Map')
+    plt.savefig(os.path.join(save_folder, "env_{}_y_convolved_map.png".format(i)))
+
+    plt.figure(13)
+    plt.imshow(force_y, cmap='gray')
+    plt.title('Y-Convolved Map')
+    plt.savefig(os.path.join(save_folder, "env_{}_y_convolved_map.png".format(i)))
 
 
 def compute_v_force_by_path(env_path, geo_path):

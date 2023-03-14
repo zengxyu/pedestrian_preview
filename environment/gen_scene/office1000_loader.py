@@ -5,9 +5,11 @@ from typing import Dict, List
 import numpy as np
 
 from environment.gen_scene.build_office_world import drop_world_walls
+from environment.gen_scene.common_sampler import point_sampler
 from environment.gen_scene.world_generator import get_world_config
 from environment.nav_utilities.coordinates_converter import cvt_to_bu
 from utils.fo_utility import *
+from utils.image_utility import dilate_image
 
 
 def check_office1000_folder_structure():
@@ -58,6 +60,25 @@ def check_office1000_folder_structure():
                         assert length == 240, warning1 + warning2 + warning3 + ";length={}".format(length)
 
 
+def sample_starts(occupancy_map, running_config):
+    dilated_occ_map = dilate_image(occupancy_map, dilation_size=3)
+    starts = [np.array(point_sampler(dilated_occ_map))]
+    for i in range(running_config["num_agents"] - 1):
+        too_close = True
+        while too_close:
+            start = point_sampler(dilated_occ_map)
+            start = np.array(start)
+            pre_starts = np.array(starts)
+            distances = np.linalg.norm(pre_starts - start[np.newaxis, :], axis=1)
+            min_distance = np.min(distances)
+            if min_distance < 10:
+                too_close = True
+            else:
+                too_close = False
+        starts.append(start)
+    return starts
+
+
 def load_office1000_scene(p, running_config, worlds_config, phase, parent_folder):
     """
     load scene from map path and trajectory path
@@ -88,6 +109,8 @@ def load_office1000_scene(p, running_config, worlds_config, phase, parent_folder
 
     # Read occupancy map, starts and ends
     occupancy_map, starts, ends = pickle.load(open(env, 'rb'))
+    # starts = sample_starts(occupancy_map, running_config)
+    # starts = [point_sampler(dilated_occ_map) for i in range(running_config["num_agents"])]
     # read obstacle distance map
     obstacle_distance_map = pickle.load(open(obstacle_distance_path, 'rb'))
     # read geodesic_distance_map

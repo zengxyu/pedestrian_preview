@@ -175,4 +175,4 @@ class RobotEnvBridge:
 
     def add_to_trajectories(self):
         self.trajectories.append(self.robot.get_position())
-        self.times.append(self.env.step_count)
+        self.times.append(self.env.step_count.value)

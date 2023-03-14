@@ -206,7 +206,7 @@ def compute_u_forces(dataset_path, folder_name, phase, indexes):
         # # 显示u force
         # display_u_force(force_x, force_y, force)
         # 保存 u force 图片
-        save_u_force(force_x, force_y, force, save_folder=u_image_folder, i=i)
+        save_u_force(force_x,  force_y, force, save_folder=u_image_folder, i=i)
         print()
 
 
@@ -243,4 +243,4 @@ if __name__ == '__main__':
     # 要处理从哪个到哪个文件
     indexes = [i for i in range(0, 1)]
     # compute_u_forces(dataset_path, folder_name, phase, indexes)
-    multi_process(dataset_path, folder_name, phase, indexes)
+    compute_u_forces(dataset_path, folder_name, phase, indexes)

@@ -73,6 +73,7 @@ class EnvironmentBullet(PybulletBaseEnv):
         self.obstacle_distance_map = None
         self.force_u1_x, self.force_u1_y, self.force_u1 = None, None, None
         self.force_vxs, self.force_vys, self.force_vs = [], [], []
+        self.agent_robots_copy: List[ObjectRobot] = []
         self.agent_robots: List[ObjectRobot] = []
         self.agent_robot_ids = []
 
@@ -150,7 +151,7 @@ class EnvironmentBullet(PybulletBaseEnv):
             print("scene folder:{}".format(parent_folder))
         elif self.args.env == EnvTypes.P2V:
             parent_folders = [get_p2v_sg_walls_path(), get_p2v_goal_at_door_path()]
-            parent_folder = np.random.choice(parent_folders, size=(1,), p=np.array([0.5, 0.5]))[0]
+            parent_folder = np.random.choice(parent_folders, size=(1,), p=np.array([0, 1]))[0]
             print("scene folder:{}".format(parent_folder))
         else:
             raise NotImplementedError
@@ -178,6 +179,7 @@ class EnvironmentBullet(PybulletBaseEnv):
         # initialize robot
         logging.debug("Create the environment, Done...")
         self.agent_robots = self.init_robots(agent_starts, agent_goals)
+        self.agent_robots_copy = [robot for robot in self.agent_robots]
 
     def visualize_goals(self, bu_goals, colors):
         thetas = np.linspace(0, np.pi * 2, 10)
@@ -248,7 +250,7 @@ class EnvironmentBullet(PybulletBaseEnv):
             reach_goal = all(reach_goals)
 
             # 并将到达目标的robot删掉
-            for i in remove_ids:
+            for i in remove_ids[::-1]:
                 robot = self.agent_robots[i]
                 self.agent_robots.remove(robot)
                 robot.bridge.clear_itself()
@@ -308,7 +310,9 @@ class EnvironmentBullet(PybulletBaseEnv):
             if self.args.train:
                 return reward, reward_info
             else:
-                print("robot:{}; reward info:{}".format(i, reward_info))
+
+                # print("robot:{}; reward info:{}".format(i, reward_info))
+                pass
         return 0, {}
 
     def compute_geo_obs_reward(self, robot: ObjectRobot):
@@ -404,8 +408,8 @@ class EnvironmentBullet(PybulletBaseEnv):
 
             geodesic_distance = rt.bridge.compute_geodesic_distance()
 
-            if not self.args.train:
-                print("input geodesic_distance:{}".format(geodesic_distance))
+            # if not self.args.train:
+            #     print("input geodesic_distance:{}".format(geodesic_distance))
             rela_pose_geo = np.array([*relative_pose.flatten().tolist(), geodesic_distance]).astype(float)[np.newaxis,
                             :]
             # print(rela_pose_geo.dtype)
