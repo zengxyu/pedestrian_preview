@@ -5,29 +5,22 @@ import numpy as np
 
 from environment.gen_scene.common_sampler import sg_opposite_baffle_sampler3
 from environment.gen_scene.compute_door import compute_door
-from utils.fo_utility import get_project_path
+from utils.fo_utility import *
 from utils.image_utility import dilate_image
 from utils.gen_fixed_envs import display_and_save
 
 
 # 将 office 1500 中的目标点转为门，起点是和终点仍然是有隔板的点, 之后需要重新计算obstacle distance, geodesic distance, uv_forces
-def convert_office_1000_goal_outdoor():
-    phase = "test"
-    office_1000_parent_folder = os.path.join(get_project_path(), "data", "office_1500", phase)
-    office_1000_random_envs_folder = os.path.join(office_1000_parent_folder, "envs")
-
-    out_goal_outdoor_parent_folder = os.path.join(get_project_path(), "data", "office_1500_goal_outdoor", phase)
-    out_goal_outdoor_envs_folder = os.path.join(out_goal_outdoor_parent_folder, "envs")
-    out_goal_outdoor_images_folder = os.path.join(out_goal_outdoor_parent_folder, "envs_images")
+def convert_office_1000_goal_outdoor(dataset_path, folder_name, out_folder_name, phase, indexes):
+    env_folder = os.path.join(dataset_path, folder_name, phase, "envs")
+    out_env_folder = os.path.join(dataset_path, out_folder_name, phase, "envs")
+    out_image_folder = os.path.join(dataset_path, out_folder_name, phase, "envs_images")
 
     num_starts = 20
-    indexes = [i for i in range(0, 240)]
-    if not os.path.exists(out_goal_outdoor_parent_folder):
-        os.makedirs(out_goal_outdoor_parent_folder)
-    if not os.path.exists(out_goal_outdoor_envs_folder):
-        os.makedirs(out_goal_outdoor_envs_folder)
-    if not os.path.exists(out_goal_outdoor_images_folder):
-        os.makedirs(out_goal_outdoor_images_folder)
+    if not os.path.exists(out_env_folder):
+        os.makedirs(out_env_folder)
+    if not os.path.exists(out_image_folder):
+        os.makedirs(out_image_folder)
 
     file_name_template = "env_{}.pkl"
     image_name_template = "image_{}.png"
@@ -36,9 +29,9 @@ def convert_office_1000_goal_outdoor():
         file_name = file_name_template.format(i)
         image_name = image_name_template.format(i)
         print("Processing file:{}".format(file_name))
-        in_file_path = os.path.join(office_1000_random_envs_folder, file_name)
-        out_file_path = os.path.join(out_goal_outdoor_envs_folder, file_name)
-        out_image_path = os.path.join(out_goal_outdoor_images_folder, image_name)
+        in_file_path = os.path.join(env_folder, file_name)
+        out_file_path = os.path.join(out_env_folder, file_name)
+        out_image_path = os.path.join(out_image_folder, image_name)
 
         occupancy_map, _, _ = pickle.load(open(in_file_path, "rb"))
         dilated_occ_map = dilate_image(occupancy_map, dilation_size=5)
@@ -83,4 +76,11 @@ def convert_office_1000_goal_outdoor():
 
 
 if __name__ == '__main__':
-    convert_office_1000_goal_outdoor()
+    dataset_path = get_office_evacuation_path()
+    folder_name = "sg_walls"
+    out_folder_name = "goal_at_door"
+    phase = "train"
+    # 要处理从哪个到哪个文件
+    indexes = [i for i in range(1200, 1700)]
+
+    convert_office_1000_goal_outdoor(dataset_path, folder_name, out_folder_name, phase, indexes)

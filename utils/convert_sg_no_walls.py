@@ -23,7 +23,7 @@ def convert_sg_no_walls():
     in_folder_name = "sg_walls"
     out_folder_name = "sg_no_walls"
     num_starts = 20
-    indexes = [i for i in range(0, 1200)]
+    indexes = [i for i in range(1200, 1700)]
 
     # in
     sg_walls_folder = os.path.join(get_office_evacuation_path(), in_folder_name)
