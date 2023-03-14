@@ -336,6 +336,8 @@ class EnvironmentBullet(PybulletBaseEnv):
 
     def compute_goal_geo_reward(self, robot: ObjectRobot):
         delta_geodesic_distance = robot.bridge.compute_delta_geodesic_distance()
+        if delta_geodesic_distance < 0:
+            delta_geodesic_distance = delta_geodesic_distance * 2
         geo_distance_reward = delta_geodesic_distance * self.reward_config["goal_geo"]
         return geo_distance_reward
 
