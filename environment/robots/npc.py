@@ -50,7 +50,7 @@ class Npc:
         self.robot = init_robot(self.p, self.client_id, self.npc_robot_name, RobotRoles.NPC,
                                 self.physical_step_duration,
                                 self.npc_robot_config, self.sensors_name,
-                                self.args.sensors_config, path[0], yaw)
+                                self.args.sensors_config, path[0], path[-1], yaw)
 
         self.path_manager.register_path(path)
         self.path_manager.update_nearest_waypoint(self.robot.get_position())
