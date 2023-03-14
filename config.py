@@ -21,7 +21,6 @@ def process_args():
     parser.add_argument("--resume", action="store_true", default=False)
     parser.add_argument("--from_configs", type=str, default="configs")
     parser.add_argument("--gpu", type=int, default=0, help="gpu >=0 : use gpu; gpu <0 : use cpu")
-    parser.add_argument('--scene_name', type=str, help='')
     parser.add_argument("--max_speed", type=float, help='')
     parser.add_argument("--dynamic_num", type=int, help='')
     parser.add_argument("--static_num", type=int, help='')
@@ -73,23 +72,17 @@ def process_args():
     parser_args.running_config = read_yaml(parser_args.configs_folder, "running_config.yaml")
 
     # evaluation时动态配置的环境参数，
-    if not parser_args.train or parser_args.resume:
-        if parser_args.scene_name is not None:
-            if parser_args.running_config["scene_name"] == "random":
-                scene_name = np.random.choice(a=["office", "corridor", "cross"])
-            else:
-                scene_name = parser_args.scene_name
-            parser_args.running_config["scene_name"] = scene_name
+    # if not parser_args.train or parser_args.resume:
 
-        if parser_args.max_steps is not None:
-            parser_args.running_config["max_steps"] = parser_args.max_steps
+    if parser_args.max_steps is not None:
+        parser_args.running_config["max_steps"] = parser_args.max_steps
 
-        if parser_args.goal_reached_thresh is not None:
-            parser_args.running_config["goal_reached_thresh"] = parser_args.goal_reached_thresh
-        if parser_args.num_npc is not None:
-            parser_args.running_config["num_npc"] = parser_args.num_npc
-        if parser_args.num_agents is not None:
-            parser_args.running_config["num_agents"] = parser_args.num_agents
+    if parser_args.goal_reached_thresh is not None:
+        parser_args.running_config["goal_reached_thresh"] = parser_args.goal_reached_thresh
+    if parser_args.num_npc is not None:
+        parser_args.running_config["num_npc"] = parser_args.num_npc
+    if parser_args.num_agents is not None:
+        parser_args.running_config["num_agents"] = parser_args.num_agents
 
     print("\nYaml training config:", parser_args.running_config)
     print("\n==============================================================================================\n")

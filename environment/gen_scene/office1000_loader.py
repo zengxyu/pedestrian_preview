@@ -110,7 +110,6 @@ def load_office1000_scene(p, running_config, worlds_config, phase, parent_folder
     # Read occupancy map, starts and ends
     occupancy_map, starts, ends = pickle.load(open(env, 'rb'))
     # starts = sample_starts(occupancy_map, running_config)
-    # starts = [point_sampler(dilated_occ_map) for i in range(running_config["num_agents"])]
     # read obstacle distance map
     obstacle_distance_map = pickle.load(open(obstacle_distance_path, 'rb'))
     # read geodesic_distance_map
